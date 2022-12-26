@@ -1,0 +1,51 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC001 - Bishop Bug
+==================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	19-Dec-2022
+
+Contributor:	E. Labelle (Information source: R. Woodhead)
+
+The Issue:	If your character is a Bishop, it can identify the true name of an item. These items are in its inventory slots 1 through 8. Pressing other keys besides 1 through 8 can have the following benefits:
+
+-	9 : The Bishop gains 100 million experience points.
+-	S : The character below the Bishop gains 100 million experience points.
+-	J : The character below the Bishop gains 100 million gold pieces.
+
+
+The fix:
+
+This bug is due to a programming error. The code is similar to "IF (CH>="1") OR (CH<="8") THEN". The "OR" should have been a "AND".
+
+Why this fix:
+
+To prevent exploit and to prevent game corruption if other keys are pressed.	
+
+Source Disk:	Wiz1C.dsk
+
+File:		UTILITIE.TEXT
+
+Segment:	PROCEDURE IDITEM;  (* P010108 *)
+
+Code From:
+
+      UNTIL (ITEMX > 0) OR (ITEMX <= CHARACTR[ CHARX].POSS.POSSCNT);
+
+Code To:
+
+      (* WC001 CHANGE -OR- TO -AND- SO KEYS OUTSIDE 1-8 CANNOT BE USED *)    
+      UNTIL (ITEMX > 0) AND (ITEMX <= CHARACTR[ CHARX].POSS.POSSCNT);
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
+
