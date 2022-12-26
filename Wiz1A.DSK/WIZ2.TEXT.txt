@@ -1,0 +1,503 @@
+
+  PROCEDURE PRINTBEL;  (* P010002 *)
+  
+    BEGIN
+      WRITE( CHR( 7));
+      WRITE( CHR( 7));
+      WRITE( CHR( 7))
+    END;
+
+
+  FUNCTION GETREC;  (* P010003 *)
+  
+    VAR
+         BUFFADDR : INTEGER;
+         DSKBLOCK : INTEGER;
+                        
+    BEGIN
+      DSKBLOCK := SCNTOC.BLOFF[ DATATYPE] +
+                  2 *  (DATAINDX DIV SCNTOC.RECPER2BL[ DATATYPE]);
+      BUFFADDR := DATASIZE * (DATAINDX MOD SCNTOC.RECPER2BL[ DATATYPE]);
+      IF CACHEBL <> DSKBLOCK THEN
+        BEGIN
+          IF CACHEWRI THEN
+            REPEAT
+              UNITWRITE( DRIVE1, IOCACHE, SIZEOF( IOCACHE),
+                         (CACHEBL + SCNTOCBL), 0)
+            UNTIL IORESULT = 0;
+          CACHEWRI := FALSE;
+          CACHEBL := DSKBLOCK;
+          REPEAT
+            UNITREAD( DRIVE1, IOCACHE, SIZEOF( IOCACHE),
+                      (CACHEBL + SCNTOCBL), 0)
+          UNTIL IORESULT = 0
+        END;
+      GETREC := BUFFADDR
+    END;
+         
+
+  FUNCTION GETRECW;  (* P010004 *)
+    
+    VAR
+         BUFFADDR : INTEGER;
+         DSKBLOCK : INTEGER;
+                        
+    BEGIN
+    
+      DSKBLOCK := SCNTOC.BLOFF[ DATATYPE] +
+                  2 *  (DATAINDX DIV SCNTOC.RECPER2BL[ DATATYPE]);
+      BUFFADDR := DATASIZE * (DATAINDX MOD SCNTOC.RECPER2BL[ DATATYPE]);
+      IF CACHEBL <> DSKBLOCK THEN
+        BEGIN
+          IF CACHEWRI THEN
+            REPEAT
+              UNITWRITE( DRIVE1, IOCACHE, SIZEOF( IOCACHE),
+                         (CACHEBL + SCNTOCBL), 0)
+            UNTIL IORESULT = 0;
+          CACHEBL := DSKBLOCK;
+          REPEAT
+            UNITREAD( DRIVE1, IOCACHE, SIZEOF( IOCACHE),
+                      (CACHEBL + SCNTOCBL), 0)
+          UNTIL IORESULT = 0;
+        END;
+      CACHEWRI := TRUE;
+      GETRECW := BUFFADDR
+    END;
+    
+    
+  PROCEDURE ADDLONGS;  (* P010005 *)
+  
+    BEGIN
+      FIRST.LOW := FIRST.LOW + SECOND.LOW;
+      IF FIRST.LOW >= 10000 THEN
+        BEGIN
+          FIRST.MID := FIRST.MID + 1;
+          FIRST.LOW := FIRST.LOW - 10000
+        END;
+        
+      FIRST.MID := FIRST.MID + SECOND.MID;
+      IF FIRST.MID >= 10000 THEN
+        BEGIN
+          FIRST.HIGH := FIRST.HIGH + 1;
+          FIRST.MID := FIRST.MID - 10000
+        END;
+        
+      FIRST.HIGH := FIRST.HIGH + SECOND.HIGH;
+      IF FIRST.HIGH >= 10000 THEN
+        BEGIN
+          FIRST.HIGH := 9999;
+          FIRST.MID  := 9999;
+          FIRST.LOW  := 9999
+        END
+    END;
+    
+    
+  PROCEDURE SUBLONGS;  (* P010006 *)
+  
+    BEGIN
+      FIRST.LOW := FIRST.LOW - SECOND.LOW;
+      IF FIRST.LOW < 0 THEN
+        BEGIN
+          FIRST.MID := FIRST.MID - 1;
+          FIRST.LOW := FIRST.LOW + 10000
+        END;
+      
+      FIRST.MID := FIRST.MID - SECOND.MID;
+      IF FIRST.MID < 0 THEN
+        BEGIN
+          FIRST.HIGH := FIRST.HIGH - 1;
+          FIRST.MID := FIRST.MID + 10000
+        END;
+        
+      FIRST.HIGH := FIRST.HIGH - SECOND.HIGH;
+      IF FIRST.HIGH < 0 THEN
+        BEGIN
+          FIRST.HIGH := 0;
+          FIRST.MID  := 0;
+          FIRST.LOW  := 0
+        END
+    END;
+
+
+  PROCEDURE LONG2BCD;  (* P010008 *)
+  
+    VAR
+         DIGITX : INTEGER;
+  
+  
+    PROCEDURE INT2BCD( PARTLONG: INTEGER);  (* P010021 *)
+    
+      PROCEDURE PUTDIGIT( POWOF10: INTEGER);  (* P010022 *)
+      
+        BEGIN
+          BCDNUM[ DIGITX] := PARTLONG DIV POWOF10;
+          DIGITX := DIGITX + 1;
+          PARTLONG := PARTLONG MOD POWOF10
+        END;
+    
+    
+      BEGIN  (* INT2BCD *)
+        PUTDIGIT( 1000);
+        PUTDIGIT(  100);
+        PUTDIGIT(   10);
+        PUTDIGIT(    1)
+      END;   (* INT2BCD *)
+      
+      
+    BEGIN  (* LONG2BCD *)
+      BCDNUM[ 0] := 0;
+      DIGITX := 1;
+      INT2BCD( LONGNUM.HIGH);
+      INT2BCD( LONGNUM.MID);
+      INT2BCD( LONGNUM.LOW)
+    END;  (* LONG2BCD *)
+
+
+  PROCEDURE BCD2LONG;  (* P010007 *)
+  
+    VAR
+         DIGITX : INTEGER;
+  
+  
+    PROCEDURE BCD2INT( VAR LONGPART: INTEGER);  (* P010023 *)
+  
+  
+      PROCEDURE GETDIGIT;  (* P010024 *)
+      
+        BEGIN
+          LONGPART := (10 * LONGPART) + BCDNUM[ DIGITX];
+          DIGITX := DIGITX + 1
+        END;
+        
+        
+      BEGIN  (* BCD2INT *)
+        LONGPART := 0;
+        GETDIGIT;
+        GETDIGIT;
+        GETDIGIT;
+        GETDIGIT
+      END;
+      
+      
+    BEGIN  (* BCD2LONG *)
+      FILLCHAR( LONGNUM, 6, 0);
+      DIGITX := 1;
+      BCD2INT( LONGNUM.HIGH);
+      BCD2INT( LONGNUM.MID);
+      BCD2INT( LONGNUM.LOW)
+    END;  (* BCD2LONG *)
+
+
+  PROCEDURE MULTLONG;  (* P010009 *)
+  
+    VAR
+         UNUSEDXX : INTEGER;
+         UNUSEDYY : INTEGER;
+         DIGITX   : INTEGER;
+         BCDNUM   : TBCD;
+         
+    BEGIN
+      LONG2BCD( LONGNUM, BCDNUM);
+      FOR DIGITX := 12 DOWNTO 1 DO
+        BCDNUM[ DIGITX] := BCDNUM[ DIGITX] * INTNUM;
+      FOR DIGITX := 12 DOWNTO 1 DO
+        IF BCDNUM[ DIGITX] > 9 THEN
+          BEGIN
+            BCDNUM[ DIGITX - 1] := BCDNUM[ DIGITX - 1] +
+                                   BCDNUM[ DIGITX] DIV 10;
+            BCDNUM[ DIGITX] := BCDNUM[ DIGITX] MOD 10
+          END;
+      BCD2LONG( LONGNUM, BCDNUM)
+    END;  (* MULTLONG *)
+
+
+  PROCEDURE DIVLONG;  (* P01000A *)
+
+    VAR
+         NXTDIGIT : INTEGER;
+         DIGITX   : INTEGER;
+         BCDNUM   : TBCD;
+
+    BEGIN
+      LONG2BCD( LONGNUM, BCDNUM);
+      FOR DIGITX := 1 TO 12 DO
+        BEGIN
+          NXTDIGIT := BCDNUM[ DIGITX] DIV INTNUM;
+          BCDNUM[ DIGITX + 1] := BCDNUM[ DIGITX + 1] + 
+                                 (10 * (BCDNUM[ DIGITX] - NXTDIGIT * INTNUM));
+          BCDNUM[ DIGITX] := NXTDIGIT
+        END;
+      BCD2LONG( LONGNUM, BCDNUM)
+    END;  (* DIVLONG *)
+
+
+  FUNCTION TESTLONG;  (* P01000B *)
+                    
+    PROCEDURE LTEQGT( FIRSTX:  INTEGER;  (* P01002E *)
+                      SECONDX: INTEGER);
+    
+      BEGIN
+        IF FIRSTX = SECONDX THEN
+          EXIT( LTEQGT)
+        ELSE
+          BEGIN
+            IF FIRSTX > SECONDX THEN
+              TESTLONG := 1
+            ELSE
+              TESTLONG := -1
+          END;
+        EXIT( TESTLONG)
+      END; (* LTEQGT *)
+      
+  
+    BEGIN  (* TESTLONG *)
+      LTEQGT( FIRST.HIGH, SECOND.HIGH);
+      LTEQGT( FIRST.MID,  SECOND.MID);
+      LTEQGT( FIRST.LOW,  SECOND.LOW);
+      TESTLONG := 0
+    END;
+
+
+  PROCEDURE PRNTLONG;  (* P01000C *)
+                     
+    VAR
+         BCDNUM   : TBCD;
+         NONSPCX  : INTEGER;
+         LEADSPCX : INTEGER;
+  
+    BEGIN
+      LONG2BCD( LONGNUM, BCDNUM);
+      LEADSPCX := 1;
+      WHILE (LEADSPCX < 12) AND (BCDNUM[ LEADSPCX] = 0) DO
+        BEGIN
+          LEADSPCX := LEADSPCX + 1;
+          WRITE( ' ')
+        END;
+      FOR NONSPCX := LEADSPCX TO 12 DO
+        WRITE(  BCDNUM[ NONSPCX] : 1)
+    END;  (* PRNTLONG *)
+
+
+  PROCEDURE GETKEY;  (* P01000D *)
+  
+    CONST
+         SYSTERM = 2;
+         
+    VAR
+         INBUF : PACKED ARRAY[ 0..1] OF CHAR;
+  
+  
+    BEGIN
+      MVCURSOR( 80, 0);  (* ADJUST RANDOM #, AND RETURN WHEN A CHAR IS AVAIL *)
+      UNITREAD( SYSTERM, INBUF, 1, 0, 0);
+      INCHAR := INBUF[ 0];
+      IF EOLN THEN
+        INCHAR := CHR( CRETURN)
+    END;  (* GETKEY *)
+
+
+  PROCEDURE GETLINE;  (* P01000E *)
+  
+    VAR
+         IPOS : INTEGER;
+         
+    BEGIN
+      IPOS := 0;
+      REPEAT
+        GETKEY;
+        IF (INCHAR >= CHR( 32)) AND
+           (INCHAR <= CHR( 90)) AND
+           (IPOS < 40) THEN
+          BEGIN
+             IPOS:= IPOS + 1;
+            GTSTRING[ IPOS] := INCHAR;
+            WRITE( INCHAR)
+          END
+        ELSE
+          BEGIN
+            IF INCHAR = CHR( 8) THEN
+              BEGIN
+                IF IPOS > 0 THEN
+                  BEGIN
+                    WRITE( INCHAR);
+                    WRITE( ' ');
+                    WRITE( INCHAR);
+                    IPOS := IPOS -1
+                  END;
+              END;
+          END;
+      UNTIL INCHAR = CHR( CRETURN);
+      GTSTRING[ 0] := CHR( IPOS)
+    END;
+    
+    
+   FUNCTION GETCHARX;  (* P01000F *)
+  
+    BEGIN
+      GOTOXY( 0, 18);
+      WRITE( CHR( 11));
+      IF DSPNAMES THEN
+        BEGIN
+          FOR LLBASE04 := 0 TO PARTYCNT - 1 DO
+            BEGIN
+              GOTOXY( 20 * (LLBASE04 MOD 2), 20 + (LLBASE04 DIV 2));
+              WRITE( LLBASE04 + 1 :1);
+              WRITE( ') ' );
+              WRITE( CHARACTR[ LLBASE04].NAME);
+            END;
+        END;
+      REPEAT
+        GOTOXY( 0, 18);
+        WRITE( CHR( 29));
+        WRITE( SOLICIT);
+        WRITE( ' ([RETURN] EXITS) >');
+        GETKEY;
+        LLBASE04 := ORD( INCHAR) - ORD( '0');
+      UNTIL ((LLBASE04 > 0) AND (LLBASE04 <= PARTYCNT)) OR
+            (INCHAR = CHR( 13));
+      IF INCHAR = CHR( CRETURN) THEN
+        LLBASE04 := 0;
+      GETCHARX := LLBASE04 - 1
+    END;
+  
+  
+  PROCEDURE PAUSE1;   (* P010011 *)
+  
+    BEGIN
+      FOR LLBASE04 := 0 TO TIMEDLAY DO
+        BEGIN
+        END;
+    END;
+    
+    
+  PROCEDURE PAUSE2;   (* P010012 *)
+  
+    BEGIN
+      FOR LLBASE04 := 0 TO 3000 DO
+        BEGIN
+        END
+    END;
+    
+    
+  PROCEDURE CENTSTR;  (* P010010 *)
+  
+    BEGIN
+      GOTOXY( 20 - (LENGTH( ASTRING) DIV 2), 23);
+      WRITE( ASTRING);
+      GOTOXY( 41, 0);
+      PAUSE2
+    END;
+    
+    
+  PROCEDURE CLEARPIC;  (* P010013 *)
+  
+    BEGIN
+      CLRPICT( 0, 0, 0, 100)    (* 100 === CLEAR PICTURE *)
+    END;
+    
+    
+  PROCEDURE GRAPHICS;  (* P010014 *)
+  
+    BEGIN
+      MVCURSOR( 40, 0)    (* GRAPHICS MODE *)
+    END;
+    
+    
+  PROCEDURE TEXTMODE;  (* P010015 *)
+  
+    BEGIN
+      MVCURSOR( 50, 0)    (* TEXT MODE *)
+    END;
+    
+    
+  PROCEDURE PRINTCHR;  (* P010016 *)
+  
+    BEGIN
+      PRGRCHR( CHARSET[ ORD( ACHAR) - 32])
+    END;
+    
+    
+  PROCEDURE PRINTSTR;  (* P010017 *)
+  
+    VAR
+         IPOS : INTEGER;
+  
+    BEGIN
+      FOR IPOS := 1 TO LENGTH( ASTRING) DO
+        BEGIN
+          PRGRCHR( CHARSET[ ORD( ASTRING[ IPOS]) - 32])
+        END;
+    END;
+    
+    
+  PROCEDURE PRINTNUM;  (* P010018 *)
+  
+    VAR
+         DIGITS : STRING[ 5];
+         DIGITX : INTEGER;
+         
+    BEGIN
+      IF ANUM < 0 THEN
+        ANUM := 0;
+      IF FIELDSZ > 5 THEN
+        FIELDSZ := 5;
+      IF FIELDSZ < 1 THEN
+        FIELDSZ := 1;
+      FOR DIGITX := 5 DOWNTO 1 DO
+        BEGIN
+           DIGITS[  DIGITX]  :=  CHR( 48 +  (ANUM MOD 10));
+           ANUM := ANUM DIV 10
+        END;
+      DIGITX := 1;
+      WHILE  (DIGITX < 5) AND (DIGITS[ DIGITX] = CHR( 48)) DO
+        BEGIN
+          DIGITS[ DIGITX] := CHR( 32);
+           DIGITX:= DIGITX + 1
+        END;
+      FOR DIGITX := (6 - FIELDSZ) TO 5 DO
+        BEGIN
+          PRINTCHR( DIGITS[ DIGITX])
+        END;
+    END;
+    
+    
+  PROCEDURE GETSTR;
+  
+    VAR
+         UNUSEDXX : INTEGER;
+         UNUSEDYY : INTEGER;
+         IPOS     : INTEGER;
+         
+    BEGIN
+      IPOS := 0;
+      REPEAT
+        MVCURSOR( WINXPOS + IPOS, WINYPOS);
+        PRINTCHR( CHR( 64));
+        GETKEY;
+        IF INCHAR = CHR( 27) THEN
+          BEGIN
+            CLRRECT( WINXPOS, WINYPOS, IPOS + 1, 1);
+            IPOS := 0
+          END
+        ELSE
+          BEGIN
+            IF (INCHAR = CHR( 8)) AND (IPOS > 0) THEN
+              BEGIN
+                CLRRECT( WINXPOS + IPOS, WINYPOS, 1, 1);
+                IPOS := IPOS - 1
+              END
+            ELSE
+              BEGIN
+                IF (INCHAR <> CHR( CRETURN)) AND (ORD( INCHAR) >= 32) THEN
+                  BEGIN
+                    MVCURSOR( WINXPOS + IPOS, WINYPOS);
+                    PRINTCHR( INCHAR);
+                    IPOS := IPOS + 1;
+                    ASTRING[ IPOS] := INCHAR
+                  END
+              END
+          END
+      UNTIL INCHAR = CHR( CRETURN);
+      ASTRING[ 0] := CHR( IPOS)
+    END;
+

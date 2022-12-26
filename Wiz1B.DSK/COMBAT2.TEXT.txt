@@ -1,0 +1,822 @@
+    SEGMENT PROCEDURE CUTIL;
+
+
+      PROCEDURE CACTION;  (* P010602 *)
+      
+        VAR
+             SPLGRCNT : ARRAY[ 0..5] OF INTEGER;
+             BDISPELL : BOOLEAN;
+             MYCHARX  : INTEGER;
+             AGIL1TEN : INTEGER;
+             
+          
+        PROCEDURE WHICHGRP( SOLICIT:   STRING;   (* P010603 *)
+                            SPELLHSH:  INTEGER);
+                            
+        
+          BEGIN
+            IF BATTLERC[ 2].A.ALIVECNT = 0 THEN
+              BEGIN
+                BATTLERC[ 0].A.TEMP04[ MYCHARX].VICTIM := 1;
+                BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH := SPELLHSH;
+                EXIT( WHICHGRP)
+              END;
+            MVCURSOR( 26 - ( LENGTH( SOLICIT) DIV 2), 8);
+            PRINTSTR( SOLICIT);
+            REPEAT
+              GETKEY
+            UNTIL ((INCHAR >= '1') AND (INCHAR < '5')) OR
+                   (INCHAR = CHR( CRETURN));
+            IF INCHAR = CHR( CRETURN) THEN
+              BEGIN
+                BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH := -999;
+                EXIT( WHICHGRP)
+              END;
+            IF BATTLERC[ ORD( INCHAR) - ORD( '0')].A.ALIVECNT = 0 THEN
+              BEGIN
+                BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH := -999;
+                EXIT( WHICHGRP)
+              END;
+            BATTLERC[ 0].A.TEMP04[ MYCHARX].VICTIM := ORD( INCHAR) - ORD( '0');
+            BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH := SPELLHSH;
+            CLRRECT( 13, 8, 26, 2)
+          END;
+          
+          
+        PROCEDURE USEITEM;  (* P010604 *)
+        
+          VAR
+               BUSEABLE : ARRAY[ 1..8] OF BOOLEAN;
+               POSSX    : INTEGER;
+               OBJECT   : TOBJREC;
+        
+        
+          PROCEDURE READOBJT;  (* P010605 *)
+          
+            BEGIN
+              MOVELEFT( 
+                IOCACHE[ GETREC(
+                        ZOBJECT,
+                        CHARACTR[ MYCHARX].POSS.POSSESS[ POSSX].EQINDEX,
+                        SIZEOF( TOBJREC))],
+                OBJECT,
+                SIZEOF( TOBJREC))
+            END;
+            
+            
+          PROCEDURE DSPITEMS;  (* P010606 *)
+          
+            VAR
+                 ITEMCNT : INTEGER;
+          
+            BEGIN
+              CLRRECT( 1, 11, 38, 4);
+              ITEMCNT := 0;
+              FOR POSSX := 1 TO CHARACTR[ MYCHARX].POSS.POSSCNT DO
+                BEGIN
+                  BUSEABLE[ POSSX] := FALSE;
+                  MVCURSOR( 1 + 19 * ((POSSX - 1) MOD 2),
+                           11 + (POSSX - 1) DIV 2);
+                  READOBJT;
+                  IF OBJECT.SPELLPWR > 0 THEN
+                    IF (OBJECT.OBJTYPE = SPECIAL) OR
+                       (CHARACTR[ MYCHARX].POSS.POSSESS[ POSSX].EQUIPED) THEN
+                      BEGIN
+                        ITEMCNT := ITEMCNT + 1;
+                        BUSEABLE[ POSSX] := TRUE;
+                        PRINTNUM( POSSX, 1);
+                        PRINTSTR( ') ');
+                        IF CHARACTR[ MYCHARX].POSS.POSSESS[ POSSX].IDENTIF THEN
+                          PRINTSTR( OBJECT.NAME)
+                        ELSE
+                          PRINTSTR( OBJECT.NAMEUNK)
+                      END
+                END;
+              IF ITEMCNT = 0 THEN
+                EXIT( USEITEM);
+              MVCURSOR( 13, 8);
+              PRINTSTR( 'WHICH ITEM (RETURN EXITS)?')
+            END;
+            
+            
+          PROCEDURE CHGITEM;  (* P010607 *)
+          
+            BEGIN
+              IF (RANDOM MOD 100) >= OBJECT.CHGCHANC THEN
+                EXIT( CHGITEM);
+              WITH CHARACTR[ MYCHARX].POSS.POSSESS[ POSSX] DO
+                BEGIN
+                  EQINDEX := OBJECT.CHANGETO;
+                  IDENTIF := FALSE
+                END;
+            END;
+            
+            
+          PROCEDURE UIGENERC( SPELLHSH: INTEGER);  (* P010608 *)
+          
+            BEGIN
+              BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH := SPELLHSH;
+              BATTLERC[ 0].A.TEMP04[ MYCHARX].VICTIM := -1;
+              CHGITEM
+            END;
+            
+            
+          PROCEDURE UIPERSON( SPELLHSH: INTEGER);  (* P010609 *)
+          
+            BEGIN
+              MVCURSOR( 15, 8);
+              PRINTSTR( 'USE ITEM ON PERSON # ?');
+              REPEAT
+                GETKEY
+              UNTIL (INCHAR >= '1') AND (INCHAR <= CHR( ORD('0') + PARTYCNT));
+              BATTLERC[ 0].A.TEMP04[ MYCHARX].VICTIM :=
+                 ORD( INCHAR) - ORD('0') - 1;
+              BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH := SPELLHSH;
+              CHGITEM
+            END;
+            
+            
+          PROCEDURE UIGROUP( SPELLHSH : INTEGER);  (* P01060A *)
+          
+            BEGIN
+              WHICHGRP( 'USE ITEM ON WHAT GROUP # ?', SPELLHSH);
+              CHGITEM
+            END;
+            
+            
+          BEGIN (* USEITEM *)
+            IF CHARACTR[ MYCHARX].POSS.POSSCNT = 0 THEN
+              EXIT( USEITEM);
+            DSPITEMS;
+            
+            REPEAT
+              GETKEY;
+              POSSX := ORD( INCHAR) - ORD( '0');
+              IF INCHAR = CHR( CRETURN) THEN
+                EXIT( USEITEM)
+            UNTIL (POSSX > 0) AND
+                  (POSSX <= CHARACTR[ MYCHARX].POSS.POSSCNT) AND
+                  (BUSEABLE[ POSSX]);
+            READOBJT;
+            CLRRECT( 13, 6, 26, 4);
+            LLBASE04 := SCNTOC.SPELLHSH[ OBJECT.SPELLPWR];
+            CASE SCNTOC.SPELL012[ OBJECT.SPELLPWR] OF
+              GENERIC:  UIGENERC( LLBASE04);
+               PERSON:  UIPERSON( LLBASE04);
+                GROUP:  UIGROUP(  LLBASE04);
+            END
+          END; (* USEITEM *)
+          
+          
+        PROCEDURE GETSPELL;  (* P01060B *)
+        
+          VAR
+              SPELLNAM : STRING[ 14];
+              SPELLCST : INTEGER;
+              SPELNAML : INTEGER;
+              SPELCHRA : INTEGER;
+              SPELNAMI : INTEGER;
+        
+        
+          PROCEDURE DOSPELL;  (* P01060C *)
+          
+            VAR
+                 SPELLX : INTEGER;
+                 
+                 
+            PROCEDURE CASTCHK( SPELLI:  INTEGER;  (* P01060D *)
+                               SPELLGR: INTEGER);
+            
+              BEGIN
+                IF CHARACTR[ MYCHARX].SPELLSKN[ SPELLI] THEN
+                  IF (SPELLI < 22) AND 
+                     (CHARACTR[ MYCHARX].MAGESP[ SPELLGR] > 0) THEN
+                       SPLGRCNT[ MYCHARX] := SPELLGR
+                  ELSE
+                      IF CHARACTR[ MYCHARX].PRIESTSP[ SPELLGR] > 0 THEN
+                          SPLGRCNT[ MYCHARX] := SPELLGR + 10;
+              
+                MVCURSOR( 13, 9);
+                IF SPLGRCNT[ MYCHARX] > 0 THEN
+                  EXIT( CASTCHK)
+                ELSE
+                  IF CHARACTR[ MYCHARX].SPELLSKN[ SPELLI] THEN
+                    PRINTSTR( 'SPELL POINTS EXHAUSTED')
+                  ELSE
+                    PRINTSTR( 'YOU DONT KNOW THAT SPELL');
+                PAUSE1;
+                EXIT( GETSPELL)
+              END;
+              
+              
+            PROCEDURE SPGENERC( SPELLI:  INTEGER;  (* P01060E *)
+                                SPELLGR: INTEGER);
+            
+              BEGIN
+                CASTCHK( SPELLI, SPELLGR);
+                BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH := SPELLCST;
+                BATTLERC[ 0].A.TEMP04[ MYCHARX].VICTIM := -1
+              END;
+              
+              
+            PROCEDURE SPPERSON( SPELLI:  INTEGER;  (* P01060F *)
+                                SPELLGR: INTEGER);
+            
+              BEGIN
+                CASTCHK( SPELLI, SPELLGR);
+                MVCURSOR( 13, 8);
+                PRINTSTR( ' CAST SPELL ON PERSON # ?');
+                REPEAT
+                  GETKEY
+                UNTIL (INCHAR >=  '1') AND
+                      (ORD (INCHAR) <= ( (ORD('0') + PARTYCNT) ));
+                BATTLERC[ 0].A.TEMP04[ MYCHARX].VICTIM := 
+                  ORD( INCHAR) - ORD( '0') - 1;
+                BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH := SPELLCST;
+                CLRRECT( 13, 8, 26, 1)
+              END;
+              
+              
+            PROCEDURE SPGROUP( SPELLI:  INTEGER;  (* P010610 *)
+                               SPELLGR: INTEGER);
+            
+              BEGIN
+                CASTCHK( SPELLI, SPELLGR);
+                WHICHGRP( 'CAST SPELL ON GROUP #?', SPELLCST)
+              END;
+              
+              
+            BEGIN (* DOSPELL *)
+              FOR SPELLX := 0 TO 50 DO
+                IF SPELLCST = SCNTOC.SPELLHSH[ SPELLX] THEN
+                  CASE SCNTOC.SPELL012[ SPELLX] OF
+                    GENERIC:  SPGENERC( SPELLX, SCNTOC.SPELLGRP[ SPELLX]);
+                     PERSON:  SPPERSON( SPELLX, SCNTOC.SPELLGRP[ SPELLX]);
+                      GROUP:  SPGROUP(  SPELLX, SCNTOC.SPELLGRP[ SPELLX]);
+                  END
+            END;  (* DOSPELL *)
+            
+            
+          BEGIN  (* GETSPELL *)
+            MVCURSOR( 13, 8);
+            PRINTSTR( 'SPELL NAME ? >');
+            GETSTR( SPELLNAM, 27, 8);
+            SPELNAML := LENGTH( SPELLNAM);
+            IF SPELNAML = 0 THEN
+              EXIT( GETSPELL);
+            SPELLCST := SPELNAML;
+            FOR SPELNAMI := 1 TO SPELNAML DO
+              BEGIN
+                SPELCHRA := ORD( SPELLNAM[ SPELNAMI]) - 64;
+                SPELLCST := SPELLCST + (SPELCHRA * SPELCHRA * SPELNAMI)
+              END;
+            CLRRECT( 13, 8, 26, 1);
+            DOSPELL
+          END; (* GETSPELL *)
+          
+          
+        PROCEDURE RUNAWAY;  (* P010611 *)
+        
+          VAR
+               TEMP : INTEGER;  (* MULTIPLE USES *)
+        
+        
+          PROCEDURE RUNFAILD;  (* P010612 *)
+          
+            BEGIN
+              FOR TEMP := 0 TO PARTYCNT - 1 DO
+                BATTLERC[ 0].A.TEMP04[ TEMP].AGILITY := -1;
+              EXIT( CACTION)
+            END;
+            
+            
+          BEGIN (* RUNAWAY *)
+            CLRRECT( 13, 6, 26, 4);
+            TEMP := 38 - 3 * MAZELEV;
+            IF PARTYCNT < 4 THEN
+              TEMP := TEMP + 20 - 5 * PARTYCNT;
+            IF BASE12.MYSTRENG > ENSTRENG THEN
+              TEMP := TEMP + 20;
+            IF MAZELEV = 10 THEN
+              TEMP := -1;
+            IF (RANDOM MOD 100) > TEMP THEN
+              RUNFAILD;
+            FOR TEMP := 1 TO 4 DO
+              BEGIN
+                BATTLERC[ TEMP].A.ALIVECNT := 0;
+                BATTLERC[ TEMP].A.ENMYCNT := 0
+              END;
+            XGOTO := XREWARD2;
+            DONEFIGH := TRUE;
+            EXIT( CUTIL)
+          END; (* RUNAWAY *)
+        
+        
+        PROCEDURE DOSUPRIS;  (* P010613 *)
+        
+          BEGIN
+            CLRRECT( 13, 6, 26, 4);
+            CLRRECT( 1, 11, 38, 4);
+            MVCURSOR( 1, 12);
+          
+            IF SURPRISE = 1 THEN
+              PRINTSTR( 'YOU SURPRISED THE MONSTERS!')
+            ELSE
+              IF SURPRISE = 2 THEN
+                PRINTSTR( 'THE MONSTERS SURPRISED YOU!');
+            IF SURPRISE <> 0 THEN
+              BEGIN
+                WRITE( CHR( 7));
+                WRITE( CHR( 7));
+                WRITE( CHR( 7));
+                PAUSE2;
+                PAUSE2
+              END
+          END;
+          
+          
+        BEGIN (* CACTION *)
+          DOSUPRIS;
+          MYCHARX := 0;
+          FILLCHAR( SPLGRCNT, 12, 0);
+          WHILE MYCHARX < PARTYCNT DO
+            BEGIN
+              REPEAT
+            
+                IF (BATTLERC[ 0].A.TEMP04[ MYCHARX].STATUS = OK) AND
+                   (SURPRISE <> 2) THEN
+                  BEGIN
+                    BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH := -999;
+                    REPEAT
+                      AGIL1TEN := RANDOM MOD 10;
+                      CASE CHARACTR[ MYCHARX].ATTRIB[ AGILITY] OF
+                          3:  AGIL1TEN := AGIL1TEN + 3;
+                        4,5:  AGIL1TEN := AGIL1TEN + 2;
+                        6,7:  AGIL1TEN := AGIL1TEN + 1;
+                         15:  AGIL1TEN := AGIL1TEN - 1;
+                         16:  AGIL1TEN := AGIL1TEN - 2;
+                         17:  AGIL1TEN := AGIL1TEN - 3;
+                         18:  AGIL1TEN := AGIL1TEN - 4;
+                      END;
+                      IF AGIL1TEN < 1 THEN
+                        AGIL1TEN := 1
+                      ELSE
+                        IF AGIL1TEN > 10 THEN
+                          AGIL1TEN := 10;
+                      BATTLERC[ 0].A.TEMP04[ MYCHARX].AGILITY := AGIL1TEN;
+                      UNITCLEAR( 1);
+                      MVCURSOR( 13, 6);
+                      PRINTSTR( CHARACTR[ MYCHARX].NAME);
+                      PRINTSTR( '''S OPTIONS');
+                      MVCURSOR( 13, 8);
+                      IF MYCHARX < 3 THEN
+                        BEGIN
+                          PRINTSTR( 'F)IGHT  ')
+                        END;
+                      PRINTSTR( 'S)PELL  P)ARRY');
+                      MVCURSOR( 13, 9);
+                      PRINTSTR( 'R)UN    U)SE    ');
+                      BDISPELL := FALSE;
+                      IF (CHARACTR[ MYCHARX].CLASS = PRIEST)
+                         OR
+                         ((CHARACTR[ MYCHARX].CLASS = LORD) AND 
+                          (CHARACTR[ MYCHARX].CHARLEV > 8)) 
+                         OR
+                         ((CHARACTR[ MYCHARX].CLASS = BISHOP) AND
+                          (CHARACTR[ MYCHARX].CHARLEV > 3)) THEN
+                          
+                          BEGIN
+                            BDISPELL := TRUE;
+                            PRINTSTR( 'D)ISPELL ')
+                          END;
+                          
+                      REPEAT
+                        GETKEY
+                      UNTIL (INCHAR = 'F') OR (INCHAR = 'S') OR
+                            (INCHAR = 'P') OR (INCHAR = 'U') OR
+                            (INCHAR = 'D') OR (INCHAR = 'R') OR
+                            (INCHAR = 'B');
+                            
+                      CLRRECT( 13, 8, 26, 2);
+                      SPLGRCNT[ MYCHARX] := 0;
+                          
+                      CASE INCHAR OF
+                      
+                        'D':  IF BDISPELL THEN
+                                WHICHGRP( 'DISPELL WHICH GROUP# ?', -5);
+                              
+                        'R':  RUNAWAY;
+                        
+                        'F':  IF MYCHARX < 3 THEN
+                                WHICHGRP( 'FIGHT AGAINST GROUP# ?', -1);
+                              
+                        'P':  BEGIN
+                                 BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH := 0;
+                                 BATTLERC[ 0].A.TEMP04[ MYCHARX].AGILITY := -1;
+                              END;
+                              
+                        'S':  GETSPELL;
+                              
+                        'U':  BEGIN
+                                USEITEM;
+                                CLRRECT( 1, 11, 38, 4)
+                              END;
+                        
+                        'B':  IF MYCHARX > 0 THEN
+                                BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH :=
+                                  -100;
+                      END;
+                      
+                    CLRRECT( 13, 6, 26, 4);
+                    UNTIL BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH <> -999;
+                    IF BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH = -100 THEN
+                      MYCHARX := -1;
+                  END
+                ELSE
+                  BATTLERC[ 0].A.TEMP04[ MYCHARX].AGILITY := -1;
+                  
+                MYCHARX := MYCHARX + 1
+                  
+              UNTIL MYCHARX = PARTYCNT;
+              
+              IF SURPRISE <> 2 THEN
+                BEGIN
+                  MVCURSOR( 14, 6);
+                  PRINTSTR( 'PRESS [RETURN] TO FIGHT,');
+                  MVCURSOR( 25, 7);
+                  PRINTSTR( 'OR');
+                  MVCURSOR( 14, 8);
+                  PRINTSTR( 'GO B)ACK TO REDO OPTIONS');
+                  
+                  REPEAT
+                    GETKEY
+                  UNTIL (INCHAR = CHR( CRETURN)) OR (INCHAR = 'B');
+                  
+                  IF INCHAR = 'B' THEN
+                    MYCHARX := 0
+                END;
+                CLRRECT( 13, 6, 26, 4);
+                CLRRECT( 1, 11, 38, 4)
+            END; (* WHILE LOOP *)
+          
+          FOR MYCHARX := 0 TO PARTYCNT - 1 DO
+            BEGIN
+              IF SPLGRCNT[ MYCHARX] > 0 THEN
+                BEGIN
+                  IF SPLGRCNT[ MYCHARX] > 10 THEN
+                   CHARACTR[ MYCHARX].PRIESTSP[ SPLGRCNT[ MYCHARX] - 10]
+                   := CHARACTR[ MYCHARX].PRIESTSP[ SPLGRCNT[ MYCHARX] - 10] - 1
+                  ELSE
+                   CHARACTR[ MYCHARX].MAGESP[ SPLGRCNT[ MYCHARX]]
+                   := CHARACTR[ MYCHARX].MAGESP[ SPLGRCNT[ MYCHARX]] - 1
+                END
+            END;
+        END;  (* CACTION *)
+        
+
+      PROCEDURE ENATTACK;  (* P010614 *)
+      
+        VAR
+            UNUSEDXX : INTEGER;
+            ATTCKTYP : INTEGER;
+            CHARX    : INTEGER;
+            ENEMYX   : INTEGER;
+            GROUPI   : INTEGER;
+      
+      
+        FUNCTION CANATTCK : BOOLEAN;  (* P010615 *)
+        
+          BEGIN
+            CANATTCK :=
+             (NOT CHARACTR[ CHARX].WEPVSTY2[ 1][ BATTLERC[ GROUPI].B.CLASS])
+               OR
+             ((RANDOM MOD 100) < 50)
+          END;
+          
+          
+        PROCEDURE ENEMYSPL;  (* P010616 *)
+        
+        
+          PROCEDURE SPELLEZR( VAR SPELLGR: INTEGER);  (* P010617 *)
+          
+            BEGIN
+              IF RANDOM MOD (BATTLERC[ GROUPI].A.ALIVECNT + 2) = 0 THEN
+                SPELLGR := SPELLGR - 1
+            END;
+            
+            
+          PROCEDURE GETMAGSP( SPELLLEV: INTEGER);  (* P010618 *)
+          
+            VAR
+                 SPELLCAS : INTEGER;
+                 TWOTHIRD : BOOLEAN;
+          
+            BEGIN
+              WHILE (SPELLLEV > 1) AND ( (RANDOM MOD 100) > 70) DO
+                SPELLLEV := SPELLLEV - 1;
+              TWOTHIRD := (RANDOM MOD 100) > 33;
+              SPELLEZR( BATTLERC[ GROUPI].B.MAGSPELS);
+              
+              CASE SPELLLEV OF
+              
+                1:  IF TWOTHIRD THEN
+                      SPELLCAS := KATINO
+                    ELSE
+                      SPELLCAS := HALITO;
+                      
+                2:  IF TWOTHIRD THEN
+                      SPELLCAS := DILTO
+                    ELSE
+                      SPELLCAS := HALITO;  (* BUG *)
+                      
+                3:  IF TWOTHIRD THEN
+                      SPELLCAS := MOLITO
+                    ELSE
+                      SPELLCAS := MAHALITO;
+                      
+                4:  IF TWOTHIRD THEN
+                      SPELLCAS := DALTO
+                    ELSE
+                      SPELLCAS := LAHALITO;  (* ...HMMM *)
+                      
+                5:  IF TWOTHIRD THEN
+                      SPELLCAS := LAHALITO   (* ...HMMM *)
+                    ELSE
+                      SPELLCAS := MADALTO;
+                      
+                6:  IF TWOTHIRD THEN
+                      SPELLCAS := MADALTO    (* ...HMMM *)
+                    ELSE
+                      SPELLCAS := ZILWAN;
+                      
+                7:  SPELLCAS := TILTOWAI;
+              END;
+              
+              ATTCKTYP := SPELLCAS
+            END;  (* GETMAGSP *)
+            
+            
+          PROCEDURE GETPRISP( SPELLLEV : INTEGER);  (* P010619 *)
+          
+            VAR
+                 SPELLCAS : INTEGER;
+                 TWOTHIRD : BOOLEAN;
+                 
+            BEGIN
+              TWOTHIRD := (RANDOM MOD 100) > 33;
+              SPELLEZR( BATTLERC[ GROUPI].B.PRISPELS);
+              
+              CASE SPELLLEV OF
+              
+                1:  SPELLCAS := BADIOS;
+                
+                2:  SPELLCAS := MONTINO;
+                
+                3:  IF TWOTHIRD THEN
+                      SPELLCAS := BADIOS
+                    ELSE
+                      SPELLCAS := BADIAL;
+                      
+                4:  SPELLCAS := BADIAL;
+                
+                5:  IF TWOTHIRD THEN
+                      SPELLCAS := BADIALMA
+                    ELSE
+                      SPELLCAS := BADI;
+                      
+                6:  IF TWOTHIRD THEN
+                      SPELLCAS := LORTO
+                    ELSE
+                      SPELLCAS := MABADI;
+                      
+                7:  SPELLCAS := MABADI;
+              END;
+              
+              ATTCKTYP := SPELLCAS
+            END;  (* GETPRISP *)
+            
+            
+          BEGIN (* ENEMYSPL *)
+            IF BATTLERC[ GROUPI].B.MAGSPELS > 0 THEN
+              IF (RANDOM MOD 100) < 75 THEN
+                GETMAGSP( BATTLERC[ GROUPI].B.MAGSPELS);
+                
+            IF ATTCKTYP = 0 THEN
+              IF BATTLERC[ GROUPI].B.PRISPELS > 0 THEN
+                IF (RANDOM MOD 100) < 75 THEN
+                  GETPRISP( BATTLERC[ GROUPI].B.PRISPELS);
+          END;  (* ENEMYSPL *)
+          
+          
+        PROCEDURE YELLHELP;  (* P01061A *)
+        
+          BEGIN
+            IF BATTLERC[ GROUPI].B.SPPC[ 6] THEN
+              IF BATTLERC[ GROUPI].A.ALIVECNT < 5 THEN
+                IF (RANDOM MOD 100) < 75 THEN
+                  ATTCKTYP := -4
+          END;
+          
+          
+        PROCEDURE RUNENMY;  (* P01061B *)
+        
+          BEGIN
+            IF NOT (BATTLERC[ GROUPI].B.SPPC[ 5]) THEN
+              EXIT( RUNENMY);
+            IF BASE12.MYSTRENG > ENSTRENG THEN
+              IF (RANDOM MOD 100) < 65 THEN
+                ATTCKTYP := -2
+          END;
+          
+          
+        PROCEDURE BREATHES;  (* P01061C *)
+        
+          BEGIN
+            IF BATTLERC[ GROUPI].B.BREATHE > 0 THEN
+              IF (RANDOM MOD 100) < 60 THEN
+                ATTCKTYP := -3
+          END;
+          
+        PROCEDURE ADVANCE;  (* P01061D *)
+        
+          VAR
+               ADVSTREN : ARRAY[ 1..4] OF INTEGER;
+               ENEMYX   : INTEGER;
+               GROUPI   : INTEGER;
+               TEMPE2   : TENEMY2;
+          
+          
+          PROCEDURE MOVETEXT( GROUPI : INTEGER);  (* P01061E *)
+          
+            (* MOVE STRINGS OF TEXT AROUND ON THE SCREEN 
+               FOR THE VARIOUS MONSTER GROUP NAMES       *)
+          
+            TYPE
+                 MEMVAR = RECORD CASE INTEGER OF
+                    1:  (I: INTEGER);
+                    2:  (A: ARRAY[ 0..10] OF INTEGER);
+                   END;
+                   
+                 MEMVAR2 = RECORD CASE INTEGER OF
+                    1:  (I: INTEGER);
+                    2:  (P: ^INTEGER);
+                   END;
+                   
+            VAR
+                 LINEX    : INTEGER;
+                 PIX      : INTEGER;
+                 SAVEROW  : ARRAY[ 0..7] OF MEMVAR;
+                 LINEPTRS : ARRAY[ 0..15] OF MEMVAR2;
+            
+            BEGIN
+            
+              (* SET UP POINTERS TO 2 TEXT ROWS.  EACH ROW IS 8 PIXELS. *)
+            
+              LINEPTRS[ 0].I :=  8192 + 128 *  GROUPI      + 16;
+              LINEPTRS[ 8].I :=  8192 + 128 * (GROUPI + 1) + 16;
+              FOR PIX := 1 TO 7 DO
+                BEGIN
+                  LINEPTRS[ PIX].I :=     LINEPTRS[ PIX - 1].I + 1024;
+                  LINEPTRS[ PIX + 8].I := LINEPTRS[ PIX + 7].I + 1024
+                END;
+              WRITE( CHR( 7));
+              
+              (* SAVE UPPER ROW OF TEXT *)
+              
+              FOR PIX := 0 TO 7 DO
+                MOVELEFT( LINEPTRS[ PIX].P^, SAVEROW[ PIX].I, 22);
+                 
+                (* IS 22 LARGE ENOUGH *)
+                
+              (* CLEAR UPPER OF THE TWO ROWS *)
+                
+              FOR PIX := 0 TO 7 DO
+                FILLCHAR( LINEPTRS[ PIX].P^, 22, 0);
+              WRITE( CHR( 7));
+              
+              (* MOVE LOWER ROW OF TEXT UPWARD A PIXEL AT A TIME *)
+              
+              FOR PIX := 7 DOWNTO 0 DO
+                BEGIN
+                  FOR LINEX := PIX TO PIX + 7 DO
+                    MOVELEFT( LINEPTRS[ LINEX + 1].P^, LINEPTRS[ LINEX].P^, 22);
+                  FILLCHAR( LINEPTRS[ PIX + 8].P^, 22, 0)
+                END;
+              WRITE( CHR( 7));
+              
+              (* MOVE SAVED ROW OF TEXT TO LOWER ROW *)
+              
+              FOR PIX := 0 TO 7 DO
+                MOVELEFT( SAVEROW[ PIX].I, LINEPTRS[ PIX + 8].P^, 22);
+            END;
+            
+            
+          BEGIN (* ADVANCE *)
+            FOR GROUPI := 1 TO 4 DO
+              BEGIN
+                ADVSTREN[ GROUPI] := 0;
+                FOR ENEMYX := 0 TO BATTLERC[ GROUPI].A.ALIVECNT - 1 DO
+                  IF BATTLERC[ GROUPI].A.TEMP04[ ENEMYX].STATUS = OK THEN
+                    ADVSTREN[ GROUPI] := ADVSTREN[ GROUPI]
+                                + BATTLERC[ GROUPI].A.TEMP04[ ENEMYX].HPLEFT
+                                - 3 * (BATTLERC[ GROUPI].B.MAGSPELS + 
+                                       BATTLERC[ GROUPI].B.PRISPELS);
+                                         
+                IF ADVSTREN[ GROUPI] > 1000 THEN
+                  ADVSTREN[ GROUPI] := 1000
+                ELSE IF ADVSTREN[ GROUPI] < 1 THEN
+                  ADVSTREN[ GROUPI] := 1;
+              END;
+            
+            FOR GROUPI := 4 DOWNTO 2 DO
+              BEGIN
+                IF BATTLERC[ GROUPI].A.ALIVECNT > 0 THEN
+                  BEGIN
+                    IF (RANDOM MOD 100) <= 
+                       30 + ((20 * ADVSTREN[ GROUPI]) DIV ADVSTREN[ GROUPI - 1]) THEN
+                       
+                      BEGIN
+                        MVCURSOR( 1, 15 - GROUPI);
+                        PRINTSTR( 'THE ');
+                        IF BATTLERC[ GROUPI].A.IDENTIFI THEN
+                          PRINTSTR( BATTLERC[ GROUPI].B.NAMES)
+                        ELSE
+                          PRINTSTR( BATTLERC[ GROUPI].B.NAMEUNKS);
+                        PRINTSTR( ' ADVANCE!');
+                        MOVETEXT( GROUPI - 1);
+                        PAUSE1;
+                        
+                        ENEMYX                := ADVSTREN[ GROUPI];
+                        ADVSTREN[ GROUPI]     := ADVSTREN[ GROUPI - 1];
+                        ADVSTREN[ GROUPI - 1] := ENEMYX;
+                        
+                        TEMPE2                := BATTLERC[ GROUPI];
+                        BATTLERC[ GROUPI]     := BATTLERC[ GROUPI - 1];
+                        BATTLERC[ GROUPI - 1] := TEMPE2
+                      END;
+                  END;
+              END;
+            CLRRECT( 1, 11, 38, 4)
+          END;  (* ADVANCE *)
+          
+          
+        BEGIN (* ENATTACK *)
+          ADVANCE;
+          FOR GROUPI := 1 TO 4 DO
+            BEGIN
+              IF BATTLERC[ GROUPI].A.ALIVECNT > 0 THEN
+                FOR ENEMYX := 0 TO (BATTLERC[ GROUPI].A.ALIVECNT - 1) DO
+                  WITH BATTLERC[ GROUPI] DO
+                    BEGIN
+                    IF (A.TEMP04[ ENEMYX].STATUS = OK) AND
+                       (SURPRISE <> 1) THEN
+                      BEGIN
+                        A.TEMP04[ ENEMYX].AGILITY := (RANDOM MOD 8) + 2;
+                        IF PARTYCNT = 1 THEN
+                          CHARX := 0
+                        ELSE
+                          BEGIN
+                            CHARX := PARTYCNT - 1;
+                            WHILE BATTLERC[ 0].A.TEMP04[ CHARX].STATUS >=
+                                    DEAD DO 
+                              CHARX := CHARX - 1;
+                            CHARX := RANDOM MOD (CHARX + 1)
+                          END;
+                        A.TEMP04[ ENEMYX].VICTIM := CHARX;
+                        A.TEMP04[ ENEMYX].SPELLHSH := 0;
+                        ATTCKTYP := 0;
+                        IF CANATTCK THEN
+                          BEGIN
+                            ENEMYSPL;
+                            IF ATTCKTYP = 0 THEN
+                              BREATHES;
+                            IF ATTCKTYP = 0 THEN
+                              YELLHELP;
+                            IF ATTCKTYP = 0 THEN
+                              RUNENMY;
+                            IF ATTCKTYP > 0 THEN
+                              IF CHARACTR[ CHARX].WEPVSTY3[ 1][ 6] THEN
+                                A.TEMP04[ ENEMYX].AGILITY := -1;
+                            IF ATTCKTYP = 0 THEN
+                              IF (ENEMYX <= 4 - GROUPI) OR
+                                 ((60 - 10 * GROUPI) <= (RANDOM MOD 100)) THEN
+                                BEGIN
+                                  CHARX := CHARX MOD 3;
+                                  IF CANATTCK THEN
+                                    BEGIN
+                                      ATTCKTYP := -1;
+                                      A.TEMP04[ ENEMYX].VICTIM := CHARX
+                                    END
+                                  ELSE
+                                    A.TEMP04[ ENEMYX].AGILITY := -1;
+                                END
+                          END;
+                        A.TEMP04[ ENEMYX].SPELLHSH := ATTCKTYP
+                      END
+                    ELSE
+                      A.TEMP04[ ENEMYX].AGILITY := -1
+                END
+            END
+          END;  (* ENATTACK *)
+        
+        

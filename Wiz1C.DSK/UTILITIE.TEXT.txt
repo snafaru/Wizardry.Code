@@ -1,0 +1,601 @@
+
+SEGMENT PROCEDURE UTILITIE;  (* P010101 *)
+
+  VAR
+       CHARI : INTEGER;
+       CHARX : INTEGER;  (* MULTIPLE USES   SVBASE04, SAVBASE4, ETC.
+                                            SAVECAST, ETC. *)
+       EQUIPALL : BOOLEAN;
+
+
+  PROCEDURE RDSPELLS;  (* P010102 *)
+  
+    CONST
+         SCNMAGE = 4;
+         SCNPRST = 5;
+  
+    VAR
+         SPELLGRP : INTEGER;
+         SPLISTX  : INTEGER;
+         DSKSPLNM : INTEGER;
+         SPELLX   : INTEGER;
+         
+         
+    PROCEDURE LISTSPLS;  (* P010103 *)
+    
+      VAR
+           SPELLNM : STRING;
+           CHPTR   : INTEGER;
+           
+           
+      PROCEDURE PRSPELL( SPELLNM: STRING);  (* P010104 *)
+      
+        BEGIN
+          IF SPELLNM[ 1] = '*' THEN
+            BEGIN
+              SPELLNM := COPY( SPELLNM, 2, LENGTH( SPELLNM) - 1);
+              SPLISTX := SPLISTX + 1
+            END;
+          GOTOXY( 10 * (SPLISTX DIV 20), 2 + SPLISTX MOD 20);
+          IF CHARACTR[ CHARX].SPELLSKN[ SPELLX] THEN
+            BEGIN
+              WRITE( SPELLNM);
+              SPLISTX := SPLISTX + 1
+            END;
+          SPELLX := SPELLX + 1
+        END;  (* PRSPELL *)
+        
+        
+      PROCEDURE SPRETURN;  (* P010105 *)
+      
+        BEGIN
+          GOTOXY( 0, 23);
+          WRITE( 'L)EAVE WHEN READY');
+          REPEAT
+            GOTOXY( 41, 0);
+            GETKEY
+          UNTIL INCHAR = 'L';
+          INCHAR := CHR( 0)
+        END;  (* SPRETURN *)
+      
+      
+      BEGIN  (* LISTSPLS *)
+        MOVELEFT( IOCACHE[ GETREC( ZZERO, 0, SIZEOF( TSCNTOC))],
+                  SCNTOC,
+                  SIZEOF( TSCNTOC));
+        UNITREAD( DRIVE1, IOCACHE, BLOCKSZ, SCNTOCBL + DSKSPLNM, 0);
+        CHPTR := 0;
+        SPLISTX := 0;
+        WHILE IOCACHE[ CHPTR] <> CHR( CRETURN) DO
+          BEGIN
+            LLBASE04 := 0;
+            WHILE IOCACHE[ CHPTR] <> CHR( CRETURN) DO
+              BEGIN
+                LLBASE04 := LLBASE04 + 1;
+                SPELLNM[ LLBASE04] :=  IOCACHE[ CHPTR];
+                CHPTR := CHPTR + 1
+              END;
+            SPELLNM[ 0] := CHR( LLBASE04);
+            PRSPELL( SPELLNM);
+            CHPTR := CHPTR + 1
+          END;
+        UNITREAD( DRIVE1, IOCACHE, SIZEOF( IOCACHE), SCNTOCBL, 0);
+        SPRETURN
+      END;  (* LISTSPLS *)
+      
+      
+    PROCEDURE PRPRIEST;  (* P010106 *)
+    
+      BEGIN
+        WRITE( CHR( 12));
+        WRITE( 'KNOWN PRIEST SPELLS');
+        DSKSPLNM := SCNPRST;
+        SPELLX := 22;
+        LISTSPLS
+      END;  (* PRPRIEST *)
+      
+      
+    PROCEDURE PRMAGE;  (* P010107 *)
+    
+      BEGIN
+        DSKSPLNM := SCNMAGE;
+        SPELLX := 1;
+        WRITE( CHR(12));
+        WRITE( 'KNOWN MAGE SPELLS');
+        LISTSPLS
+      END;  (* PRMAGE *)
+      
+    
+    BEGIN  (* RDSPELLS *)
+      CHARX := LLBASE04;
+      REPEAT
+        WRITE( CHR(12));
+        WRITE( 'MAGE   SPELLS LEFT = ');
+        WRITE( CHARACTR[ CHARX].MAGESP[ 1]);
+        SPELLGRP := 1 + 1;
+        WHILE SPELLGRP <= 7 DO
+          BEGIN
+            WRITE( '/');
+            WRITE( CHARACTR[ CHARX].MAGESP[ SPELLGRP]);
+            SPELLGRP := SPELLGRP + 1
+          END;
+        WRITELN;
+        WRITE( 'PRIEST SPELLS LEFT = ');
+        WRITE( CHARACTR[ CHARX].PRIESTSP[ 1]);
+        SPELLGRP := 1 + 1;
+        WHILE SPELLGRP <= 7 DO
+          BEGIN
+            WRITE( '/');
+            WRITE( CHARACTR[ CHARX].PRIESTSP[ SPELLGRP]);
+            SPELLGRP := SPELLGRP + 1
+          END;
+        WRITELN;
+        WRITELN;
+        WRITELN( 'YOU MAY SEE M)AGE OR P)RIEST SPELL BOOKS');
+        WRITELN( 'OR L)EAVE.' :22);
+        GOTOXY( 41, 15);
+        GETKEY;
+        CASE INCHAR OF
+          'M' :  PRMAGE;
+          'P' :  PRPRIEST;
+        END
+      UNTIL INCHAR = 'L';
+      INCHAR := CHR( 0);
+      XGOTO := XBK2CMP2;
+      LLBASE04 := CHARX;
+      EXIT( UTILITIE)
+    END;  (* RDSPELLS *)
+    
+
+  PROCEDURE IDITEM;  (* P010108 *)
+  
+    VAR
+         ITEMX    : INTEGER;
+         OBJECT   : TOBJREC;
+  
+  
+    PROCEDURE EXITIDIT;  (* P010109 *)
+    
+      BEGIN
+        LLBASE04 := CHARX;
+        EXIT( UTILITIE)
+      END;  (* EXITIDIT *)
+    
+    
+    BEGIN (* IDITEM *)
+      CHARX := LLBASE04;
+      XGOTO := XBK2CMP2;
+      REPEAT
+        GOTOXY( 0, 18);
+        WRITE( CHR(11));
+        WRITE( 'IDENTIFY WHAT ITEM (0=EXIT) ? >');
+        GETKEY;
+        ITEMX := ORD( INCHAR) - ORD( '0');
+        IF ITEMX =  0 THEN
+          EXITIDIT
+      UNTIL (ITEMX > 0) OR (ITEMX <= CHARACTR[ CHARX].POSS.POSSCNT);
+      IF CHARACTR[ CHARX].POSS.POSSESS[ ITEMX].IDENTIF THEN
+        EXITIDIT;
+      CHARACTR[ CHARX].POSS.POSSESS[ ITEMX].IDENTIF :=
+        (RANDOM MOD 100) < (10 +  5 * CHARACTR[ CHARX].CHARLEV);
+      IF CHARACTR[ CHARX].POSS.POSSESS[ ITEMX].IDENTIF THEN
+        CENTSTR( 'SUCCESS!')
+      ELSE
+        CENTSTR( 'FAILURE');
+      IF (RANDOM MOD 100) < (35 - (3 * CHARACTR[ CHARX].CHARLEV)) THEN
+        BEGIN
+          MOVELEFT( IOCACHE[ GETREC(
+                      ZOBJECT,
+                      CHARACTR[ CHARX].POSS.POSSESS[ ITEMX].EQINDEX,
+                      SIZEOF( TOBJREC))],
+                    OBJECT,
+                    SIZEOF( TOBJREC));
+          CHARACTR[ CHARX].POSS.POSSESS[ ITEMX].CURSED := OBJECT.CURSED;
+          XGOTO := XEQPDSP
+        END;
+      EXITIDIT
+    END;  (* IDITEM *)
+    
+  PROCEDURE KANDIFND;  (* P01010A *)
+  
+    VAR
+        CHARXDSK  : INTEGER;
+        LOCSTRING : STRING;
+        LOSTCHAR  : TCHAR;
+  
+  
+    PROCEDURE EXITKAND;  (* P01010B *)
+    
+      BEGIN
+        WRITELN;
+        WRITELN( 'L)EAVE WHEN READY');
+        GOTOXY( 41, 0);
+        REPEAT
+          GETKEY;
+        UNTIL INCHAR = 'L';
+        INCHAR := 'A';
+        LLBASE04 := CHARX;
+        XGOTO := XBK2CMP2;
+        EXIT( UTILITIE)
+      END;  (* EXITKAND *)
+      
+      
+    PROCEDURE KANDILOC;  (* P01010C *)
+    
+      BEGIN
+        IF LOSTCHAR.STATUS = LOST THEN
+          EXIT( KANDILOC);
+        IF LOSTCHAR.STATUS < DEAD THEN
+          WRITELN( 'STILL WITH US!')
+        ELSE
+          BEGIN
+            IF (LOSTCHAR.LOSTXYL.LOCATION[ 1] = 0) AND
+               (LOSTCHAR.LOSTXYL.LOCATION[ 2] = 0) AND
+               (LOSTCHAR.LOSTXYL.LOCATION[ 3] = 0)     THEN
+              WRITELN( 'IN THE MOURGE')
+            ELSE
+              IF LOSTCHAR.LOSTXYL.LOCATION[ 3] <= 0 THEN
+                BEGIN
+                  WRITELN( 'UNREACHABLE!')
+                END
+              ELSE
+                BEGIN
+                  WRITE( 'IN THE ');
+                  
+                  IF LOSTCHAR.LOSTXYL.LOCATION[ 2] > 9 THEN
+                    WRITE( 'NORTH ')
+                  ELSE
+                    WRITE( 'SOUTH ');
+                    
+                  IF LOSTCHAR.LOSTXYL.LOCATION[ 1] > 9 THEN
+                    WRITE( 'EAST')
+                  ELSE
+                    WRITE( 'WEST');
+                    
+                  WRITE( ' OF LEVEL ');
+                  WRITELN(  LOSTCHAR.LOSTXYL.LOCATION[ 3]);
+                END
+          END;
+        EXITKAND
+      END;  (* KANDILOC *)
+      
+      
+    BEGIN  (* KANDIFND *)
+      CHARX :=  LLBASE04;
+      WRITE( CHR(12));
+      WRITELN( 'LOCATE BODIES');
+      WRITELN;
+      WRITE('FIND WHO ? >');
+      GETLINE( LOCSTRING);
+      WRITE( CHR(12));
+      WRITE( 'THE SOUL OF ');
+      WRITE( LOCSTRING);
+      WRITELN( ' IS..');
+      WRITELN;
+      FOR CHARXDSK := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+        BEGIN
+          MOVELEFT( IOCACHE[ GETREC( ZCHAR, CHARXDSK, SIZEOF( TCHAR))],
+                    LOSTCHAR,
+                    SIZEOF( TCHAR));
+          IF LOSTCHAR.NAME = LOCSTRING THEN
+            KANDILOC
+        END;
+      WRITELN( 'LOST FOREVER!');
+      EXITKAND
+    END;   (* KANDIFND *)
+    
+
+    PROCEDURE DUMAPIC;  (* P01010D *)
+    
+      BEGIN
+        XGOTO := XBK2CMP2;
+        IF MAZELEV = 10 THEN
+          BEGIN
+            WRITE( CHR( 12));
+            WRITELN( 'ENCHANTMENTS PREVENT SPELL FROM WORKING');
+            EXIT( UTILITIE)
+          END;
+        CHARX := LLBASE04;
+        WRITE( CHR( 12));
+        WRITELN( 'PARTY LOCATION:');
+        WRITELN;
+        WRITE( 'THE PARTY IS FACING ');
+        CASE DIRECTIO OF
+          0:  WRITELN( 'NORTH.');
+          1:  WRITELN( 'EAST.');
+          2:  WRITELN( 'SOUTH.');
+          3:  WRITELN( 'WEST.');
+        END;
+        WRITELN;
+        WRITE( 'YOU ARE ');
+        WRITE( MAZEX);
+        WRITELN( ' SQUARES EAST AND');
+        WRITE( MAZEY);
+        WRITELN( ' SQUARES NORTH OF THE STAIRS');
+        WRITE( 'TO THE CASTLE, AND ');
+        WRITE( MAZELEV);
+        WRITELN( ' LEVELS');
+        WRITELN( 'BELOW IT.');
+        WRITELN;
+        WRITELN( 'L)EAVE WHEN READY');
+        REPEAT
+          GOTOXY( 41, 0);
+          GETKEY
+        UNTIL INCHAR = 'L';
+        INCHAR := 'A';
+        LLBASE04 := CHARX;
+        EXIT( UTILITIE)
+      END;  (* DUMAPIC *)
+  
+
+  PROCEDURE MALOR;    (* P01010E *)
+  
+    VAR
+         DELTAUD  : INTEGER;
+         DELTANS  : INTEGER;
+         DELTAEW  : INTEGER;
+  
+  
+    PROCEDURE TELEPORT;  (* P01010F *)
+    
+      PROCEDURE ROCK;  (* P010110 *)
+      
+        VAR
+             X : INTEGER;
+      
+        BEGIN
+          WRITELN( 'YOU LANDED IN SOLID ROCK OUTSIDE THE');
+          WRITELN( 'DUNGEON - YOU ARE LOST FOREVER!');
+          FOR X := 0 TO PARTYCNT - 1 DO
+            BEGIN
+              CHARACTR[ X].INMAZE := FALSE;
+              CHARACTR[ X].STATUS := LOST
+            END;
+          XGOTO := XCEMETRY;
+          EXIT( UTILITIE)
+        END;
+              
+        
+      PROCEDURE VOLCANO;  (* P010111 *)
+      
+        VAR
+             X : INTEGER;
+      
+        BEGIN
+          WRITELN( 'YOU MATERIALIZED IN MID-AIR AND FELL');
+          WRITELN( 'TO A PAINFUL DEATH!');
+          FOR X := 0 TO PARTYCNT - 1 DO
+            IF CHARACTR[ X].STATUS < DEAD THEN
+              CHARACTR[ X].STATUS := DEAD;
+          MAZELEV := 0;
+          XGOTO := XCHK4WIN;
+          EXIT( UTILITIE)
+        END;
+        
+        
+      PROCEDURE MOAT;   (* P010112 *)
+      
+        VAR
+             X : INTEGER;
+      
+        BEGIN
+          WRITELN( 'YOU APPEARED IN THE CASTLE MOAT AND');
+          WRITELN( 'PROBABLY DROWNED!');
+          FOR X := 0 TO PARTYCNT - 1 DO
+            IF CHARACTR[ X].STATUS < DEAD THEN
+              IF (RANDOM MOD 25) > CHARACTR[ X].ATTRIB[ AGILITY] THEN
+                CHARACTR[ X].STATUS := DEAD;
+          MAZELEV := 0;
+          XGOTO := XCHK4WIN;
+          EXIT( UTILITIE)
+        END;
+    
+    
+      PROCEDURE TOSHOPS;  (* P010113 *)
+      
+        BEGIN
+          XGOTO := XCHK4WIN;
+          EXIT( UTILITIE)
+        END;
+    
+    
+      PROCEDURE BOUNCE;  (* P010114 *)
+      
+        BEGIN
+          WRITELN( 'YOU BOUNCED BACK TO WHERE YOU WERE!');
+          EXIT( UTILITIE)
+        END;
+    
+    
+      BEGIN (* TELEPORT *)
+        WRITE( CHR(12));
+        XGOTO := XNEWMAZE;
+        IF MAZELEV + DELTAUD = SCNTOC.RECPERDK[ ZMAZE] THEN
+          BOUNCE;
+        MAZEX := MAZEX + DELTAEW;
+        MAZEY := MAZEY + DELTANS;
+        MAZELEV := MAZELEV + DELTAUD;
+        IF ( (MAZEX < 0) OR (MAZEX > 19) OR
+             (MAZEY < 0) OR (MAZEY > 19) OR
+             (MAZELEV > SCNTOC.RECPERDK[ ZMAZE]))
+           AND
+           (MAZELEV > 0) THEN
+            ROCK
+        ELSE
+          BEGIN
+            IF MAZELEV < 0 THEN
+              VOLCANO
+            ELSE
+              IF MAZELEV = 0 THEN
+                IF (MAZEX = 0) AND (MAZEY = 0) THEN
+                  TOSHOPS
+                ELSE
+                  MOAT
+          END;
+        EXIT( UTILITIE)
+      END;
+  
+  
+    BEGIN (* MALOR *)
+      CHARX := LLBASE04;
+      WRITE( CHR(12));
+      WRITELN( 'PARTY TELEPORT:');
+      WRITELN;
+      WRITELN( 'ENTER NSEWU OR D TO  SET DISPLACEMENT,');
+      WRITELN( 'THEN [RETURN] TO TELEPORT, OR [ESC] TO');
+      WRITELN( 'CHICKEN OUT!');
+      WRITELN;
+      WRITELN( '# SQUARES EAST  =');
+      WRITELN( '# SQUARES NORTH =');
+      WRITELN( '# SQUARES DOWN  =');
+      DELTAEW := 0;
+      DELTANS := 0;
+      DELTAUD := 0;
+      REPEAT
+        GOTOXY( 18, 6);
+        WRITE( DELTAEW : 4);
+        GOTOXY( 18, 7);
+        WRITE( DELTANS : 4);
+        GOTOXY( 18, 8);
+        WRITE( DELTAUD : 4);
+        GOTOXY( 41, 0);
+        GETKEY;
+        IF INCHAR = CHR( CRETURN) THEN
+          TELEPORT
+        ELSE
+          BEGIN
+            CASE INCHAR OF
+              'N': DELTANS := DELTANS + 1;
+              'S': DELTANS := DELTANS - 1;
+              'E': DELTAEW := DELTAEW + 1;
+              'W': DELTAEW := DELTAEW - 1;
+              'D': DELTAUD := DELTAUD + 1;
+              'U': DELTAUD := DELTAUD - 1;
+            END
+          END
+      UNTIL INCHAR = CHR( 27);
+      XGOTO := XBK2CMP2;
+      LLBASE04 := CHARX;
+      EXIT( UTILITIE)
+    END;
+    
+
+  PROCEDURE NEWMAZE;  (* P010115 *)
+  
+    VAR
+         MAZEMAP  : TMAZE;
+         UNUSED   : ARRAY[ 0..2] OF INTEGER;
+         
+  
+    PROCEDURE FIGHTS;  (* P010116 *)
+    
+      VAR
+           FIGHTY : INTEGER;
+           FIGHTX : INTEGER;
+           Y      : INTEGER;
+           X      : INTEGER;
+    
+    
+      PROCEDURE FINDSPOT;  (* P010117 *)
+      
+        VAR
+            Y1 : INTEGER;
+            X1 : INTEGER;
+      
+        BEGIN (* FINDSPOT *)
+          X1 := RANDOM MOD 20;
+          Y1 := RANDOM MOD 20;
+          FIGHTX := X1;
+          FIGHTY := Y1;
+          REPEAT
+            IF MAZEMAP.FIGHTS[ FIGHTX][ FIGHTY] = 1 THEN
+              IF NOT (FIGHTMAP[ FIGHTX][ FIGHTY]) THEN
+                BEGIN
+                  EXIT( FINDSPOT)
+                END;
+            FIGHTX := FIGHTX + 1;
+            IF FIGHTX > 19 THEN
+              BEGIN
+                FIGHTX := 0;
+                FIGHTY := FIGHTY + 1;
+                IF FIGHTY > 19 THEN
+                  FIGHTY := 0
+              END;
+          UNTIL (FIGHTX = X1) AND (FIGHTY = Y1);
+          EXIT( FIGHTS)
+        END;   (* FINDSPOT *)
+        
+        
+      PROCEDURE FILLROOM( X : INTEGER; Y : INTEGER);  (* P010118 *)
+        
+        BEGIN
+        
+          X := (X + 20) MOD 20;
+          Y := (Y + 20) MOD 20;
+          IF (MAZEMAP.FIGHTS[ X][ Y] = 0) OR
+             FIGHTMAP[ X][ Y] THEN
+             BEGIN
+               EXIT( FILLROOM)
+             END;
+             
+          FIGHTMAP[ X][ Y] := TRUE;
+          
+          IF MAZEMAP.N[ X][ Y] = OPEN THEN
+            FILLROOM( X, Y + 1);
+            
+          IF MAZEMAP.E[ X][ Y] = OPEN THEN
+            FILLROOM( X + 1, Y);
+            
+          IF MAZEMAP.S[ X][ Y] = OPEN THEN
+            FILLROOM( X, Y - 1);
+            
+          IF MAZEMAP.W[ X][ Y] = OPEN THEN
+            FILLROOM( X - 1, Y)
+            
+        END;   (* FILLROOM *)
+    
+    
+      BEGIN (* FIGHTS *)
+        FILLCHAR( FIGHTMAP, 80, 0);
+        FOR X := 1 TO 9 DO
+          BEGIN
+            FINDSPOT;
+            FILLROOM( FIGHTX, FIGHTY)
+          END;
+          
+        FOR X := 0 TO 19 DO
+          BEGIN
+            FOR Y := 0 TO 19 DO
+              BEGIN
+                IF MAZEMAP.SQRETYPE[ MAZEMAP.SQREXTRA[ X][ Y]] = ENCOUNTE THEN
+                  FILLROOM( X, Y)
+              END;
+          END;
+      END;  (* FIGHTS *)
+  
+  
+    BEGIN (* NEWMAZE *)
+      IF MAZELEV = 0 THEN
+        BEGIN
+          WRITE( CHR(12));
+          XGOTO := XCHK4WIN;
+          EXIT( UTILITIE)
+        END;
+        
+      IF MAZELEV < 0 THEN
+        BEGIN
+          MAZELEV := 1;
+          XGOTO := XEQUIP6
+        END
+      ELSE
+        BEGIN
+          XGOTO := XRUNNER
+        END;
+      MOVELEFT( IOCACHE[ GETREC( ZMAZE, MAZELEV - 1, SIZEOF( TMAZE))],
+                MAZEMAP,
+                SIZEOF( TMAZE));
+      FIGHTS;
+      CLRRECT( 1, 11, 38, 4);
+      EXIT( UTILITIE)
+    END;  (* NEWMAZE *)
+    

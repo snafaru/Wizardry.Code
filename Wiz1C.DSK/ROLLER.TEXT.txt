@@ -1,0 +1,836 @@
+SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
+  
+    VAR
+         CHARREC  : TCHAR;
+         TEMPX    : INTEGER;  (* MULTIPLE USES *)
+         CHARACX  : INTEGER;
+         PTSLEFT  : INTEGER;
+         CHARNAME : STRING;
+         CHG2LST  : ARRAY[ FIGHTER..NINJA] OF BOOLEAN;
+         BASEATTR : ARRAY[ STRENGTH..LUCK] OF INTEGER;
+         SIXATTR2 : ARRAY[ STRENGTH..LUCK] OF INTEGER;
+  
+  
+    PROCEDURE GETPASS( VAR PASSWORD: STRING);  (* P010B02 *)
+    
+      VAR
+           UNUSEDXX : INTEGER;
+           RANDX    : INTEGER;
+           CHRCNT   : INTEGER;
+      
+      BEGIN
+        CHRCNT := 0;
+        REPEAT
+          GETKEY;
+          IF INCHAR <> CHR( CRETURN) THEN
+            IF CHRCNT < 15 THEN
+              BEGIN
+                FOR RANDX := 0 TO (RANDOM MOD 2) DO
+                  WRITE( CHR( 88));
+                CHRCNT := CHRCNT + 1;
+                PASSWORD[ CHRCNT] := INCHAR
+              END
+            ELSE
+              WRITE( CHR( 7));
+        UNTIL INCHAR = CHR( CRETURN);
+        WRITELN;
+        PASSWORD[ 0] := CHR( CHRCNT)
+      END;
+      
+      
+    FUNCTION GTCHGLST : BOOLEAN;  (* P010B03 *)
+    
+      BEGIN
+        CHG2LST[ FIGHTER] :=  SIXATTR2[ STRENGTH] >= 11;
+        
+        CHG2LST[ MAGE]    :=  SIXATTR2[ IQ] >= 11;
+        
+        CHG2LST[ PRIEST]  := (SIXATTR2[ PIETY] >= 11)   AND
+                             (CHARREC.ALIGN <> NEUTRAL);
+                             
+        CHG2LST[ THIEF]   := (SIXATTR2[ AGILITY] >= 11) AND
+                             (CHARREC.ALIGN <> GOOD);
+                             
+        CHG2LST[ BISHOP]  := (SIXATTR2[ IQ] >= 12)      AND
+                             (SIXATTR2[ PIETY] >= 12)   AND
+                             (CHARREC.ALIGN <> NEUTRAL);
+                            
+        CHG2LST[ SAMURAI] := (SIXATTR2[ STRENGTH] >= 15) AND
+                             (SIXATTR2[ IQ] >= 11)       AND
+                             (SIXATTR2[ PIETY] >= 10)    AND
+                             (SIXATTR2[ VITALITY] >= 14) AND
+                             (SIXATTR2[ AGILITY] >= 10)  AND
+                             (CHARREC.ALIGN <> EVIL);
+                            
+        CHG2LST[ LORD]    := (SIXATTR2[ STRENGTH] >= 15) AND
+                             (SIXATTR2[ IQ] >= 12)       AND
+                             (SIXATTR2[ PIETY] >= 12)    AND
+                             (SIXATTR2[ VITALITY] >= 15) AND
+                             (SIXATTR2[ AGILITY] >= 14)  AND
+                             (SIXATTR2[ LUCK] >= 15)     AND
+                             (CHARREC.ALIGN = GOOD);
+                             
+        CHG2LST[ NINJA]   := (SIXATTR2[ STRENGTH] >= 17) AND
+                             (SIXATTR2[ IQ] >= 17)       AND
+                             (SIXATTR2[ PIETY] >= 17)    AND
+                             (SIXATTR2[ VITALITY] >= 17) AND
+                             (SIXATTR2[ AGILITY] >= 17)  AND
+                             (SIXATTR2[ LUCK] >= 17)     AND
+                             (CHARREC.ALIGN = EVIL);
+                            
+        GTCHGLST := CHG2LST[ FIGHTER] OR
+                    CHG2LST[ MAGE]    OR
+                    CHG2LST[ PRIEST]  OR
+                    CHG2LST[ THIEF]   OR
+                    CHG2LST[ BISHOP]  OR
+                    CHG2LST[ LORD]    OR
+                    CHG2LST[ SAMURAI] OR
+                    CHG2LST[ NINJA]
+      END;
+      
+      
+    PROCEDURE SETBASE;  (* P010B04 *)
+    
+      PROCEDURE SETXBASE( BASESTR: STRING);  (* P010B05 *)
+      
+        VAR
+             ATTRI : INTEGER;
+             ATTR  : TATTRIB;
+      
+        BEGIN
+          ATTR := STRENGTH;
+          FOR ATTRI := 1 TO 6 DO
+            BEGIN
+              BASEATTR[ ATTR] := ORD( BASESTR[ ATTRI]) - ORD( '0');
+              ATTR := SUCC( ATTR)
+            END
+        END;  (* SETXBASE *)
+        
+        
+      BEGIN  (* SETBASE *)
+        CASE CHARREC.RACE OF            (*  S, I, P, V, A, L *)
+           HUMAN:  SETXBASE( '885889'); (*  8  8  5  8  8  9 *)
+             ELF:  SETXBASE( '7::696'); (*  7 10 10  6  9  6 *)
+           DWARF:  SETXBASE( ':7::56'); (* 10  7 10 10  5  6 *)
+           GNOME:  SETXBASE( '77:8:7'); (*  7  7 10  8 10  7 *)
+          HOBBIT:  SETXBASE( '5776:?')  (*  5  7  7  6 10 15 *)
+        END
+      END;  (* SETBASE *)
+      
+      
+    PROCEDURE GETCHARC( VAR BUFFER: TCHAR;  (* P010B06 *)
+                            CHINDX: INTEGER);
+    
+      BEGIN
+        MOVELEFT( IOCACHE[ GETREC(  ZCHAR, CHINDX, SIZEOF( TCHAR))],
+                  BUFFER,
+                  SIZEOF( TCHAR))
+      END;
+      
+      
+    PROCEDURE PUTCHARC( VAR BUFFER: TCHAR;  (* P010B07 *)
+                            CHINDX: INTEGER);
+    
+      BEGIN
+        MOVELEFT( BUFFER,
+                  IOCACHE[ GETRECW( ZCHAR, CHINDX, SIZEOF( TCHAR))],
+                  SIZEOF( TCHAR))
+      END;
+      
+      
+    PROCEDURE GTSCNTOC;  (* P010B08 *)
+    
+      BEGIN
+        MOVELEFT( IOCACHE[ GETREC( ZZERO, 0, SIZEOF( SCNTOC))],
+                  SCNTOC,
+                  SIZEOF( SCNTOC))
+      END;
+      
+      
+    PROCEDURE MAKECHAR;  (* P010B09 *)
+      
+      
+      PROCEDURE INITCHAR;  (* P010B0A *)
+      
+        VAR
+             LSI    : INTEGER;
+             UNUSED : INTEGER;
+      
+        BEGIN
+          FILLCHAR( CHARREC, SIZEOF( CHARREC), 0);
+          CHARREC.NAME := CHARNAME;
+          CHARREC.AGE := (18 * 52) + (RANDOM MOD 300);
+          CHARREC.GOLD.LOW := 90 + (RANDOM MOD 100);
+          CHARREC.STATUS := OK;
+          FOR LSI := 0 TO 4 DO
+            BEGIN
+              CHARREC.LUCKSKIL[ LSI] := 16
+            END;
+          CHARREC.MAXLEVAC := 1;
+          CHARREC.CHARLEV := 1;
+          CHARREC.ARMORCL := 10
+        END;
+      
+      
+      PROCEDURE P010B0B;
+      
+        BEGIN
+          GOTOXY( 0, 15);
+          WRITE( CHR( 11))
+        END;
+        
+        
+      PROCEDURE P010B0C;
+      
+        BEGIN
+          GOTOXY( 0, 15);
+          WRITE( CHR( 29))
+        END;
+        
+        
+      PROCEDURE MAKEMENU;  (* P010B0D *)
+      
+        VAR
+             PASSWD : STRING;
+             
+        BEGIN
+          WRITE( CHR( 12));
+          WRITE(   'NAME ': 10);
+          WRITELN( CHARREC.NAME);
+          WRITELN( 'PASSWORD': 9);
+          WRITELN( 'RACE': 9);
+          WRITELN( 'POINTS': 9);
+          WRITELN;
+          WRITELN( 'STRENGTH': 9);
+          WRITELN( 'I.Q.': 9);
+          WRITELN( 'PIETY': 9);
+          WRITELN( 'VITALITY': 9);
+          WRITELN( 'AGILITY': 9);
+          WRITELN( 'LUCK': 9);
+          WRITELN;
+          WRITELN( 'ALIGNMENT');
+          WRITELN( 'CLASS': 9);
+          WRITELN;
+          
+          REPEAT
+            P010B0B;
+            WRITELN( 'ENTER A PASSWORD ([RET] FOR NONE)');
+            GOTOXY( 10, 1);
+            WRITE( CHR( 29));
+            GOTOXY( 10, 1);
+            GETPASS( CHARNAME);
+            IF LENGTH( CHARNAME) > 15 THEN
+              CHARNAME := COPY( CHARNAME, 1, 15);
+            P010B0B;
+            WRITELN( 'ENTER IT AGAIN TO BE SURE');
+            GOTOXY( 10, 1);
+            WRITE( CHR( 29));
+            GOTOXY( 10, 1);
+            GETPASS( PASSWD);
+          UNTIL PASSWD = CHARNAME;
+          CHARREC.PASSWORD := CHARNAME
+        END;
+        
+        
+      PROCEDURE CHOSRACE;  (* P010B0E *)
+      
+        VAR
+             UNUSED : INTEGER;
+             RACEI  : TRACE;
+      
+        BEGIN
+          P010B0B;
+          GOTOXY( 0, 17);
+          FOR RACEI := HUMAN TO HOBBIT DO
+            BEGIN
+              WRITE( CHR( ORD( '@') + ORD( RACEI)));
+              WRITE( ') ' );
+              WRITELN( SCNTOC.RACE[ RACEI])
+            END;
+          REPEAT
+            P010B0C;
+            WRITE( 'CHOOSE A RACE >');
+            GETKEY
+          UNTIL (INCHAR >= 'A') AND (INCHAR <= 'E');
+          GOTOXY( 10, 2);
+          CHARREC.RACE := HUMAN;
+          WHILE INCHAR > 'A' DO
+            BEGIN
+              INCHAR := PRED( INCHAR);
+              CHARREC.RACE := SUCC( CHARREC.RACE)
+            END;
+          WRITE( SCNTOC.RACE[ CHARREC.RACE]);
+          SETBASE
+        END;
+        
+        
+      PROCEDURE GIVEPTS;  (* P010B0F *)
+      
+        VAR
+             UNUSED  : INTEGER;
+             CANCHG  : BOOLEAN;
+             ATTRIBX : TATTRIB;
+             CLASSX  : TCLASS;
+        
+        
+        PROCEDURE PTSMENU;  (* P010B10 *)
+        
+          BEGIN
+            GOTOXY( 0, 15);
+            WRITE( CHR( 11));
+            WRITELN( 'ENTER [+,-] TO ALTER A SCORE,');
+            WRITELN( '      [RET] TO GO TO NEXT SCORE,');
+            WRITELN( '      [ESC] TO GO ON WHEN POINTS USED UP');
+            PTSLEFT := 7 + (RANDOM MOD 4);
+            WHILE (PTSLEFT < 20) AND ((RANDOM MOD 11) = 10) DO
+              PTSLEFT := PTSLEFT + 10;
+            SIXATTR2 := BASEATTR;
+            FOR ATTRIBX := STRENGTH TO LUCK DO
+              BEGIN
+                GOTOXY( 10, 5 + ORD( ATTRIBX));
+                WRITE( SIXATTR2[ ATTRIBX] :2)
+              END;
+            ATTRIBX:= STRENGTH;
+            CANCHG := FALSE
+          END;  (* PTSMENU *)
+        
+        
+        BEGIN (* GIVEPTS *)
+          PTSMENU;
+          REPEAT
+            GOTOXY( 13, 5 + ORD( ATTRIBX));
+            WRITE( '<--');
+            REPEAT
+              GOTOXY( 10, 3);
+              WRITE( PTSLEFT :2);
+              GOTOXY( 41, 0);
+              GETKEY;
+              IF ( (INCHAR = '+') OR (INCHAR = ';') ) AND
+                 (SIXATTR2[ ATTRIBX] < 18) AND
+                 (PTSLEFT > 0) THEN
+                 
+                BEGIN
+                  SIXATTR2[ ATTRIBX] := SIXATTR2[ ATTRIBX] + 1;
+                  PTSLEFT := PTSLEFT - 1
+                END
+              ELSE
+                BEGIN
+                  IF ( (INCHAR = '-') OR (INCHAR = '=') ) AND
+                     (SIXATTR2[ ATTRIBX] > BASEATTR[ ATTRIBX]) THEN
+                     BEGIN
+                       SIXATTR2[ ATTRIBX] := SIXATTR2[ ATTRIBX] - 1;
+                       PTSLEFT := PTSLEFT + 1
+                     END;
+                END;
+              IF (INCHAR = '+') OR (INCHAR = '-') OR (INCHAR = ';') OR
+                 (INCHAR = '=') THEN
+                BEGIN
+                  GOTOXY( 10, 5 + ORD( ATTRIBX));
+                  WRITE( SIXATTR2[ ATTRIBX] : 2);
+                  CANCHG := GTCHGLST;
+                  FOR CLASSX := FIGHTER TO NINJA DO
+                    BEGIN
+                      GOTOXY( 20, 5 + ORD( CLASSX));
+                      IF CHG2LST[ CLASSX] THEN
+                        BEGIN
+                          WRITE( CHR( ORD( 'A') + ORD( CLASSX)));
+                          WRITE( ') ' );
+                          WRITE( SCNTOC.CLASS[ CLASSX])
+                        END
+                      ELSE
+                        WRITE( CHR( 29))
+                    END;
+                END;
+            UNTIL  (INCHAR = CHR( 27)) OR (INCHAR = CHR( CRETURN));
+            IF INCHAR = CHR( CRETURN) THEN
+              BEGIN
+                GOTOXY( 13, 5 + ORD( ATTRIBX));
+                WRITE( '   ');
+                IF ATTRIBX < LUCK THEN
+                   ATTRIBX:= SUCC( ATTRIBX)
+                ELSE
+                   ATTRIBX:= STRENGTH;
+              END;
+          UNTIL (INCHAR = CHR( 27)) AND CANCHG AND (PTSLEFT = 0);
+          REPEAT
+            REPEAT
+              P010B0B;
+              WRITE( 'CHOOSE A CLASS >');
+              GETKEY
+            UNTIL (INCHAR >= 'A') AND (INCHAR <= 'H');
+            CLASSX := FIGHTER;
+            WHILE INCHAR > 'A' DO
+              BEGIN
+                CLASSX := SUCC( CLASSX);
+                INCHAR := PRED( INCHAR)
+              END;
+          UNTIL CHG2LST[ CLASSX];
+          GOTOXY( 10, 13);
+          WRITE( SCNTOC.CLASS[ CLASSX]);
+          CHARREC.CLASS := CLASSX;
+          FOR ATTRIBX := STRENGTH TO LUCK DO
+            CHARREC.ATTRIB[ ATTRIBX] := SIXATTR2[ ATTRIBX]
+        END;  (* GIVEPTS *)
+      
+      
+      PROCEDURE CHOSALIG;  (* P010B11 *)
+      
+        VAR
+             ALIGNX : TALIGN;
+             
+        BEGIN
+          P010B0B;
+          GOTOXY( 0, 17);
+          FOR ALIGNX := GOOD TO EVIL DO
+            BEGIN
+              WRITE( CHR(  ORD( '@') + ORD( ALIGNX)));
+              WRITE( ') ' );
+              WRITELN( SCNTOC.ALIGN[ ALIGNX])
+            END;
+          REPEAT
+            P010B0C;
+            WRITE( 'CHOOSE AN ALIGNMENT >');
+            GETKEY;
+          UNTIL (INCHAR >= 'A') AND (INCHAR <= 'C');
+          IF INCHAR = 'A' THEN
+            CHARREC.ALIGN := GOOD
+          ELSE IF INCHAR = 'B' THEN
+            CHARREC.ALIGN := NEUTRAL
+          ELSE
+            CHARREC.ALIGN := EVIL;
+          GOTOXY( 10, 12);
+          WRITE( SCNTOC.ALIGN[ CHARREC.ALIGN])
+        END;
+        
+        
+      PROCEDURE KEEPCHYN;  (* P010B12 *)
+      
+        VAR
+             VITHPMOD : INTEGER;
+             CLSHPMOD : INTEGER;
+             
+        BEGIN
+          REPEAT
+            P010B0B;
+            WRITE( 'KEEP THIS CHARACTER (Y/N)? >');
+            GETKEY
+          UNTIL (INCHAR = 'Y') OR (INCHAR = 'N');
+          IF INCHAR = 'N' THEN
+            EXIT( MAKECHAR);
+          IF (CHARREC.CLASS = MAGE) OR (CHARREC.CLASS = BISHOP) THEN
+            BEGIN
+              CHARREC.SPELLSKN[ 3] := TRUE;
+              CHARREC.SPELLSKN[ 1] := TRUE;
+              CHARREC.MAGESP[ 1] := 2
+            END;
+          IF (CHARREC.CLASS = PRIEST) THEN
+            BEGIN
+              CHARREC.SPELLSKN[ 23] := TRUE;
+              CHARREC.SPELLSKN[ 24] := TRUE;
+              CHARREC.PRIESTSP[ 1] := 2
+            END;
+          CASE CHARREC.CLASS OF
+                   FIGHTER, LORD:  CLSHPMOD := 10;
+                          PRIEST:  CLSHPMOD :=  8;
+            THIEF, BISHOP, NINJA:  CLSHPMOD :=  6;
+                            MAGE:  CLSHPMOD :=  4;
+                         SAMURAI:  CLSHPMOD := 16;
+          END;
+          
+          VITHPMOD := 0;
+          CASE CHARREC.ATTRIB[ VITALITY] OF
+               3:  VITHPMOD := -2;
+            4, 5:  VITHPMOD := -1;
+              16:  VITHPMOD :=  1;
+              17:  VITHPMOD :=  2;
+              18:  VITHPMOD :=  3;
+          END;
+          
+          CLSHPMOD := CLSHPMOD + VITHPMOD;
+          FOR LLBASE04 := 1 TO 2 DO
+            IF (RANDOM MOD 2) = 1 THEN
+              CLSHPMOD := (9 * CLSHPMOD) DIV 10;
+          IF CLSHPMOD < 2 THEN
+             CLSHPMOD:= 2;
+          CHARREC.HPMAX := CLSHPMOD;
+          CHARREC.HPLEFT := CLSHPMOD
+        END;
+      
+      
+      BEGIN (* MAKECHAR *)
+        INITCHAR;
+        MAKEMENU;
+        CHOSRACE;
+        CHOSALIG;
+        GIVEPTS;
+        KEEPCHYN;
+        PUTCHARC( CHARREC, CHARACX)
+      END;  (* MAKECHAR *)
+      
+      
+      
+    PROCEDURE CREATE;  (* P010B13 *)
+    
+      VAR
+           CHARRECI : INTEGER;
+    
+    
+      PROCEDURE EXITCREA( EXITSTR : STRING);  (* P010B14 *)
+      
+        BEGIN
+          WRITELN;
+          WRITELN;
+          WRITELN( EXITSTR);
+          WRITELN;
+          WRITELN( 'PRESS ANY KEY TO CONTINUE');
+          GOTOXY( 41, 0);
+          GETKEY;
+          EXIT( CREATE)
+        END;  (* EXITCREA *)
+        
+        
+      BEGIN (* CREATE *)
+        CHARACX := -1;
+        FOR CHARRECI := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+          BEGIN
+            IF CHARACX < 0 THEN
+              BEGIN
+              GETCHARC( CHARREC, CHARRECI);
+              IF CHARREC.STATUS = LOST THEN
+                CHARACX := CHARRECI
+              END;
+          END;
+        IF CHARACX = -1 THEN
+          EXITCREA( 'THERE IS NO ROOM LEFT - TRY DELETING');
+        WRITELN;
+        WRITELN;
+        WRITELN( 'THAT CHARACTER DOES NOT EXIST. DO YOU');
+        WRITE(   'WANT TO CREATE IT (Y/N) ?> ');
+        REPEAT
+          WRITE( CHR(8));
+          GETKEY
+        UNTIL (INCHAR = 'Y') OR (INCHAR = 'N');
+        IF INCHAR = 'N' THEN
+          EXIT( CREATE);
+        MAKECHAR
+      END;  (* CREATE *)
+      
+      
+    PROCEDURE DSP20NM;  (* P010B15 *)
+    
+      VAR
+           UNUSED  : INTEGER;
+           LINECNT : INTEGER;
+           CHARI   : INTEGER;
+    
+      BEGIN
+        WRITE( CHR( 12));
+        WRITELN( 'NAMES IN USE:');
+        WRITELN( '----------------------------------------');
+        LINECNT := 0;
+        FOR CHARI := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+          BEGIN
+            GETCHARC( CHARREC, CHARI);
+            IF CHARREC.STATUS <> LOST THEN
+              BEGIN
+                LINECNT := LINECNT + 1;
+                GOTOXY( 0, LINECNT + 1);
+                WRITE( CHARREC.NAME);
+                WRITE( ' LEVEL ');
+                WRITE( CHARREC.CHARLEV);
+                WRITE( ' ');
+                WRITE( SCNTOC.RACE[ CHARREC.RACE]);
+                WRITE( ' ');
+                WRITE( SCNTOC.CLASS[ CHARREC.CLASS]);
+                WRITE( ' (' );
+                WRITE( SCNTOC.STATUS[ CHARREC.STATUS]);
+                WRITE( ')' );
+                IF CHARREC.INMAZE OR (CHARREC.LOSTXYL.LOCATION[ 1] <> 0) THEN
+                  WRITE( ' OUT');
+              END;
+          END;
+          
+        GOTOXY( 0, 22);
+        WRITELN( '----------------------------------------');
+        WRITE( 'YOU MAY L)EAVE WHEN READY');
+        REPEAT
+          GOTOXY( 41, 0);
+          GETKEY
+        UNTIL INCHAR = 'L';
+        INCHAR := CHR( 0)
+      END;
+      
+      
+    PROCEDURE TRAINING;  (* P010B16 *)
+    
+    VAR
+         
+         PASSSTR  : STRING;
+    
+    
+      PROCEDURE LOSECHAR;  (* P010B17 *)
+      
+        BEGIN
+          CHARREC.STATUS := LOST;
+          CHARREC.INMAZE := FALSE;
+          PUTCHARC( CHARREC, CHARACX);
+          GTSCNTOC
+        END;
+        
+        
+      PROCEDURE INSPECT;  (* P010B18 *)
+      
+        BEGIN
+          PARTYCNT := 1;
+          CHARACTR[ 0] := CHARREC;
+          CHARDISK[ 0] := CHARACX;
+          XGOTO := XINSPCT3;
+          EXIT( ROLLER)
+        END;
+        
+        
+      PROCEDURE RUSUREYN( DELSTR: STRING);  (* P010B19 *)
+      
+        BEGIN
+          REPEAT
+            WRITE( CHR(12));
+            WRITE( 'ARE YOU SURE YOU WANT TO ');
+            WRITE( DELSTR);
+            WRITE( ' (Y/N) ?' );
+            GETKEY
+          UNTIL (INCHAR = 'Y') OR (INCHAR = 'N')
+        END;
+        
+        
+      PROCEDURE DELCHAR;  (* P010B1A *)
+      
+        BEGIN
+          RUSUREYN( 'DELETE');
+          IF INCHAR = 'N' THEN
+            EXIT( DELCHAR);
+          LOSECHAR;
+          EXIT( TRAINING)
+        END;
+        
+        
+      PROCEDURE CHGCLASS;  (* P010B1B *)
+      
+        VAR
+             ATTRIBI  : TATTRIB;
+             CHGLSTX  : BOOLEAN;  (* NOT USED *)
+             CLASSX   : TCLASS;
+      
+        BEGIN  (* CHGCLASS *)
+          GOTOXY( 0, 2);
+          WRITELN( CHR( 11));
+          FOR ATTRIBI := STRENGTH TO LUCK DO
+            SIXATTR2[ ATTRIBI] := CHARREC.ATTRIB[ ATTRIBI];
+          CHGLSTX := GTCHGLST;
+          
+          FOR CLASSX := FIGHTER TO NINJA DO
+            IF CHG2LST[ CLASSX] AND
+               NOT ( CLASSX = CHARREC.CLASS) THEN
+              BEGIN
+                WRITE( CHR( ORD('A') + ORD( CLASSX)));
+                WRITE( ') ');
+                WRITELN( SCNTOC.CLASS[ CLASSX]);
+              END;
+          WRITELN;
+          WRITELN( 'PRESS [LETTER] TO CHANGE CLASS');
+          WRITELN( '[RET] TO NOT CHANGE CLASS' : 34);
+          REPEAT
+            REPEAT
+              GOTOXY( 41, 0);
+              GETKEY
+            UNTIL (INCHAR = CHR( CRETURN)) OR
+                   ((ORD( INCHAR) >= ORD( 'A')) AND
+                    (ORD( INCHAR) <= ORD( 'H')));
+            IF INCHAR = CHR( CRETURN) THEN
+              EXIT( CHGCLASS);
+            CLASSX := FIGHTER;
+            WHILE INCHAR > 'A' DO
+              BEGIN
+                CLASSX := SUCC( CLASSX);
+                INCHAR := PRED( INCHAR)
+              END;
+          UNTIL CHG2LST[ CLASSX] AND ( NOT( CLASSX = CHARREC.CLASS));
+          
+          SETBASE;
+          FOR ATTRIBI := STRENGTH TO LUCK DO
+            CHARREC.ATTRIB[ ATTRIBI] := BASEATTR[ ATTRIBI];
+          CHARREC.CLASS := CLASSX;
+          CHARREC.CHARLEV := 1;
+          CHARREC.EXP.HIGH := 0;
+          CHARREC.EXP.MID  := 0;
+          CHARREC.EXP.LOW  := 0;
+          CHARREC.AGE := CHARREC.AGE + 52 * (RANDOM MOD 3) + 252;
+          IF CLASSX = MAGE THEN
+            CHARREC.SPELLSKN[ 3] := TRUE
+          ELSE IF CLASSX = PRIEST THEN
+            CHARREC.SPELLSKN[ 23] := TRUE;
+          FOR TEMPX := 1 TO 7 DO
+            BEGIN
+              CHARREC.MAGESP[   TEMPX] := 0;
+              CHARREC.PRIESTSP[ TEMPX] := 0
+            END;
+          FOR TEMPX := 1 TO CHARREC.POSS.POSSCNT DO
+            IF NOT CHARREC.POSS.POSSESS[ TEMPX].CURSED THEN
+              CHARREC.POSS.POSSESS[ TEMPX].EQUIPED := FALSE;
+          PUTCHARC( CHARREC, CHARACX);
+          GTSCNTOC
+        END;  (* CHGCLASS *)
+        
+
+      PROCEDURE CHGPASS;  (* P010B1C *)
+      
+        VAR
+             NEWPASS2 : STRING[ 40];
+             NEWPASS1 : STRING[ 40];
+      
+        BEGIN;
+          WRITE( CHR(12));
+          WRITE( 'ENTER NEW PASSWORD ([RET] FOR NONE)');
+          REPEAT
+            GOTOXY( 10, 2);
+            GETPASS(  NEWPASS1)
+          UNTIL LENGTH( NEWPASS1) <= 15;
+          WRITE( CHR( 12));
+          WRITE( 'ENTER AGAIN TO BE SURE');
+          REPEAT
+            GOTOXY( 10, 2);
+            GETPASS( NEWPASS2)
+          UNTIL LENGTH( NEWPASS2) <= 15;
+          WRITE( CHR( 12));
+          IF NEWPASS1 = NEWPASS2 THEN
+            BEGIN
+              CHARREC.PASSWORD := NEWPASS1;
+              PUTCHARC( CHARREC, CHARACX);
+              GTSCNTOC;
+              WRITE( 'PASSWORD CHANGED - ')
+            END
+          ELSE
+            BEGIN
+              WRITELN( 'THEY ARE NOT THE SAME - YOUR PASSWORD');
+              WRITELN( 'HAS NOT BEEN CHANGED!');
+              WRITELN
+            END;
+          WRITE( 'PRESS [RET]');
+          GOTOXY( 41, 0);
+          READLN
+        END;
+
+        
+      BEGIN  (* TRAINING *)
+        PARTYCNT := 0;
+        IF XGOTO <> XBCK2ROL THEN
+          BEGIN
+            REPEAT
+              GOTOXY( 9, 10);
+              WRITE( 'PASSWORD >');
+              GETPASS( PASSSTR)
+            UNTIL LENGTH( PASSSTR) <= 15;
+            IF PASSSTR <> CHARREC.PASSWORD THEN
+              EXIT( TRAINING)
+          END
+        ELSE
+          BEGIN
+            XGOTO := XTRAININ;
+            CHARREC := CHARACTR[ 0];
+            CHARACX := CHARDISK[ 0]
+          END;
+        
+        REPEAT
+          WRITE( CHR( 12));
+          WRITE( CHARREC.NAME);
+          WRITE( ' LEVEL ');
+          WRITE( CHARREC.CHARLEV);
+          WRITE( ' ');
+          WRITE( SCNTOC.RACE[ CHARREC.RACE]);
+          WRITE( ' ');
+          WRITE( SCNTOC.CLASS[ CHARREC.CLASS]);
+          WRITE( ' (' );
+          WRITE( SCNTOC.STATUS[ CHARREC.STATUS]);
+          WRITELN( ')' );
+          WRITELN;
+          
+          WRITELN( 'YOU MAY I)NSPECT THIS CHARACTER,');
+          WRITELN( 'D)ELETE  THIS CHARACTER,' : 32);
+          WRITELN( 'R)EROLL  THIS CHARACTER,' : 32);
+          WRITELN( 'C)HANGE  CLASS,' : 23);
+          WRITELN( 'S)ET NEW PASSWORD, OR' : 29);
+          WRITELN( '  PRESS [RET] TO LEAVE');
+          
+          GOTOXY( 41, 0);
+          GETKEY;
+          IF INCHAR = CHR( CRETURN) THEN
+            EXIT( TRAINING);
+          CASE INCHAR OF
+            'I':  INSPECT;
+            'D':  DELCHAR;
+            'C':  CHGCLASS;
+            'R':  BEGIN
+                    RUSUREYN( 'REROLL');
+                    IF INCHAR = 'Y' THEN
+                      BEGIN
+                        CHARNAME := CHARREC.NAME;
+                        LOSECHAR;
+                        MAKECHAR
+                      END;
+                  END;
+            'S':  CHGPASS;
+          END;  
+          
+        UNTIL FALSE
+      END;   (* TRAINING *)
+      
+      
+    BEGIN  (* P010B01  ROLLER *)
+      IF XGOTO = XBCK2ROL THEN
+        TRAINING;
+      REPEAT
+        WRITE( CHR( 12));
+        WRITE(   ' ' :12);
+        WRITELN( 'TRAINING GROUNDS');
+        WRITELN;
+        WRITELN( 'YOU MAY ENTER A CHARACTER NAME TO ADD,');
+        WRITE(   ' ' :8);
+        WRITELN( 'INSPECT OR EDIT,');
+        WRITELN;
+        WRITE(   ' ' :8);
+        WRITELN( '"*ROSTER" TO SEE ROSTER,');
+        WRITELN;
+        WRITELN( 'OR PRESS [RET] FOR CASTLE.' : 33);
+        REPEAT
+          GOTOXY( 13, 9);
+          WRITE( CHR( 11));
+          WRITE( 'NAME >');
+          GETLINE( CHARNAME);
+          IF  CHARNAME = '' THEN
+            BEGIN
+              WRITE( CHR( 12));
+              XGOTO := XCASTLE;
+              EXIT( ROLLER)
+            END;
+        UNTIL LENGTH( CHARNAME) <= 15;
+        
+        IF CHARNAME = '*ROSTER' THEN
+          DSP20NM
+        ELSE
+          BEGIN
+            CHARACX := -1;
+            FOR TEMPX := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+              IF CHARACX < 0 THEN
+                BEGIN
+                  GETCHARC( CHARREC, TEMPX);
+                  IF CHARREC.STATUS <> LOST THEN
+                    IF CHARREC.NAME = CHARNAME THEN
+                      CHARACX := TEMPX
+                END;
+            IF CHARACX < 0 THEN
+              CREATE
+            ELSE
+              TRAINING
+          END
+      UNTIL FALSE
+    END;   (* ROLLER *)
+  

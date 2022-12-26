@@ -1,0 +1,766 @@
+(* MELEE *)
+
+SEGMENT PROCEDURE MELEE;  (* P010701 *)
+
+  VAR
+         VICTIM   : INTEGER;
+         ATTACKTY : INTEGER;
+         BATI     : INTEGER;
+         BATG     : INTEGER;
+         AGILELEV : INTEGER;
+  
+(* CASTASPE *)
+
+    SEGMENT PROCEDURE CASTASPE;  (* P010801 *)
+    
+      TYPE
+           THITHEAL = RECORD
+               HITS     : INTEGER;
+               HITRANGE : INTEGER;
+               HITMIN   : INTEGER;
+             END;
+                    
+      VAR
+           SPELL    : INTEGER;
+           CASTI    : INTEGER;
+           CASTGR   : INTEGER;
+           
+           
+      PROCEDURE DSPNAMES( GROUPI:  INTEGER;  (* P010802 *)
+                          MYCHARI: INTEGER);
+      
+        BEGIN
+          IF GROUPI = 0 THEN
+            PRINTSTR( CHARACTR[ MYCHARI].NAME)
+          ELSE
+            IF BATTLERC[ GROUPI].A.IDENTIFI THEN
+              PRINTSTR( BATTLERC[ GROUPI].B.NAME)
+            ELSE
+              PRINTSTR( BATTLERC[ GROUPI].B.NAMEUNK);
+          PRINTSTR( ' ');
+        END;
+        
+        
+      PROCEDURE UNAFFECT( GROUPI: INTEGER;
+                          CHARX:  INTEGER;
+                          DAMPTS: INTEGER);  (* P010803 *)
+      
+        BEGIN
+          CLRRECT( 1, 12, 38, 3);
+          IF BATTLERC[ GROUPI].A.TEMP04[ CHARX].STATUS >= DEAD THEN
+            EXIT( UNAFFECT);
+          MVCURSOR( 1, 12);
+          DSPNAMES( GROUPI, CHARX);
+          IF GROUPI <> 0 THEN
+            BEGIN
+              IF BATTLERC[ GROUPI].B.UNAFFCT > (RANDOM MOD 100) THEN
+                 DAMPTS := 0;
+            END;
+          IF DAMPTS = 0 THEN
+            PRINTSTR( 'IS UNAFFECTED!')
+          ELSE
+            BEGIN
+              PRINTSTR( 'TAKES ');
+              PRINTNUM( DAMPTS, 4);
+              PRINTSTR( ' DAMAGE');
+              WITH BATTLERC[ GROUPI].A.TEMP04[ CHARX] DO
+                BEGIN
+                  HPLEFT := HPLEFT - DAMPTS;
+                  IF HPLEFT <= 0 THEN
+                    BEGIN
+                      HPLEFT := 0;
+                      STATUS := DEAD;
+                      MVCURSOR( 1, 14);
+                      DSPNAMES( GROUPI, CHARX);
+                      PRINTSTR( 'DIES!')
+                    END
+                END
+            END;
+          PAUSE1
+        END;
+        
+        
+      PROCEDURE ISISNOT( GROUPI:    INTEGER;  (* P010804 *)
+                         CHARI:     INTEGER;
+                         ISNOTCHN:  INTEGER;
+                         SDAMTYPE:  STRING;
+                         DAMTYPE:   INTEGER);
+      
+        BEGIN
+          MVCURSOR( 1, 13);
+          DSPNAMES( GROUPI, CHARI);
+          
+          IF (RANDOM MOD 100) < ISNOTCHN THEN
+            PRINTSTR( 'IS NOT ')
+          ELSE
+            BEGIN
+              PRINTSTR( 'IS ');
+              CASE DAMTYPE OF
+              
+                0, 3:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := ASLEEP;
+                
+                   1:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].INAUDCNT :=
+                         (RANDOM MOD 4) + 2;
+                         
+                   2:  BEGIN
+                         BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := DEAD;
+                         BATTLERC[ GROUPI].A.TEMP04[ CHARI].HPLEFT := 0
+                       END
+              END
+            END;
+          PRINTSTR( SDAMTYPE);
+          PAUSE1;
+          CLRRECT( 1, 13, 38, 1)
+        END;
+        
+        
+      FUNCTION CALCPTS( HITHEAL: THITHEAL) : INTEGER;  (* P010805 *)
+      
+        VAR
+             POINTS : INTEGER;
+             
+        BEGIN
+          POINTS := 0;
+          WHILE HITHEAL.HITS > 0 DO
+            BEGIN
+              POINTS := POINTS + (RANDOM MOD HITHEAL.HITRANGE) + 1;
+              HITHEAL.HITS := HITHEAL.HITS - 1
+            END;
+          CALCPTS := POINTS + HITHEAL.HITMIN
+        END;
+        
+        
+      PROCEDURE MODAC( GROUPI: INTEGER;  (* P010806 *)
+                       ACMOD:  INTEGER;
+                       CHARF:  INTEGER;
+                       CHARL:  INTEGER);
+                         
+        VAR
+             X : INTEGER;
+      
+        BEGIN
+          FOR X := CHARF TO CHARL DO
+            BATTLERC[ GROUPI].A.TEMP04[ X].ARMORCL :=
+              BATTLERC[ GROUPI].A.TEMP04[ X].ARMORCL + ACMOD;
+        END;
+        
+        
+      PROCEDURE DOHEAL( GROUPI:   INTEGER;   (* P010807 *)
+                        CHARI:    INTEGER;
+                        HITCNT:   INTEGER;
+                        HITRANGE: INTEGER);
+      
+        VAR
+             HITHEAL : THITHEAL;
+             POINTS  : INTEGER;
+      
+        BEGIN
+          HITHEAL.HITS     := HITCNT;
+          HITHEAL.HITRANGE := HITRANGE;
+          HITHEAL.HITMIN   := 0;
+          POINTS := CALCPTS( HITHEAL);
+          BATTLERC[ GROUPI].A.TEMP04[ CHARI].HPLEFT :=
+            BATTLERC[ GROUPI].A.TEMP04[ CHARI].HPLEFT + POINTS;
+          IF CHARACTR[ CHARI].HPMAX < 
+               BATTLERC[ GROUPI].A.TEMP04[ CHARI].HPLEFT THEN
+            BATTLERC[ GROUPI].A.TEMP04[ CHARI].HPLEFT :=
+              CHARACTR[ CHARI].HPMAX;
+          DSPNAMES( GROUPI, CHARI);
+          IF CHARACTR[ CHARI].HPMAX =
+               BATTLERC[ GROUPI].A.TEMP04[ CHARI].HPLEFT THEN
+            PRINTSTR( 'IS FULLY HEALED')
+          ELSE
+            PRINTSTR( 'IS PARTIALLY HEALED')
+        END;
+        
+        
+      PROCEDURE DOHITS( GROUPI:   INTEGER;  (* P010808 *)
+                        CHARI:    INTEGER;
+                        HITCNT:   INTEGER;
+                        HITRANGE: INTEGER);
+      
+        VAR
+            HITHEAL : THITHEAL;
+            POINTS  : INTEGER;
+      
+        BEGIN
+          HITHEAL.HITS     := HITCNT;
+          HITHEAL.HITRANGE := HITRANGE;
+          HITHEAL.HITMIN   := 0;
+          POINTS := CALCPTS( HITHEAL);
+          IF GROUPI > 0 THEN
+            IF BATTLERC[ GROUPI].B.UNAFFCT > 0 THEN
+              IF (RANDOM MOD 100) < BATTLERC[ GROUPI].B.UNAFFCT THEN
+                POINTS := 0;
+          UNAFFECT( GROUPI, CHARI, POINTS)
+        END;
+        
+        
+      PROCEDURE DOHOLD;  (* P010809 *)
+      
+        VAR
+            CHARX : INTEGER;
+            
+        BEGIN
+          FOR CHARX := 0 TO BATTLERC[ CASTGR].A.ALIVECNT - 1 DO
+            IF BATTLERC[ CASTGR].A.TEMP04[ CHARX].STATUS <= ASLEEP THEN
+              IF CASTGR = 0 THEN
+                ISISNOT( CASTGR,
+                         CHARX,
+                         50 + 10 * CHARACTR[ CHARX].CHARLEV,
+                         'HELD',
+                         0)
+              ELSE
+                ISISNOT( CASTGR,
+                         CHARX,
+                         50 + 10 * BATTLERC[ CASTGR].B.HPREC.LEVEL,
+                         'HELD',
+                         0)
+                 
+        END;
+        
+        
+      PROCEDURE DOSILENC;  (* P01080A *)
+      
+        VAR
+             CHARX : INTEGER;
+      
+        BEGIN
+          FOR CHARX := 0 TO BATTLERC[ CASTGR].A.ALIVECNT - 1 DO
+            IF CASTGR = 0 THEN
+              ISISNOT( CASTGR,
+                       CHARX,
+                        100 - 5 * CHARACTR[ CHARX].LUCKSKIL[ 4],
+                       'SILENCED',
+                       1)
+            ELSE
+              ISISNOT( CASTGR,
+                       CHARX,
+                       10 * BATTLERC[ CASTGR].B.HPREC.LEVEL, 
+                       'SILENCED',
+                       1)
+        END;
+        
+        
+      PROCEDURE DODISRUP;  (* P01080B *)
+      
+        BEGIN
+          MVCURSOR( 1, 13);
+          PRINTSTR( 'SPELL DISRUPTED')
+        END;
+        
+        
+      PROCEDURE DOSLAIN( GROUPI: INTEGER;  (* P01080C *)
+                         CHARI:  INTEGER);
+      
+        VAR
+             CHNOTSLN : INTEGER;
+      
+        BEGIN
+          IF GROUPI = 0 THEN
+            CHNOTSLN := CHARACTR[ CHARI].CHARLEV
+          ELSE
+            CHNOTSLN := BATTLERC[ GROUPI].B.HPREC.LEVEL;
+          ISISNOT( GROUPI, CHARI, 10 * CHNOTSLN, 'SLAIN', 2)
+        END;
+        
+        
+      PROCEDURE DOSLEPT;  (* P01080D *)
+      
+        VAR
+             CHARX : INTEGER;
+      
+        BEGIN
+          FOR CHARX := 0 TO BATTLERC[ CASTGR].A.ALIVECNT - 1 DO
+            IF BATTLERC[ CASTGR].A.TEMP04[ CHARX].STATUS < ASLEEP THEN
+              IF CASTGR > 0 THEN
+                BEGIN
+                IF BATTLERC[ CASTGR].B.SPPC[ 4] THEN
+                  ISISNOT( CASTGR,
+                           CHARX,
+                           20 * BATTLERC[ CASTGR].B.HPREC.LEVEL,
+                           'SLEPT',
+                           3)
+                END
+              ELSE
+                ISISNOT( CASTGR,
+                         CHARX,
+                         20 * CHARACTR[ CHARX].CHARLEV,
+                         'SLEPT',
+                         3)
+        END;
+        
+        
+      PROCEDURE HAMMAHAM( MAHAMFLG: INTEGER);  (* P01080E *)
+      
+        VAR
+             TEMP2    : INTEGER;  (* MULTIPLE USES *)
+             TEMP1    : INTEGER;  (* MULTIPLE USES *)
+      
+      
+        PROCEDURE HAMCURE;  (* P01080F *)
+        
+          VAR
+               HITHEAL : THITHEAL;
+        
+          BEGIN
+            PRINTSTR( 'DIALKO''S PARTY 3 TIMES');
+            HITHEAL.HITS := 9;
+            HITHEAL.HITRANGE := 8;
+            HITHEAL.HITMIN := 0;
+            FOR TEMP1 := 0 TO PARTYCNT - 1 DO
+              IF BATTLERC[ 0].A.TEMP04[ TEMP1].STATUS < DEAD THEN
+                BEGIN
+                  WITH  BATTLERC[ 0].A.TEMP04[ TEMP1] DO
+                    BEGIN
+                      STATUS := OK;
+                      INAUDCNT := 0;
+                      HPLEFT := HPLEFT + CALCPTS( HITHEAL);
+                      IF HPLEFT > CHARACTR[ TEMP1].HPMAX THEN
+                        HPLEFT := CHARACTR[ TEMP1].HPMAX;
+                    END
+                END
+          END;
+          
+          
+        PROCEDURE HAMSILEN;  (* P010810 *)
+        
+          BEGIN
+            PRINTSTR( 'SILENCES MONSTERS!');
+            FOR TEMP1 := 1 TO 3 DO
+              FOR TEMP2 := 0 TO BATTLERC[ TEMP1].A.ALIVECNT - 1 DO
+                BATTLERC[ TEMP1].A.TEMP04[ TEMP2].INAUDCNT :=
+                  5 + (RANDOM MOD 5)
+          END;
+          
+          
+        PROCEDURE HAMMAGIC;  (* P010811 *)
+        
+          BEGIN
+            PRINTSTR( 'ZAPS MONSTER MAGIC RESISTANCE!');
+            FOR TEMP1 := 1 TO 3 DO
+              BEGIN
+                BATTLERC[ TEMP1].B.UNAFFCT := 0
+              END
+          END;
+          
+          
+        PROCEDURE HAMTELEP;  (* P010812 *)    (* NAME IS FROM MESSAGE *)
+        
+          BEGIN
+            PRINTSTR( 'DESTROYS MONSTERS!');
+            FOR TEMP1 := 1 TO 4 DO
+              BEGIN
+                FOR TEMP2 := 0 TO BATTLERC[ TEMP1].A.ALIVECNT - 1 DO
+                  BEGIN
+                    BATTLERC[ TEMP1].A.TEMP04[ TEMP2].STATUS := DEAD;
+                    BATTLERC[ TEMP1].A.TEMP04[ TEMP2].HPLEFT := 0
+                  END;
+                BATTLERC[ TEMP1].A.ALIVECNT := 0
+              END
+          END;
+          
+          
+        PROCEDURE HAMHEAL;  (* P010813 *)
+        
+          BEGIN
+            PRINTSTR( 'HEALS PARTY!');
+            FOR TEMP1 := 0 TO PARTYCNT - 1 DO
+              IF BATTLERC[ 0].A.TEMP04[ TEMP1].STATUS < DEAD THEN
+                BEGIN
+                  WITH BATTLERC[ 0].A.TEMP04[ TEMP1] DO
+                    BEGIN
+                      STATUS := OK;
+                      INAUDCNT := 0;
+                      HPLEFT := CHARACTR[ TEMP1].HPMAX
+                    END;
+                END
+          END;
+          
+          
+        PROCEDURE HAMPROT; (* P010814 *)
+        
+          BEGIN
+            PRINTSTR( 'SHIELDS PARTY');
+            FOR TEMP1 := 0 TO PARTYCNT - 1 DO
+              IF CHARACTR[ TEMP1].ARMORCL > -10 THEN
+                CHARACTR[ TEMP1].ARMORCL := -10
+          END;
+          
+          
+        PROCEDURE HAMALIVE;  (* P010815 *)
+        
+          BEGIN
+            PRINTSTR( 'RESSURECTS AND ');
+            FOR TEMP1 := 0 TO PARTYCNT - 1 DO
+              IF BATTLERC[ 0].A.TEMP04[ TEMP1].STATUS <> LOST THEN
+                BATTLERC[ 0].A.TEMP04[ TEMP1].STATUS := OK;
+            HAMHEAL
+          END;
+      
+      
+        PROCEDURE HAMMANGL;  (* P010816 *)
+        
+          VAR
+               SPELLI : INTEGER;
+              
+          BEGIN (* HAMMANGL *)
+            MVCURSOR( 1, 14);
+            PRINTSTR( 'BUT HIS SPELL BOOKS ARE MANGLED!');
+            FOR SPELLI := 1 TO 50 DO
+              BEGIN
+                IF (RANDOM MOD 100) > 50 THEN
+                  CHARACTR[ TEMP1].SPELLSKN[ SPELLI] := FALSE
+              END
+          END; (* HAMMANGL *)
+      
+      
+        BEGIN  (* HAMMAHAM *)
+          IF MAHAMFLG = 7 THEN
+            PRINTSTR( 'MA');
+          PRINTSTR( 'HAMAN IS INTONED AND...');
+          PAUSE2;
+          MVCURSOR( 1, 13);
+          IF CHARACTR[ BATI].CHARLEV < 13 THEN
+            BEGIN
+              PRINTSTR( 'FAILS!');
+              EXIT( HAMMAHAM)
+            END;
+          CHARACTR[ BATI].CHARLEV := CHARACTR[ BATI].CHARLEV - 1;
+          DRAINED[ BATI] := TRUE;
+          
+          CASE RANDOM MOD 3 * MAHAMFLG OF     (* MAHAMFLG IS 6 OR 7 *)
+             0,  1,  2,  3,  4,  5:  HAMCURE;   (*     1? 2? 3? 4? 5? *)
+                 7,  8,  9, 10, 11:  HAMSILEN;  (*     8? 9? 10? 11?  *)
+                    12, 13, 22, 23:  HAMMAGIC;  (*    13?, 22?, 23?   *)
+                        14, 20, 21:  HAMTELEP;  (*    14?, 20?        *)
+                         6, 15, 19:  HAMHEAL;   (*    15?, 19?        *)
+                                17:  HAMPROT;   (*    17?      DEAD CODE    *)
+                            16, 18:  HAMALIVE;  (*    16?, 18? DEAD CODE    *)
+                            
+          (* MAYBE THEY WANTED "RANDOM MOD (3 * MAHAMFLG)",
+             AND MAHAMFLG = 6 OR 8 DEPENDING ON SPELL *)
+                            
+                            
+          END;
+          IF (RANDOM MOD CHARACTR[ BATI].CHARLEV) = 5 THEN
+            HAMMANGL
+        END;   (* HAMMAHAM *)
+        
+        
+      PROCEDURE HITGROUP( GROUPI:  INTEGER;  (* P010817 *)
+                          HITSX:   INTEGER;
+                          HITSR:   INTEGER;
+                          TEMP99I: INTEGER);
+      
+        VAR
+             CHARI : INTEGER;
+      
+        BEGIN
+          IF BATTLERC[ GROUPI].A.ALIVECNT > 0 THEN
+            FOR CHARI := 0 TO BATTLERC[ GROUPI].A.ALIVECNT - 1 DO
+              BEGIN
+                IF GROUPI = 0 THEN
+                  BATTLERC[ 0].B.WEPVSTY3 := CHARACTR[ CHARI].WEPVSTY3[ 1];
+                IF BATTLERC[ GROUPI].B.WEPVSTY3[ TEMP99I] THEN
+                  DOHITS( GROUPI, CHARI, HITSX DIV 2 + 1, HITSR)
+                ELSE
+                  DOHITS( GROUPI, CHARI, HITSX, HITSR)
+              END
+        END;
+        
+        
+      PROCEDURE SLOKTOFE;  (* P010818 *)
+      
+        VAR
+             POSSX :  INTEGER;
+             TEMPXX : INTEGER; (* MULTIPLE USES *)
+      
+        BEGIN
+          IF (RANDOM MOD 100) >  2 * CHARACTR[ BATI].CHARLEV THEN
+            BEGIN
+              MVCURSOR( 1, 13);
+              PRINTSTR( 'LOKTOFEIT FAILS!');
+              EXIT( SLOKTOFE)
+            END;
+          FOR TEMPXX := 0 TO PARTYCNT - 1 DO
+            BEGIN
+              FOR POSSX := 1 TO CHARACTR[ TEMPXX].POSS.POSSCNT DO
+                WITH CHARACTR[ TEMPXX].POSS.POSSESS[ POSSX] DO
+                  BEGIN
+                    EQINDEX := 0;
+                    IDENTIF := FALSE;
+                    CURSED  := FALSE;
+                    EQUIPED := FALSE
+                  END;
+              CHARACTR[ TEMPXX].POSS.POSSCNT := 0;
+              CHARACTR[ TEMPXX].GOLD.HIGH := 0;
+              CHARACTR[ TEMPXX].GOLD.MID  := 0
+            END;
+          XGOTO := XCHK4WIN;
+          WRITE( CHR( 12));
+          TEXTMODE;
+          EXIT( COMBAT)(* EXITCOMB *)
+        END;
+        
+        
+      PROCEDURE SMAKANIT;  (* P010819 *)
+        
+        VAR
+             ENEMYX  : INTEGER;
+             GROUPI  : INTEGER;
+             
+          
+        BEGIN (* SMAKANIT *)
+          FOR GROUPI := 1 TO 4 DO
+            BEGIN
+              IF BATTLERC[ GROUPI].A.ALIVECNT > 0 THEN
+                BEGIN
+                  MVCURSOR( 1, 13);
+                  IF BATTLERC[ GROUPI].A.IDENTIFI THEN
+                    PRINTSTR( BATTLERC[ GROUPI].B.NAMES)
+                  ELSE
+                    PRINTSTR(BATTLERC[ GROUPI].B.NAMEUNKS);
+                              
+                  IF BATTLERC[ GROUPI].B.CLASS = 10 THEN
+                    PRINTSTR( ' ARE UNAFFECTED!')
+                  ELSE
+                    IF BATTLERC[ GROUPI].B.HPREC.LEVEL > 7 THEN
+                      PRINTSTR( ' SURVIVE!')
+                    ELSE
+                      BEGIN
+                        PRINTSTR( ' PERISH!');
+                        FOR ENEMYX := 0 TO BATTLERC[ GROUPI].A.ALIVECNT DO
+                          BEGIN
+                            WITH BATTLERC[ GROUPI].A.TEMP04[ ENEMYX] DO
+                              BEGIN
+                                HPLEFT := 0;
+                                STATUS := DEAD
+                              END
+                          END
+                      END;
+                  PAUSE1;
+                  CLRRECT( 1, 13, 38, 1)
+                END
+            END
+        END;  (* SMAKANIT *)
+        
+        
+      PROCEDURE SMALOR;  (* P01081A *)
+      
+        VAR
+             UNUSEDXX : INTEGER;
+             UNUSEDYY : INTEGER;
+             
+        BEGIN
+          MAZEX := RANDOM MOD 20;
+          MAZEY := RANDOM MOD 20;
+          WHILE (RANDOM MOD 100) < 30 DO
+            MAZELEV := MAZELEV - 1;
+          WHILE (RANDOM MOD 100) < 10 DO
+            MAZELEV := MAZELEV - 1;
+          IF MAZELEV < SCNTOC.RECPERDK[ ZMAZE] THEN
+            MAZELEV := SCNTOC.RECPERDK[ ZMAZE];
+          CLRRECT( 13, 1, 26, 4);
+          IF MAZELEV = 0 THEN
+            BEGIN
+              XGOTO := XCHK4WIN;
+              WRITE( CHR(12));
+              TEXTMODE
+            END
+          ELSE
+            XGOTO := XNEWMAZE;
+          EXIT( COMBAT)
+        END;
+        
+        
+      PROCEDURE DOPRIEST;  (* P01081B *)
+      
+        VAR
+             GROUPI : INTEGER;
+      
+        BEGIN
+          IF SPELL = KALKI THEN
+            MODAC( 0, 1, 0, PARTYCNT - 1);
+          IF SPELL = DIOS THEN
+            DOHEAL( 0, CASTGR, 1, 8);
+          IF SPELL = BADIOS THEN
+            DOHITS( CASTGR, CASTI, 1, 8);
+          IF SPELL = MILWA THEN
+            LIGHT := LIGHT + 15 + (RANDOM MOD 15);
+          IF SPELL = PORFIC THEN
+            MODAC( 0, 4, BATI, BATI);
+          IF SPELL = MATU THEN
+            MODAC( 0, 2, 0, PARTYCNT - 1);
+          IF SPELL = MANIFO THEN
+            DOHOLD;
+          IF SPELL = MONTINO THEN
+            DOSILENC;
+          IF SPELL = LOMILWA THEN
+            LIGHT := 32000;
+          IF SPELL = DIALKO THEN
+            BEGIN
+              DSPNAMES( 0, CASTGR);
+              IF (BATTLERC[ 0].A.TEMP04[ CASTGR].STATUS = PLYZE) OR
+                 (BATTLERC[ 0].A.TEMP04[ CASTGR].STATUS = ASLEEP) THEN
+                BEGIN
+                  BATTLERC[ 0].A.TEMP04[ CASTGR].STATUS := OK;
+                  PRINTSTR( 'IS CURED!')
+                END
+              ELSE
+                PRINTSTR( 'IS NOT HELPED!');
+            END;
+          IF SPELL = LATUMAPI THEN
+            BEGIN
+              FOR GROUPI := 1 TO 4 DO
+                BATTLERC[ LLBASE04].A.IDENTIFI := TRUE;  (* BUG? WITH BASE04*)
+            END;
+          IF SPELL = BAMATU THEN
+            MODAC( 0, 4, 0, PARTYCNT - 1);
+          IF SPELL = DIAL THEN
+            DOHEAL( 0, CASTGR, 2, 8);
+          IF SPELL = BADIAL THEN
+            DOHITS( CASTGR, CASTI, 2, 8);
+          IF SPELL = LATUMOFI THEN
+            BEGIN
+              DSPNAMES( 0, CASTGR);
+              PRINTSTR( 'IS UNPOISONED!');
+              CHARACTR[ CASTGR].LOSTXYL.POISNAMT[ 1] := 0
+            END;
+          IF SPELL = MAPORFIC THEN
+            ACMOD2 := 2;
+          IF SPELL = DIALMA THEN
+            DOHEAL( 0, CASTGR, 3, 8);
+          IF SPELL = BADIALMA THEN
+            DOHITS( CASTGR, CASTI, 3, 8);
+          IF SPELL = LITOKAN THEN
+            HITGROUP( CASTGR, 3, 8, 1);
+          IF SPELL = KANDI THEN
+            DODISRUP;
+          IF SPELL = DI THEN
+            DODISRUP;
+          IF SPELL = BADI THEN
+            DOSLAIN( CASTGR, CASTI);
+          IF SPELL = LORTO THEN
+            HITGROUP( CASTGR, 6, 6, 0);
+          IF SPELL = MADI THEN
+            BEGIN
+              BATTLERC[ 0].A.TEMP04[ CASTGR].HPLEFT :=
+                CHARACTR[ CASTGR].HPMAX;
+              IF BATTLERC[ 0].A.TEMP04[ CASTGR].STATUS < DEAD THEN
+                BATTLERC[ 0].A.TEMP04[ CASTGR].STATUS := OK;
+              CHARACTR[ CASTGR].LOSTXYL.POISNAMT[ 1] := 0;
+              DOHEAL( 0, CASTGR, 1, 1)
+            END;
+          IF SPELL = MABADI THEN
+            BEGIN
+              CLRRECT( 1, 12, 38, 3);
+              MVCURSOR( 1, 12);
+              DSPNAMES( CASTGR, CASTI);
+              PRINTSTR( ' IS HIT BY MABADI!');
+               BATTLERC[ CASTGR].A.TEMP04[ CASTI].HPLEFT := 
+                 1 + (RANDOM MOD 8);
+            END;
+          IF SPELL = LOKTOFEI THEN
+            SLOKTOFE;
+          IF SPELL = MALIKTO THEN
+            FOR GROUPI := 1 TO 4 DO
+              HITGROUP( GROUPI, 12, 6, 0);
+          IF SPELL = KADORTO THEN
+            DODISRUP
+        END;
+        
+        
+      PROCEDURE DOMAGE;  (* P01081C *)
+      
+        VAR
+             GROUPI : INTEGER;  (* MULTIPLE USES *)
+      
+        BEGIN
+          IF SPELL = HALITO THEN
+            DOHITS( CASTGR, CASTI, 1, 8);
+          IF SPELL = MOGREF THEN
+            MODAC( 0, 2, BATI, BATI);
+          IF SPELL = KATINO THEN
+            DOSLEPT;
+          IF SPELL = DILTO THEN
+            MODAC( CASTGR, -2, 0, BATTLERC[ CASTGR].A.ALIVECNT - 1);
+          IF SPELL = SOPIC THEN
+            MODAC( 0, 4, BATI, BATI);
+          IF SPELL = MAHALITO THEN
+            HITGROUP( CASTGR, 4, 6, 1);
+          IF SPELL = MOLITO THEN
+            HITGROUP( CASTGR, 3, 6, 0);
+          IF SPELL = MORLIS THEN
+            MODAC( CASTGR, -3, 0, BATTLERC[ CASTGR].A.ALIVECNT - 1);
+          IF SPELL = DALTO THEN
+            HITGROUP( CASTGR, 6, 6, 2);
+          IF SPELL = LAHALITO THEN
+            HITGROUP( CASTGR, 6, 6, 1);
+          IF SPELL = MAMORLIS THEN
+            FOR GROUPI := 1 TO 4 DO
+              MODAC( GROUPI, -3, 1, BATTLERC[ GROUPI].A.ALIVECNT);
+          IF SPELL = MAKANITO THEN
+            SMAKANIT;
+          IF SPELL = MADALTO THEN
+            HITGROUP( CASTGR, 8, 8, 2);
+          IF SPELL = LAKANITO THEN
+            FOR GROUPI := 0 TO BATTLERC[ CASTGR].A.ALIVECNT - 1 DO
+              IF BATTLERC[ CASTGR].A.TEMP04[ GROUPI].STATUS < DEAD THEN
+                ISISNOT( CASTGR, GROUPI, 6 * BATTLERC[ CASTGR].B.HPREC.LEVEL,
+                         'SMOTHERED', 2);
+          IF SPELL = ZILWAN THEN
+            IF BATTLERC[ CASTGR].B.CLASS = 10 THEN
+              DOHITS( CASTGR, CASTI, 10, 200);
+          IF SPELL = MASOPIC THEN
+            MODAC( 0, 4, 0, PARTYCNT - 1);
+          IF SPELL = HAMAN THEN
+            HAMMAHAM( 6);
+          IF SPELL = MALOR THEN
+            SMALOR;
+          IF SPELL = MAHAMAN THEN
+            HAMMAHAM( 7);
+          IF SPELL = TILTOWAIT THEN
+            IF BATG = 0 THEN
+              FOR GROUPI := 1 TO 4 DO
+                HITGROUP( GROUPI, 10, 15, 0)
+            ELSE
+              HITGROUP( 0, 10, 15, 0)
+        END;
+        
+        
+      PROCEDURE EXITCAST( EXITSTR: STRING);  (* P01081D *)
+      
+        BEGIN
+          MVCURSOR( 1, 12);
+          PRINTSTR( EXITSTR);
+          EXIT( CASTASPE)
+        END;
+        
+        
+      BEGIN  (* CASTASPE P010801 *)
+        DSPNAMES( BATG, BATI);
+        PRINTSTR( 'CASTS A SPELL');
+        IF BATTLERC[ BATG].A.TEMP04[ BATI].INAUDCNT > 0 THEN
+          EXITCAST( 'WHICH FAILS TO BECOME AUDIBLE!');
+        IF FIZZLES > 0 THEN
+          EXITCAST( 'WHICH FIZZLES OUT');
+        IF BATG = 0 THEN
+          BEGIN
+            CASTGR := BATTLERC[ 0].A.TEMP04[ BATI].VICTIM;
+            IF (CASTGR > 0) AND (CASTGR < 5) THEN
+              IF BATTLERC[ CASTGR].A.ALIVECNT > 0 THEN
+                CASTI := BATI MOD BATTLERC[ CASTGR].A.ALIVECNT;
+            SPELL := BATTLERC[ 0].A.TEMP04[ BATI].SPELLHSH;
+          END
+        ELSE
+          BEGIN
+            CASTGR := 0;
+            CASTI  := BATTLERC[ BATG].A.TEMP04[ BATI].VICTIM;
+            SPELL  := BATTLERC[ BATG].A.TEMP04[ BATI].SPELLHSH
+          END;
+        MVCURSOR( 1, 12);
+        DOMAGE;
+        DOPRIEST
+      END;   (* CASTASPE P010801 *)
+    

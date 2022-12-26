@@ -1,0 +1,305 @@
+SEGMENT PROCEDURE RUNNER;     (* P010E01 *)
+  
+    CONST
+         NORTH = 0;
+         EAST  = 1;
+         SOUTH = 2;
+         WEST  = 3;
+  
+    VAR
+         QUICKPLT : BOOLEAN;
+         INITTURN : BOOLEAN;
+         NEEDDRMZ : BOOLEAN;
+         MAZE     : TMAZE;
+         
+         
+    PROCEDURE DRAWMAZE;  (* P010E02 *)
+    
+      VAR
+           GOTLIGHT : BOOLEAN;
+           WALHEIGH : INTEGER;
+           DOORFRAM : INTEGER;
+           DOORWIDT : INTEGER; (* 1/2 DOOR WIDTH *)
+           WALWIDTH : INTEGER; (* 1/2 WALL WIDTH *)
+           
+           (* IMAGINE A SMALLER BOX DRAWN INSIDE AN OUTER BOX.  THE OUTER BOX
+              HAS UPPER LEFT CORNER AS 0,0 AND LOWER RIGHT CORNER AS 81,78.
+              THE INSIDE BOX HAS COORDINATES (UL, UL) AND (LR, LR).       *)
+              
+           LR  : INTEGER; (* LOWER RIGHT INNER BOX BOUNDARY *)
+           UL  : INTEGER; (* UPPER LEFT  INNER BOX BOUNDARY *)
+           
+           SQREDESC : INTEGER;
+           XUPPER   : INTEGER;
+           XLOWER   : INTEGER;
+           
+           Y4DRAW   : INTEGER;
+           X4DRAW   : INTEGER;
+           LIGHTDIS : INTEGER;
+           WALLTYPE : TWALL;
+    
+        
+      PROCEDURE SHFTPOS( VAR X:        INTEGER;  (* P010E03 *)
+                         VAR Y:        INTEGER;
+                             RIGHSHFT: INTEGER;
+                             FRWDSHFT: INTEGER);
+      
+        BEGIN
+          CASE DIRECTIO OF
+            NORTH:  BEGIN
+                      X := X + RIGHSHFT;
+                      Y := Y + FRWDSHFT
+                    END;
+                    
+             EAST:  BEGIN
+                      X := X + FRWDSHFT;
+                      Y := Y - RIGHSHFT
+                    END;
+                    
+            SOUTH:  BEGIN
+                      X := X - RIGHSHFT;
+                      Y := Y - FRWDSHFT
+                    END;
+                    
+             WEST:  BEGIN
+                      X := X - FRWDSHFT;
+                      Y := Y + RIGHSHFT
+                    END;
+          END;
+          X := (X + 20) MOD 20;
+          Y := (Y + 20) MOD 20
+        END;  (* SHFTPOS *)
+        
+        
+      
+        FUNCTION FRWDVIEW( DELTAR: INTEGER) : TWALL;  (* P010E04 *)
+        
+          VAR
+               Y : INTEGER;
+               X : INTEGER;
+               
+          BEGIN
+            X := X4DRAW;
+            Y := Y4DRAW;
+            SHFTPOS( X, Y, DELTAR, 0);
+            CASE DIRECTIO OF
+              NORTH:  FRWDVIEW := MAZE.N[ X][ Y];
+               EAST:  FRWDVIEW := MAZE.E[ X][ Y];
+              SOUTH:  FRWDVIEW := MAZE.S[ X][ Y];
+               WEST:  FRWDVIEW := MAZE.W[ X][ Y];
+            END
+          END;  (* FRWDVIEW *)
+          
+          
+        FUNCTION LEFTVIEW( DELTAR: INTEGER) : TWALL;  (* P010E05 *)
+        
+          VAR
+               Y : INTEGER;
+               X : INTEGER;
+               
+          BEGIN
+            X := X4DRAW;
+            Y := Y4DRAW;
+            SHFTPOS( X, Y, DELTAR, 0);
+            CASE DIRECTIO OF
+              NORTH:  LEFTVIEW := MAZE.W[ X][ Y];
+               EAST:  LEFTVIEW := MAZE.N[ X][ Y];
+              SOUTH:  LEFTVIEW := MAZE.E[ X][ Y];
+               WEST:  LEFTVIEW := MAZE.S[ X][ Y];
+            END
+          END;  (* LEFTVIEW *)
+          
+          
+        FUNCTION RIGHVIEW( DELTAR: INTEGER) : TWALL;  (* P010E06 *) 
+        
+          VAR
+               Y : INTEGER;
+               X : INTEGER;
+               
+          BEGIN
+            X := X4DRAW;
+            Y := Y4DRAW;
+            SHFTPOS( X, Y, DELTAR, 0);
+            CASE DIRECTIO OF
+              NORTH:  RIGHVIEW := MAZE.E[ X][ Y];
+               EAST:  RIGHVIEW := MAZE.S[ X][ Y];
+              SOUTH:  RIGHVIEW := MAZE.W[ X][ Y];
+               WEST:  RIGHVIEW := MAZE.N[ X][ Y];
+            END
+          END;  (* RIGHVIEW *)
+          
+          
+        PROCEDURE DRAWLEFT;  (* P010E07 *)
+        
+          BEGIN
+            XLOWER := UL;
+            DRAWLINE( UL, UL, -1, -1, WALWIDTH);             (* TOP EDGE *)
+            DRAWLINE( UL, UL,  0,  1, WALHEIGH);             (* RIGHT EDGE *)
+            DRAWLINE( UL, LR, -1,  1, WALWIDTH);             (* BOTTOM EDGE *)
+            DRAWLINE( UL - WALWIDTH, UL - WALWIDTH,          (* LEFT EDGE *)
+                               0,  1, WALHEIGH + WALHEIGH);
+            IF (WALLTYPE = OPEN) OR
+               (WALLTYPE = WALL) OR 
+               ((WALLTYPE = HIDEDOOR) AND
+                (NOT GOTLIGHT AND ((RANDOM MOD 6) <> 3))) THEN
+              EXIT( DRAWLEFT);
+              
+            (* DRAW THE DOOR:  TOP, RIGHT, LEFT *)
+              
+            DRAWLINE( UL - DOORFRAM, UL, -1, -1, DOORWIDT);
+            DRAWLINE( UL - DOORFRAM, UL,  0,  1, WALHEIGH + DOORFRAM);
+            DRAWLINE( UL - DOORFRAM - DOORWIDT, UL - DOORWIDT, 0, 1,
+                        WALHEIGH + WALWIDTH + DOORFRAM)
+          END;
+          
+          
+        PROCEDURE DRAWRIGH;  (* P010E08 *)
+        
+          BEGIN
+            XUPPER := LR;
+            DRAWLINE( LR, UL, 1, -1, WALWIDTH);
+            DRAWLINE( LR, UL, 0,  1, WALHEIGH);
+            DRAWLINE( LR, LR, 1,  1, WALWIDTH);
+            DRAWLINE( LR + WALWIDTH, UL - WALWIDTH,
+                              0,  1, WALHEIGH + WALHEIGH);
+            IF (WALLTYPE = OPEN) OR
+               (WALLTYPE = WALL) OR 
+               ((WALLTYPE = HIDEDOOR) AND
+                (NOT GOTLIGHT AND ((RANDOM MOD 6) <> 3))) THEN
+              EXIT( DRAWRIGH);
+              
+            (* DRAW THE DOOR *)
+              
+            DRAWLINE( LR + DOORFRAM, UL, 1, -1, DOORWIDT);
+            DRAWLINE( LR + DOORFRAM, UL, 0,  1,
+                      WALHEIGH + DOORFRAM);
+            DRAWLINE( LR + DOORFRAM + DOORWIDT, UL - DOORWIDT,
+                                         0,  1, WALHEIGH + WALWIDTH + DOORFRAM)
+          END;
+          
+          
+        PROCEDURE DRAWFRNT( FRNTWALL : TWALL; LRCENT : INTEGER); (* P010E09 *)
+        
+        
+          (* DRAW FRONT FACING WALL PANEL:  TOP, LEFT, RIGHT, BOTTOM.
+             (WHY DOES RIGHT EDGE HAVE +1 FOR LENGTH???)              *)
+        
+          BEGIN
+            DRAWLINE( UL + LRCENT, UL,            1, 0, WALHEIGH);
+            DRAWLINE( UL + LRCENT, UL,            0, 1, WALHEIGH);
+            DRAWLINE( UL + LRCENT + WALHEIGH, UL, 0, 1, WALHEIGH + 1);
+            DRAWLINE( UL + LRCENT, UL + WALHEIGH, 1, 0, WALHEIGH);
+            IF (FRNTWALL = OPEN) OR
+               (FRNTWALL = WALL) OR 
+               ((FRNTWALL = HIDEDOOR) AND
+                (NOT GOTLIGHT AND ((RANDOM MOD 6) <> 3))) THEN
+              EXIT( DRAWFRNT);
+              
+            (* DRAW DOOR:  LEFT, RIGHT, TOP *)
+             
+            DRAWLINE( UL + LRCENT + DOORFRAM, LR,
+                        0, -1, WALWIDTH + DOORWIDT + DOORFRAM);
+                        
+            DRAWLINE( UL + LRCENT + WALWIDTH + DOORWIDT + DOORFRAM, LR,
+                        0, -1, WALWIDTH + DOORWIDT + DOORFRAM);
+                        
+            DRAWLINE( UL + LRCENT + DOORFRAM,
+                        LR - WALWIDTH - DOORWIDT- DOORFRAM,
+                        1,  0, WALWIDTH + DOORWIDT + 1)
+          END;
+          
+        
+      BEGIN (* DRAWMAZE *)
+        GOTLIGHT := LIGHT > 0;
+        IF GOTLIGHT THEN
+          BEGIN
+            IF QUICKPLT THEN
+              LIGHTDIS := 3
+            ELSE
+                LIGHTDIS := 5;
+            LIGHT := LIGHT - 1
+          END
+        ELSE
+          LIGHTDIS := 2;
+        
+        UL :=  8;
+        LR := 72;
+        WALWIDTH := 32;
+        DOORWIDT := 16;
+        DOORFRAM :=  8;
+        WALHEIGH := 64;
+        
+        X4DRAW := MAZEX;
+        Y4DRAW := MAZEY;
+        CLEARPIC;
+        XLOWER := 0;
+        XUPPER := 81;
+        WHILE LIGHTDIS > 0 DO
+          BEGIN
+            SQREDESC := MAZE.SQREXTRA[ X4DRAW][ Y4DRAW];
+            IF MAZE.SQRETYPE[ SQREDESC] = DARK THEN
+              EXIT( DRAWMAZE)
+            ELSE
+              IF MAZE.SQRETYPE[ SQREDESC] = TRANSFER THEN
+                IF MAZE.AUX0[ SQREDESC] = MAZELEV THEN
+                  BEGIN
+                    X4DRAW := MAZE.AUX2[ SQREDESC];
+                    Y4DRAW := MAZE.AUX1[ SQREDESC]
+                  END;
+            
+            CLRPICT( XLOWER, 0, XUPPER, 79);
+            
+              (* $0679 := XLOWER
+                 $06F9 := 0
+                 $0779 := XUPPER
+                 $07F9 := 79
+                 
+                 THESE MEMORY LOCATIONS ARE ACCESSED BY DRAWLINE.
+                 
+                 WITH THESE PARAMETERS, THERE IS NO PICTURE CLEARING. *)
+            
+            WALLTYPE := LEFTVIEW( 0);
+            IF WALLTYPE <> OPEN THEN
+                DRAWLEFT
+            ELSE
+              BEGIN
+                WALLTYPE := FRWDVIEW( -1);  (* STEP LEFT ONE SQUARE *)
+                IF WALLTYPE <> OPEN THEN
+                  BEGIN
+                    DRAWFRNT( WALLTYPE, -( 2 * WALWIDTH));
+                    XLOWER := UL
+                  END;
+              END;
+            
+            WALLTYPE := RIGHVIEW( 0);
+            IF WALLTYPE <> OPEN THEN
+              DRAWRIGH
+            ELSE
+              BEGIN
+                WALLTYPE := FRWDVIEW( 1);  (* STEP RIGHT ONE SQUARE *)
+                IF WALLTYPE <> OPEN THEN
+                  BEGIN
+                    DRAWFRNT( WALLTYPE, 2 * WALWIDTH);
+                    XUPPER := LR
+                  END;
+              END;
+            
+            WALLTYPE := FRWDVIEW( 0);
+            IF WALLTYPE <> OPEN THEN
+              BEGIN
+                DRAWFRNT( WALLTYPE, 0);
+                EXIT( DRAWMAZE)
+              END;
+            
+            WALWIDTH := WALWIDTH DIV 2;
+            DOORWIDT := WALWIDTH DIV 2;
+            WALHEIGH := WALWIDTH * 2;
+            DOORFRAM := WALWIDTH DIV 4;
+            UL := UL + WALWIDTH;
+            LR := LR - WALWIDTH;
+            
+            SHFTPOS( X4DRAW, Y4DRAW, 0, 1);  (* STEP FORWARD *)
+            LIGHTDIS := LIGHTDIS - 1
+              
+          END; (* WHILE *)
+      END;  (* DRAWMAZE *)

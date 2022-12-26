@@ -1,0 +1,328 @@
+    PROCEDURE HEAL;  (* P01061F *)
+      
+        VAR
+             MVUPLIVE : INTEGER;
+             T1       : INTEGER; (* MULTIPLE USES *)
+             T2       : INTEGER; (* MULTIPLE USES *)
+             
+      
+        PROCEDURE TRYHEAL( HEALCHAN: INTEGER);  (* P010620 *)
+        
+          BEGIN
+            IF HEALCHAN > 50 THEN
+              HEALCHAN := 50;
+            IF (RANDOM MOD 100) <= HEALCHAN THEN
+              BATTLERC[ T2].A.TEMP04[ T1].STATUS := OK
+          END;
+          
+          
+        PROCEDURE HEALENMY;  (* P010621 *)
+        
+          VAR
+               ENEMYRC : TENEMY2;
+        
+          BEGIN
+            FOR T2 := 1 TO 4 DO
+              BEGIN
+                IF BATTLERC[ T2].A.ALIVECNT > 0 THEN
+                  BEGIN
+                    T1 := 0;
+                    MVUPLIVE := 0;
+                    WHILE MVUPLIVE < BATTLERC[ T2].A.ALIVECNT DO
+                      BEGIN
+                        BATTLERC[ T2].A.TEMP04[ T1] :=
+                          BATTLERC[ T2].A.TEMP04[ MVUPLIVE];
+                        MVUPLIVE := MVUPLIVE + 1;
+                        IF BATTLERC[ T2].A.TEMP04[ T1].STATUS < DEAD THEN
+                          BEGIN
+                            CASE BATTLERC[ T2].A.TEMP04[ T1].STATUS OF
+                            
+                              AFRAID:
+                               TRYHEAL( 10 * BATTLERC[ T2].B.HPREC.LEVEL);
+                               
+                              ASLEEP:
+                               TRYHEAL( 20 * BATTLERC[ T2].B.HPREC.LEVEL);
+                               
+                              PLYZE:
+                               TRYHEAL(  7 * BATTLERC[ T2].B.HPREC.LEVEL);
+                            END;
+                            
+                            BATTLERC[ T2].A.TEMP04[ T1].HPLEFT :=
+                              BATTLERC[ T2].A.TEMP04[ T1].HPLEFT +
+                              BATTLERC[ T2].B.HEALPTS;
+                            T1 := T1 + 1
+                          END
+                      END;
+                    BATTLERC[ T2].A.ALIVECNT := T1
+                  END
+              END;
+              
+            FOR T1 := 1 TO 3 DO
+              BEGIN
+                FOR T2 := T1 + 1 TO 4 DO
+                  IF (BATTLERC[ T1].A.ALIVECNT = 0) AND
+                     (BATTLERC[ T2].A.ALIVECNT > 0)    THEN
+                    BEGIN
+                      ENEMYRC := BATTLERC[ T1];
+                      BATTLERC[ T1] := BATTLERC[ T2];
+                      BATTLERC[ T2] := ENEMYRC
+                    END
+              END;
+            
+            T2 := 0;
+            FOR T1 := 1 TO 4 DO
+              IF BATTLERC[ T1].A.ALIVECNT > 0 THEN
+                T2 := T1;
+            DONEFIGH := (T2 = 0)
+          END;  (* HEALENMY *)
+          
+          
+        PROCEDURE HEALPRTY;  (* P010622 *)
+        
+          BEGIN
+            T2 := 0;
+            FOR T1 := 0 TO PARTYCNT - 1 DO
+              BEGIN
+                IF BATTLERC[ 0].A.TEMP04[ T1].STATUS < DEAD THEN
+                  BEGIN
+                    IF (RANDOM MOD 4) = 2 THEN
+                      BATTLERC[ 0].A.TEMP04[ T1].HPLEFT :=
+                        BATTLERC[ 0].A.TEMP04[ T1].HPLEFT +
+                        CHARACTR[ T1].HEALPTS -
+                        CHARACTR[ T1].LOSTXYL.POISNAMT[ 1];
+                      
+                    IF BATTLERC[ 0].A.TEMP04[ T1].HPLEFT > 
+                      CHARACTR[ T1].HPMAX THEN
+                       BATTLERC[ 0].A.TEMP04[ T1].HPLEFT :=
+                         CHARACTR[ T1].HPMAX;
+                         
+                    IF BATTLERC[ 0].A.TEMP04[ T1].HPLEFT <= 0 THEN
+                      BEGIN
+                        BATTLERC[ 0].A.TEMP04[ T1].STATUS := DEAD;
+                        BATTLERC[ 0].A.TEMP04[ T1].HPLEFT := 0;
+                        MVCURSOR( 1, 12);
+                        PRINTSTR( CHARACTR[ T1].NAME);
+                        PRINTSTR( ' JUST DIED!');
+                        PAUSE2;
+                        CLRRECT( 1, 12, 38, 1);
+                      END;
+           
+                    CASE BATTLERC[ 0].A.TEMP04[ T1].STATUS OF
+                      ASLEEP:  TRYHEAL( 10 * CHARACTR[ T1].CHARLEV);
+                      AFRAID:  TRYHEAL(  5 * CHARACTR[ T1].CHARLEV);
+                    END;
+                  END
+                END;
+                
+              FOR T1 := 0 TO PARTYCNT - 1 DO
+                BEGIN
+                  CHARACTR[ T1].HPLEFT := BATTLERC[ 0].A.TEMP04[ T1].HPLEFT;
+                  CHARACTR[ T1].STATUS := BATTLERC[ 0].A.TEMP04[ T1].STATUS
+                END
+          END;  (* HEALPRTY *)
+          
+          
+        PROCEDURE HEALHEAR;  (* P010623 *)
+        
+        
+          PROCEDURE DECINAUD( GROUPI:   INTEGER;  (* P01061B *)
+                              ALIVECNT: INTEGER);
+          
+            VAR
+                 X : INTEGER;
+          
+            BEGIN
+              FOR X := 0 TO ALIVECNT - 1 DO
+                IF BATTLERC[ GROUPI].A.TEMP04[ ALIVECNT].INAUDCNT > 0 THEN
+                   BATTLERC[ GROUPI].A.TEMP04[ ALIVECNT].INAUDCNT :=
+                   BATTLERC[ GROUPI].A.TEMP04[ ALIVECNT].INAUDCNT - 1
+            END;  (* DECINAUD *)
+            
+            
+          BEGIN (* HEALHEAR *)
+            DECINAUD( 0, PARTYCNT);
+            DECINAUD( 1, BATTLERC[ 1].A.ALIVECNT);
+            DECINAUD( 2, BATTLERC[ 2].A.ALIVECNT);
+            DECINAUD( 3, BATTLERC[ 3].A.ALIVECNT)
+          END; (* HEALHEAR *)
+          
+          
+        BEGIN (* HEAL *)
+          HEALENMY;
+          HEALPRTY;
+          HEALHEAR
+        END;
+      
+      
+      PROCEDURE DSPENEMY;  (* P010625 *)
+      
+        VAR
+             ENMYGROK : INTEGER;
+             ENMYGRI  : INTEGER;
+             ENMYIND  : INTEGER;
+      
+        BEGIN
+          ENSTRENG := 0;
+          FOR ENMYGRI := 1 TO 4 DO
+            BEGIN
+              CLRRECT( 13, ENMYGRI, 26, 1);
+              IF BATTLERC[ ENMYGRI].A.ALIVECNT > 0 THEN
+                BEGIN
+                  ENMYGROK := 0;
+                  FOR ENMYIND := 0 TO BATTLERC[ ENMYGRI].A.ALIVECNT - 1 DO
+                    IF BATTLERC[ ENMYGRI].A.TEMP04[ ENMYIND].STATUS = OK THEN
+                      ENMYGROK := ENMYGROK + 1;
+                  ENSTRENG := ENSTRENG + ENMYGROK *
+                                         (BATTLERC[ ENMYGRI].B.HPREC.LEVEL);
+                  MVCURSOR( 13, ENMYGRI);
+                  PRINTNUM( ENMYGRI, 1);
+                  PRINTSTR( ') ');
+                  PRINTNUM( BATTLERC[ ENMYGRI].A.ALIVECNT, 1);
+                  PRINTSTR( ' ');
+                  IF BATTLERC[ ENMYGRI].A.IDENTIFI THEN
+                    IF BATTLERC[ ENMYGRI].A.ALIVECNT > 1 THEN
+                      PRINTSTR( BATTLERC[ ENMYGRI].B.NAMES)
+                    ELSE
+                      PRINTSTR( BATTLERC[ ENMYGRI].B.NAME)
+                  ELSE
+                    IF BATTLERC[ ENMYGRI].A.ALIVECNT > 1 THEN
+                      PRINTSTR( BATTLERC[ ENMYGRI].B.NAMEUNKS)
+                    ELSE
+                      PRINTSTR( BATTLERC[ ENMYGRI].B.NAMEUNK);
+                  PRINTSTR( ' (');
+                  PRINTNUM( ENMYGROK, 1);
+                  PRINTCHR( ')')
+                END
+            END
+        END;
+        
+        
+      PROCEDURE DSPPARTY;  (* P010626 *)
+      
+        VAR
+             UNUSEDXX : INTEGER;
+             TEMPXYZ  : INTEGER;  (* MULTIPLE USES *)
+             PARTYI   : INTEGER;
+             STATUSOK : BOOLEAN;
+      
+      
+        PROCEDURE PRSTATUS;  (* P010627 *)
+        
+          BEGIN
+            STATUSOK :=  STATUSOK OR (CHARACTR[ PARTYI].STATUS < DEAD);
+            IF CHARACTR[ PARTYI].STATUS = OK THEN
+              IF CHARACTR[ PARTYI].LOSTXYL.POISNAMT[ 1] > 0 THEN
+                PRINTSTR( 'POISON')
+              ELSE
+                PRINTNUM( CHARACTR[ PARTYI].HPMAX, 4)
+            ELSE
+              PRINTSTR( SCNTOC.STATUS[ CHARACTR[ PARTYI].STATUS])
+          END; (* PRSTATUS *)
+          
+          
+        PROCEDURE SWAP2CHR( X: INTEGER;  (* P010628 *)
+                            Y: INTEGER);
+        
+          VAR
+               TEMPCHAR : TCHAR;
+               TEMPX    : BOOLEAN;
+        
+          BEGIN
+            TEMPCHAR := CHARACTR[ X];
+            CHARACTR[ X] := CHARACTR[ Y];
+            CHARACTR[ Y] := TEMPCHAR;
+            
+            LLBASE04 := CHARDISK[ X];
+            CHARDISK[ X] := CHARDISK[ Y];
+            CHARDISK[ Y] := LLBASE04;
+            
+            TEMPX := DRAINED[ X];
+            DRAINED[ X] := DRAINED[ Y];
+            DRAINED[ Y] := TEMPX;
+            
+            BATTLERC[ 0].A.TEMP04[ 6] := BATTLERC[ 0].A.TEMP04[ X];
+            BATTLERC[ 0].A.TEMP04[ X] := BATTLERC[ 0].A.TEMP04[ Y];
+            BATTLERC[ 0].A.TEMP04[ Y] := BATTLERC[ 0].A.TEMP04[ 6]
+          
+          END; (* SWAP2CHR *)
+        
+        
+        BEGIN (* DSPPARTY *)
+          FOR PARTYI := 0 TO PARTYCNT - 2 DO
+            FOR TEMPXYZ := PARTYI + 1 TO PARTYCNT - 1 DO
+              IF PREBATOR[ PARTYI] = CHARDISK[ TEMPXYZ] THEN
+                SWAP2CHR( PARTYI, TEMPXYZ);
+          
+          FOR PARTYI := 0 TO PARTYCNT - 2 DO
+            FOR TEMPXYZ := PARTYI + 1 TO PARTYCNT - 1 DO
+              IF CHARACTR[ PARTYI].STATUS > CHARACTR[ TEMPXYZ].STATUS THEN
+                SWAP2CHR( PARTYI, TEMPXYZ);
+                
+          BASE12.MYSTRENG := 0;
+          BATTLERC[ 0].A.ALIVECNT := 0;
+          FOR PARTYI := 0 TO PARTYCNT - 1 DO
+            BEGIN
+              IF CHARACTR[ PARTYI].STATUS = OK THEN
+                BASE12.MYSTRENG := BASE12.MYSTRENG +
+                                    CHARACTR[ PARTYI].CHARLEV;
+              IF CHARACTR[ PARTYI].STATUS < DEAD THEN
+                BATTLERC[ 0].A.ALIVECNT := BATTLERC[ 0].A.ALIVECNT + 1
+            END;
+            
+          CLRRECT( 1, 17, 38, 6);
+          
+          STATUSOK := FALSE;
+          FOR PARTYI := 0 TO PARTYCNT - 1 DO
+            BEGIN
+              IF (RANDOM MOD 99) < (CHARACTR[ PARTYI].ATTRIB[ IQ] +
+                                    CHARACTR[ PARTYI].ATTRIB[ PIETY] +
+                                    CHARACTR[ PARTYI].CHARLEV)  THEN
+                BATTLERC[ (RANDOM MOD 4) + 1].A.IDENTIFI := TRUE;
+              MVCURSOR( 1, 17 + PARTYI);
+              PRINTNUM( PARTYI + 1, 1);
+              PRINTSTR( ' ');
+              PRINTSTR( CHARACTR[ PARTYI].NAME);
+              MVCURSOR( 19, 17 + PARTYI);
+              PRINTSTR( COPY( SCNTOC.ALIGN[ CHARACTR[ PARTYI].ALIGN], 1, 1));
+              PRINTCHR( '-');
+              PRINTSTR( COPY( SCNTOC.CLASS[ CHARACTR[ PARTYI].CLASS], 1, 3));
+              LLBASE04 := CHARACTR[ PARTYI].ARMORCL -
+                        ACMOD2 -
+                        BATTLERC[ 0].A.TEMP04[ PARTYI].ARMORCL;
+              IF LLBASE04 >= 0 THEN
+                PRINTNUM( LLBASE04, 3)
+              ELSE
+                IF LLBASE04 > - 10 THEN
+                  BEGIN
+                    PRINTSTR( ' -');
+                    PRINTNUM( ABS( LLBASE04), 1)
+                  END
+                ELSE
+                  PRINTSTR( ' LO');
+              PRINTNUM( CHARACTR[ PARTYI].HPLEFT, 5);
+              TEMPXYZ := CHARACTR[ PARTYI].HEALPTS -
+                         CHARACTR[ PARTYI].LOSTXYL.POISNAMT[ 1];
+              IF TEMPXYZ = 0 THEN
+                PRINTCHR( ' ')
+              ELSE IF TEMPXYZ < 0 THEN
+                PRINTCHR( '-')
+              ELSE
+                PRINTCHR( '+');
+              PRSTATUS;
+            END;
+          IF NOT STATUSOK THEN
+            EXIT( COMBAT);
+        END; (* DSPPARTY *)
+        
+        
+      BEGIN (* CUTIL *)
+        HEAL;
+        DSPPARTY;
+        DSPENEMY;
+        IF DONEFIGH THEN
+          EXIT( CUTIL);
+        ENATTACK;
+        CACTION;
+        SURPRISE := 0
+      END;  (* CUTIL *)
+  

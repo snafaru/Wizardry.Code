@@ -1,0 +1,359 @@
+
+    PROCEDURE CEMETARY;  (* P010215 *)
+    
+      VAR
+           TWO : INTEGER;
+           
+           
+      PROCEDURE TOMBSTON( CHARI: INTEGER);  (* P010216 *)
+      
+        VAR
+            TOMBY : INTEGER;
+            TOMBX : INTEGER;
+        
+        
+        PROCEDURE DSPTOMBL( TOMBCHRS: STRING);  (* P010217 *)
+          
+          BEGIN
+            MVCURSOR( TOMBX, TOMBY);
+            PRINTSTR( TOMBCHRS);
+            TOMBY := TOMBY + 1
+          END;
+          
+          
+        BEGIN  (* TOMBSTON *)
+          TOMBX := 20 * (CHARI MOD 2);
+          TOMBY :=  6 * (CHARI DIV 2);
+          UNITREAD( DRIVE1, CHARSET, BLOCKSZ, SCNTOCBL + 2, 0);
+          MVCURSOR( TOMBX, TOMBY);
+          
+          DSPTOMBL( '+,-.');  (*  CHR(43)  CHR(44)  CHR(45)  CHR(46)  *)
+          DSPTOMBL( '/012');  (*  CHR(47)  CHR(48)  CHR(49)  CHR(50)  *)  
+          DSPTOMBL( '3456');  (*  CHR(51)  CHR(52)  CHR(53)  CHR(54)  *)
+          DSPTOMBL( '789:');  (*  CHR(55)  CHR(56)  CHR(57)  CHR(58)  *)
+          DSPTOMBL( ';<=>');  (*  CHR(59)  CHR(60)  CHR(61)  CHR(62)  *)
+          DSPTOMBL( '?XYZ');  (*  CHR(63)  CHR(88)  CHR(89)  CHR(90)  *)
+                              (* NOTE LAST LINE JUMPS TO XYZ *)
+                              
+          UNITREAD( DRIVE1, CHARSET, BLOCKSZ, SCNTOCBL + 1, 0);
+          MVCURSOR( TOMBX + 1, TOMBY - 2);
+          PRINTNUM( CHARACTR[ CHARI].AGE DIV 52, 2);
+          MVCURSOR( TOMBX + 4, TOMBY - 4);
+          PRINTSTR( CHARACTR[ CHARI].NAME)
+        END;  (* TOMBSTON *)
+        
+        
+      PROCEDURE BADSTUFF;  (* P010218 *)
+      
+      
+        PROCEDURE BREAKPOS;  (* P010219 *)
+        
+          VAR
+               X     : INTEGER;
+               POSSX : INTEGER;
+        
+          BEGIN
+            WITH CHARACTR[ LLBASE04] DO
+              BEGIN
+                FOR POSSX := 1 TO POSS.POSSCNT DO
+                  IF NOT POSS.POSSESS[ POSSX].CURSED THEN
+                    IF (RANDOM MOD 21 > ATTRIB[ LUCK]) THEN
+                      POSS.POSSESS[ POSSX].EQINDEX := 0;
+                X := 0;
+                FOR POSSX := 1 TO POSS.POSSCNT DO
+                  IF POSS.POSSESS[ POSSX].EQINDEX <> 0 THEN
+                    BEGIN
+                      X := X + 1;
+                      POSS.POSSESS[ X] := POSS.POSSESS[ POSSX]
+                    END;
+                POSS.POSSCNT := X
+            END
+          END;
+          
+          
+        BEGIN (* BADSTUFF *)
+          TWO := 2;
+          FOR LLBASE04 := 0 TO PARTYCNT - 1 DO
+            BEGIN
+              IF CHARACTR[ LLBASE04].STATUS <> LOST THEN
+                BEGIN
+                  WITH CHARACTR[ LLBASE04] DO
+                    BEGIN
+                      IF STATUS < DEAD THEN
+                        STATUS := DEAD;
+                      INMAZE := FALSE;
+                      DIVLONG( GOLD, TWO);
+                      BREAKPOS;
+                      IF (RANDOM MOD 50) < MAZELEV THEN
+                        BEGIN
+                          LOSTXYL.LOCATION[ 1] := -1;
+                          LOSTXYL.LOCATION[ 2] := -1;
+                          LOSTXYL.LOCATION[ 3] := -1
+                        END
+                      ELSE
+                        BEGIN
+                          LOSTXYL.LOCATION[ 1] := MAZEX;
+                          LOSTXYL.LOCATION[ 2] := MAZEY;
+                          LOSTXYL.LOCATION[ 3] := MAZELEV
+                        END;
+                      MOVELEFT( CHARACTR[ LLBASE04],
+                                IOCACHE[ GETRECW( ZCHAR,
+                                                  CHARDISK[ LLBASE04],
+                                                  SIZEOF( TCHAR))],
+                                SIZEOF( TCHAR))
+                    END
+                END
+            END;  (* END FOR *)
+            
+          MOVELEFT( IOCACHE[ GETREC(  ZZERO, 0, SIZEOF( TSCNTOC))],
+                    SCNTOC,
+                    SIZEOF( TSCNTOC))
+        END;
+        
+        
+      BEGIN (* CEMETARY *)
+        BADSTUFF;
+        CLRRECT( 0, 0, 40, 24);
+        GRAPHICS;
+        FOR LLBASE04 := 0 TO PARTYCNT - 1 DO
+          TOMBSTON( LLBASE04);
+        UNITREAD( DRIVE1, CHARSET, BLOCKSZ, SCNTOCBL + 2, 0);
+        MVCURSOR( 0, 19);
+        PRINTCHR( CHR(33));         (* UPPER LEFT CORNER  *)
+        FOR LLBASE04 := 1 TO 38 DO
+          PRINTCHR( CHR(34));       (* HORIZONTAL LINE    *)
+        PRINTCHR( CHR(35));         (* UPPER RIGHT CORNER *)
+        MVCURSOR( 0, 20);
+        PRINTCHR( CHR(36));         (* VERTICAL BAR       *)
+        MVCURSOR( 39, 20);
+        PRINTCHR( CHR(36));
+        MVCURSOR( 0, 21);
+        PRINTCHR( CHR(39));
+        FOR LLBASE04 := 1 TO 38 DO
+          PRINTCHR( CHR(34));
+        PRINTCHR( CHR(40));
+        MVCURSOR( 0, 22);
+        PRINTCHR( CHR(36));
+        MVCURSOR( 39, 22);
+        PRINTCHR( CHR(36));
+        MVCURSOR( 0, 23);
+        PRINTCHR( CHR(37));
+        FOR LLBASE04 := 1 TO 38 DO
+          PRINTCHR( CHR(34));
+        PRINTCHR( CHR(38));
+        UNITREAD( DRIVE1, CHARSET, BLOCKSZ, SCNTOCBL + 1, 0);
+        MVCURSOR( 1, 20);
+        PRINTSTR( 'YOUR ENTIRE PARTY HAS BEEN SLAUGHTERED');
+        MVCURSOR( 1, 22);
+        PRINTSTR( '  PRESS RETURN TO LEAVE THE CEMETERY  ');
+        PARTYCNT := 0;
+        REPEAT
+          GETKEY
+        UNTIL INCHAR = CHR( CRETURN);
+        WRITE( CHR( 12));
+        GOTOXY( 41, 0);
+        LLBASE04 := -2;
+        XGOTO := XSCNMSG;
+        EXIT( SHOPS)
+      END;
+  
+  
+    PROCEDURE EDGETOWN;  (* P01021A *)
+    
+    
+      PROCEDURE ENTMAZE;  (* P01021B *)
+      
+        VAR
+             X : INTEGER;
+      
+        BEGIN
+          GOTOXY( 0, 13);
+          WRITELN( CHR(11));
+          WRITELN( 'ENTERING' :24);
+          WRITELN( SCNTOC.GAMENAME : 20 + LENGTH( SCNTOC.GAMENAME) DIV 2);
+          GOTOXY( 41, 0);
+          XGOTO := XNEWMAZE;
+          MAZEX    :=  0;
+          MAZEY    :=  0;
+          MAZELEV  := -1;
+          DIRECTIO :=  0;
+          EXIT( SHOPS)
+        END;
+        
+        
+      PROCEDURE UPDCHARS;  (* P01021C *)
+      
+        VAR
+             X : INTEGER;
+      
+        BEGIN
+          FOR X := 0 TO PARTYCNT - 1 DO
+            BEGIN
+              CHARACTR[ X].INMAZE := FALSE;
+              MOVELEFT( CHARACTR[ X],
+                        IOCACHE[ GETRECW( ZCHAR,
+                                          CHARDISK[ X],
+                                          SIZEOF( TCHAR))],
+                        SIZEOF( TCHAR));
+            END;
+          PARTYCNT := 0;
+          MOVELEFT( IOCACHE[ GETREC( ZZERO, 0, SIZEOF( TSCNTOC))],
+                    X,
+                    2);
+          EXIT( SHOPS)
+        END;  (* UPDCHARS *)
+        
+        
+      BEGIN (* EDGETOWN *)
+        GOTOXY( 0, 13);
+        IF PARTYCNT = 0 THEN
+          BEGIN
+            WRITE( CHR( 11));
+            WRITELN( 'YOU MAY GO TO THE T)RAINING GROUNDS,');
+            WRITELN( 'RETURN TO THE C)ASTLE, OR L)EAVE THE');
+            WRITELN( 'GAME.') 
+          END
+        ELSE
+          BEGIN
+            WRITE( CHR( 11));
+            WRITELN( 'YOU MAY ENTER THE M)AZE, THE T)RAINING');
+            WRITELN( 'GROUNDS, C)ASTLE,  OR L)EAVE THE GAME.')
+          END;
+        REPEAT
+          GOTOXY( 41, 0);
+          GETKEY
+        UNTIL (INCHAR = 'T') OR (INCHAR = 'C') OR (INCHAR = 'L') OR
+              ((INCHAR = 'M') AND (PARTYCNT > 0));
+          
+        IF INCHAR = 'M' THEN
+          ENTMAZE
+        ELSE IF INCHAR = 'T' THEN
+          BEGIN
+            XGOTO := XTRAININ;
+            UPDCHARS
+          END
+        ELSE IF INCHAR = 'L' THEN
+          BEGIN
+            XGOTO := XDONE;
+            UPDCHARS
+          END
+        ELSE
+          BEGIN
+            XGOTO := XCASTLE;
+            EXIT( SHOPS)
+          END
+      END;
+  
+  
+    PROCEDURE CHK4WIN;  (* P01021D *)
+    
+      VAR
+          POSSI    : INTEGER;   (* MULTIPLE USES *)
+          CHARX    : INTEGER;
+          THISCHAR : TCHAR;
+          WONGAME  : BOOLEAN;
+          
+          
+      PROCEDURE CONGRATS;  (* P01021E *)
+    
+        VAR
+             EXPBONUS : TWIZLONG;
+             AWARDOVR : PACKED ARRAY[ 0..15] OF BOOLEAN;
+      
+        BEGIN
+          EXPBONUS.HIGH := 0;
+          EXPBONUS.LOW  := 0;
+          EXPBONUS.MID  := 25;
+          FOR CHARX := 0 TO PARTYCNT - 1 DO
+            BEGIN
+              CHARACTR[ CHARX].POSS.POSSCNT := 0;
+              CHARACTR[ CHARX].GOLD.HIGH := 0;
+              CHARACTR[ CHARX].GOLD.MID  := 0;
+              ADDLONGS( CHARACTR[ CHARX].EXP, EXPBONUS);
+              MOVELEFT( CHARACTR[ CHARX].LOSTXYL.AWARDS[ 4], AWARDOVR, 2);
+              AWARDOVR[ 0] := TRUE;
+              MOVELEFT( AWARDOVR, CHARACTR[ CHARX].LOSTXYL.AWARDS[ 4], 2)
+            END;
+          WRITE( CHR( 12));
+          WRITELN( '*** CONGRATULATIONS ***' : 32);
+          TEXTMODE;
+          WRITELN;
+          WRITELN( 'YOU HAVE COMPLETED YOUR QUEST AND THE');
+          WRITELN( 'AMULET IS NOW BACK IN THE HANDS OF');
+          WRITELN( 'YOUR BENIFICENT RULER, TREBOR.');
+          WRITELN;
+          WRITELN( 'IN RETURN FOR THIS, HE GRANTS YOU A');
+          WRITELN( 'BOON OF 250,000 EXPERIENCE POINTS');
+          WRITELN( 'EACH!');
+          WRITELN;
+          WRITELN( 'ADDITIONALLY, YOU WILL BE INITIATED');
+          WRITELN( 'INTO THE OVERLORD''S HONOR GUARD AND');
+          WRITELN( 'THUS WILL BE ENTITLED TO WEAR THE');
+          WRITELN( 'CHEVRON (>) OF THIS RANK EVERMORE.');
+          WRITELN;
+          WRITELN( 'HOWEVER, YOU MUST GIVE UP ALL YOUR');
+          WRITELN( 'EQUIPMENT AND MOST OF YOUR MONEY TO');
+          WRITELN( 'PAY FOR YOUR INITIATION.');
+          WRITELN;
+          WRITELN( 'PRESS [RETURN], HONORED ONES');
+          GOTOXY( 41, 0);
+          READLN( INPUT);
+          WRITE( CHR( 12))
+        END;
+        
+        
+      BEGIN (* CHK4WIN *)
+        WONGAME := FALSE;
+        FOR CHARX := 0 TO PARTYCNT -1 DO
+          BEGIN
+            FOR POSSI := 1 TO CHARACTR[ CHARX].POSS.POSSCNT DO
+              IF CHARACTR[ CHARX].POSS.POSSESS[ POSSI].EQINDEX = 94 THEN
+                WONGAME := TRUE;
+            CHARACTR[ CHARX].LOSTXYL.LOCATION[ 1] := 0;
+            CHARACTR[ CHARX].LOSTXYL.LOCATION[ 2] := 0;
+            CHARACTR[ CHARX].LOSTXYL.LOCATION[ 3] := 0
+          END;
+        IF WONGAME THEN
+          CONGRATS;
+        FOR CHARX := 0 TO PARTYCNT - 1 DO
+          BEGIN
+            CHARACTR[ CHARX].INMAZE :=
+              CHARACTR[ CHARX].STATUS = OK;
+            MOVELEFT( CHARACTR[ CHARX],
+                      IOCACHE[ GETRECW( ZCHAR,
+                                        CHARDISK[ CHARX],
+                                        SIZEOF( TCHAR))],
+                      SIZEOF( TCHAR))
+          END;
+          
+        MOVELEFT( IOCACHE[ GETREC( ZZERO, 0, SIZEOF( TSCNTOC))],
+                  CHARX,
+                  2);
+        CHARX := 0;
+        POSSI := 0;
+        WHILE CHARX < PARTYCNT DO
+          BEGIN
+            CHARACTR[ POSSI] := CHARACTR[ CHARX];
+            CHARDISK[ POSSI] := CHARDISK[ CHARX];
+            IF CHARACTR[ POSSI].STATUS = OK THEN
+              POSSI := POSSI + 1;
+            CHARX := CHARX + 1
+          END;
+        PARTYCNT := POSSI;
+        XGOTO := XCASTLE;
+        EXIT( SHOPS)
+    END;  (* CHK4WIN *)
+  
+  
+    BEGIN (* SHOPS *)
+    
+      CASE XGOTO OF
+        XCEMETRY:  CEMETARY;
+           XCANT:  CANT;
+         XBOLTAC:  BOLTAC;
+        XCHK4WIN:  CHK4WIN;
+        XEDGTOWN:  EDGETOWN;
+      END;
+      
+    END;  (* SHOPS *)
+  

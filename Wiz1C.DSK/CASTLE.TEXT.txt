@@ -1,0 +1,310 @@
+  SEGMENT PROCEDURE CASTLE;     (* P010A01 *)
+  
+    TYPE
+         BYTE = PACKED ARRAY[ 0..1] OF 0..255;
+         
+    VAR
+         CPCALLED : RECORD CASE INTEGER OF  (* COPY PROTECTION CALLED *)
+           1: (I: INTEGER);
+           2: (P: ^BYTE);
+         END;
+      
+      
+    PROCEDURE GETPASS( VAR PASSWORD: STRING);  (* P010A02 *)
+                        
+      VAR
+           UNUSEDXX : INTEGER;
+           RANDX    : INTEGER;
+           CHRCNT   : INTEGER;
+                        
+      BEGIN
+        CHRCNT := 0;
+        REPEAT
+          GETKEY;
+          IF INCHAR <> CHR( CRETURN) THEN
+            IF CHRCNT < 15 THEN
+              BEGIN
+                FOR RANDX := 0 TO (RANDOM MOD 2) DO
+                  WRITE( CHR( 88));
+                CHRCNT := CHRCNT + 1;
+                PASSWORD[ CHRCNT] := INCHAR
+              END
+            ELSE
+              WRITE( CHR(7))
+        UNTIL INCHAR = CHR( CRETURN);
+        WRITELN;
+        PASSWORD[ 0] := CHR( CHRCNT)
+      END;  (* GETPASS *)
+      
+      
+    PROCEDURE CHARINFO( CHARX: INTEGER);  (* P010A03 *)
+    
+      BEGIN
+        GOTOXY( 0, 5 + CHARX);
+        WRITE( CHR( 29));      (* ??? *)
+        WRITE( (CHARX + 1): 2);
+        WRITE( ' ');
+        WRITE( CHARACTR[ CHARX].NAME);
+        GOTOXY( 19, 5 + CHARX);
+        WRITE( COPY( SCNTOC.ALIGN[ CHARACTR[ CHARX].ALIGN], 1, 1));
+        WRITE( '-');
+        WRITE( COPY( SCNTOC.CLASS[ CHARACTR[ CHARX].CLASS], 1, 3));
+        WRITE( ' ');
+        IF CHARACTR[ CHARX].ARMORCL > - 10 THEN
+          WRITE( CHARACTR[ CHARX].ARMORCL :2)
+        ELSE
+          WRITE( 'LO');
+        WRITE( CHARACTR[ CHARX].HPLEFT :5);
+        WRITE( ' ');
+        IF CHARACTR[ CHARX].STATUS = OK THEN
+          IF CHARACTR[ CHARX].LOSTXYL.POISNAMT[ 1] <> 0 THEN
+            WRITELN( 'POISON')
+          ELSE
+            WRITELN( CHARACTR[ CHARX].HPMAX :4)
+        ELSE
+          WRITELN( SCNTOC.STATUS[ CHARACTR[ CHARX].STATUS])
+      END;
+      
+      
+    PROCEDURE DSPTITLE( TITLESTR: STRING); (* P010A04 *)
+    
+      BEGIN
+        IF CPCALLED.P^[ 0] <> 10 THEN
+          MVCURSOR( 70, 0);  (* CRASH AND BURN *)
+        GOTOXY( 0, 1);
+        WRITE( '! CASTLE');
+        WRITE( TITLESTR :30);
+        WRITE( ' !')
+      END;
+      
+      
+    PROCEDURE DSPPARTY( TITLE : STRING);  (* P010A05 *)
+    
+      VAR
+           CHARX : INTEGER;
+    
+      BEGIN
+        GOTOXY( 0, 0);
+        WRITELN( '+--------------------------------------+');
+        DSPTITLE( TITLE);
+        WRITELN;
+        WRITELN( '+----------- CURRENT PARTY: -----------+');
+        WRITELN;
+        WRITELN( ' # CHARACTER NAME  CLASS AC HITS STATUS' );
+        
+        FOR CHARX := 0 TO 5 DO
+          IF CHARX < PARTYCNT THEN
+            CHARINFO( CHARX)
+          ELSE
+            WRITELN( CHR( 29));
+        WRITELN( '+--------------------------------------+');
+        WRITE( CHR( 11))
+      END;  (* DSPPARTY *)
+      
+      
+    PROCEDURE GILGAMSH;  (*  P010A06 *)
+    
+      VAR
+           PRTYALGN : TALIGN;
+    
+    
+      PROCEDURE GETALIGN;  (* P010A07 *)
+      
+        BEGIN
+          PRTYALGN := NEUTRAL;
+          FOR LLBASE04 := 0 TO PARTYCNT - 1 DO
+            IF CHARACTR[ LLBASE04].ALIGN <> NEUTRAL THEN
+              PRTYALGN := CHARACTR[ LLBASE04].ALIGN
+        END;  (* GETALIGN *)
+        
+        
+      PROCEDURE GILGMENU;  (* P010A08 *)
+      
+        VAR
+             UNUSED : INTEGER;
+      
+      
+        BEGIN (* P010A08 *)
+          GOTOXY( 0, 13);
+          WRITE( CHR( 11));
+          WRITE( 'YOU MAY ');
+          IF PARTYCNT < 6 THEN
+            BEGIN
+              WRITE( 'A)DD A MEMBER');
+              IF PARTYCNT = 0 THEN
+                WRITELN
+              ELSE
+                WRITELN( ',');
+              WRITE( ' ' :8);
+            END;
+          IF PARTYCNT > 0 THEN
+            BEGIN
+              WRITELN( 'R)EMOVE A MEMBER,');
+              WRITE( ' ' :8);
+              WRITELN( '#) SEE A MEMBER,')
+            END
+          ELSE
+            BEGIN
+              WRITELN( CHR( 29));
+              WRITELN( CHR( 29))
+            END;
+          WRITELN;
+          WRITELN( 'OR PRESS [RETURN] TO LEAVE');
+          WRITE( CHR(11))
+        END;  (* P010A08 *)
+        
+        
+      PROCEDURE ADDPARTY;  (* P010A09 *)
+      
+        VAR
+             CHARI    : INTEGER;
+             CHARNAME : STRING;  (* MULTIPLE USES *)
+             
+
+        PROCEDURE EXITADDP( EXITSTR: STRING);  (* P010A09 *)
+        
+          BEGIN
+            CENTSTR( EXITSTR);
+            EXIT( ADDPARTY)
+          END;  (* EXITADDP *)
+          
+          
+        BEGIN (* ADDPARTY *)
+          GOTOXY( 0, 19);
+          WRITE( 'WHO WILL JOIN ? >');
+          GETLINE( CHARNAME);
+          IF (CHARNAME = '') OR (LENGTH( CHARNAME) > 15) THEN
+            EXIT( ADDPARTY);
+          CHARI := 0;
+          MOVELEFT( IOCACHE[ GETREC( ZCHAR, CHARI, SIZEOF( TCHAR))],
+                    CHARACTR[ PARTYCNT],
+                    SIZEOF( TCHAR));
+          WHILE (CHARI < SCNTOC.RECPERDK[ ZCHAR]) AND
+                ( (CHARNAME <> CHARACTR[ PARTYCNT].NAME) OR
+                  (CHARACTR[ PARTYCNT].STATUS = LOST) ) DO
+            BEGIN
+              CHARI := CHARI + 1;
+              MOVELEFT( IOCACHE[ GETREC( ZCHAR, CHARI, SIZEOF( TCHAR))],
+                        CHARACTR[ PARTYCNT],
+                        SIZEOF( TCHAR))
+            END;
+          IF CHARI = SCNTOC.RECPERDK[ ZCHAR] THEN
+            EXITADDP( '** WHO? **')
+          ELSE
+            IF CHARACTR[ PARTYCNT].INMAZE OR
+               (CHARACTR[ PARTYCNT].LOSTXYL.LOCATION[ 3] <> 0) THEN
+              EXITADDP( '** OUT **')
+            ELSE
+              IF (PRTYALGN <> NEUTRAL) THEN
+                IF (CHARACTR[ PARTYCNT].ALIGN <> NEUTRAL) THEN
+                  IF (PRTYALGN <> CHARACTR[ PARTYCNT].ALIGN) THEN
+                    EXITADDP( '** BAD ALIGNMENT **');
+          GOTOXY( 0, 20);
+          WRITE( 'ENTER PASSWORD  >');
+          GETPASS(  CHARNAME);
+          GOTOXY( 0, 21);
+          IF CHARNAME <> CHARACTR[ PARTYCNT].PASSWORD THEN
+            EXITADDP( '** THATS NOT IT **');
+          CHARDISK[ PARTYCNT] := CHARI;
+          CHARACTR[ PARTYCNT].INMAZE := TRUE;
+          MOVELEFT( CHARACTR[ PARTYCNT],
+                    IOCACHE[ GETRECW( ZCHAR, CHARI, SIZEOF( TCHAR))],
+                    SIZEOF( TCHAR));
+          IF IORESULT > 0 THEN
+            EXITADDP( '** WRITE-PROTECT CHEAT! **');
+          PARTYCNT := PARTYCNT + 1;
+          GETALIGN;
+          MOVELEFT( IOCACHE[ GETREC( ZZERO, 0, SIZEOF( TSCNTOC))],
+                    SCNTOC,
+                    SIZEOF( TSCNTOC));
+          CHARINFO( PARTYCNT - 1);
+        END;  (* ADDPARTY *)
+        
+        
+      PROCEDURE REMOVE;  (* P010A0B *)
+      
+        VAR
+             CHARX : INTEGER;
+             CHARI : INTEGER;
+      
+        BEGIN
+          CHARI := GETCHARX( FALSE, 'WHO WILL LEAVE');
+          IF (CHARI < 0) OR (CHARI = PARTYCNT) THEN
+            EXIT( REMOVE);
+          CHARACTR[ CHARI].INMAZE := FALSE;
+          MOVELEFT( CHARACTR[ CHARI],
+                    IOCACHE[ GETRECW( ZCHAR,
+                                      CHARDISK[ CHARI],
+                                      SIZEOF( TCHAR))],
+                    SIZEOF( TCHAR));
+          IF CHARI <> (PARTYCNT - 1) THEN
+            FOR CHARX := (CHARI + 1) TO (PARTYCNT - 1) DO
+              BEGIN
+                CHARACTR[ CHARX - 1] := CHARACTR[ CHARX];
+                CHARDISK[ CHARX - 1] := CHARDISK[ CHARX]
+              END;
+          PARTYCNT := PARTYCNT - 1;
+          GETALIGN;
+          DSPPARTY( 'TAVERN')
+        END;   (* REMOVE *)
+        
+        
+      PROCEDURE EXITCASL;  (* P010A0C *)
+      
+        VAR
+             UNUSEDX : INTEGER;
+             
+        BEGIN
+          LLBASE04 := ORD( INCHAR) - ORD( '1');
+          IF (LLBASE04 < 0) OR (LLBASE04 >= PARTYCNT) THEN
+            EXIT( EXITCASL);
+          MAZELEV := -1;
+          XGOTO := XINSPECT;
+          EXIT( CASTLE)
+        END;
+        
+        
+      BEGIN  (* GILGAMSH *)
+        GETALIGN;
+        DSPTITLE( 'TAVERN');
+        REPEAT
+          UNITCLEAR( 1);
+          GILGMENU;
+          GOTOXY( 41, 0);
+          GETKEY;
+          IF INCHAR = CHR( CRETURN) THEN
+            EXIT( GILGAMSH);
+          CASE INCHAR OF
+            'A':  IF PARTYCNT < 6 THEN
+                    ADDPARTY;
+                   
+            'R':  IF PARTYCNT > 0 THEN
+                    REMOVE;
+                   
+            '1', '2', '3', '4', '5', '6':
+                  IF PARTYCNT > 0 THEN
+                    EXITCASL;
+          END
+        UNTIL FALSE
+      END;   (* GILGAMSH *)
+      
+      
+    PROCEDURE GOBOLTAC;  (* P010A0D *)
+    
+      BEGIN
+        DSPTITLE( 'SHOP');
+        XGOTO := XBOLTAC;
+        XGOTO2 := XBOLTAC;
+        EXIT( CASTLE)
+      END;
+      
+      
+    PROCEDURE GOTEMPLE;  (* P010A0E *)
+    
+      BEGIN
+        DSPTITLE( 'TEMPLE');
+        XGOTO := XCANT;
+        XGOTO2 := XBOLTAC;
+        EXIT( CASTLE)
+      END;
+    

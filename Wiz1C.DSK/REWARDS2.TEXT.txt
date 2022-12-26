@@ -1,0 +1,230 @@
+    
+  PROCEDURE GIVEEXP;  (* P010D1F *)
+  
+    VAR
+         WEPSTY3I : INTEGER;
+         SPPCI    : INTEGER;
+         BATRESLT : TBATRSLT;
+         CHARXXX  : INTEGER;  (* MULTIPLE USES *)
+         KILLEXP  : TWIZLONG; (* MULTIPLE USES *)
+                  
+                  
+    PROCEDURE CNTALIVE;  (* P010D20 *)
+    
+      BEGIN
+        ALIVECNT := 0;
+        FOR LLBASE04 := 0 TO PARTYCNT - 1 DO
+          IF CHARACTR[ LLBASE04].STATUS = OK THEN
+            ALIVECNT := ALIVECNT + 1;
+        IF ALIVECNT = 0 THEN
+          BEGIN
+            XGOTO := XCEMETRY;
+            EXIT( REWARDS)
+          END
+      END;  (* CNTALIVE *)
+      
+      
+    PROCEDURE CALC1EXP;  (* P010D21 *)
+    
+      VAR
+            MULT2040 : INTEGER;
+    
+    
+      PROCEDURE TOTALEXP;  (* P010D22 *)
+      
+        VAR
+             ENEMYREC : TENEMY;
+      
+          PROCEDURE CALCKILL;  (* P010D23 *)
+          
+            VAR
+                 KILLEXPX: TWIZLONG;
+          
+          
+            PROCEDURE SETKILLX( AMOUNT : INTEGER);  (* P010D24 *)
+            
+              BEGIN (* SETKILLX *)
+                KILLEXPX.HIGH := 0;
+                KILLEXPX.MID  := 0;
+                KILLEXPX.LOW  := AMOUNT
+              END;  (* SETKILLX *)
+              
+              
+            PROCEDURE MLTADDKX( MULTIPLY : INTEGER;  (* P010D25 *)
+                                AMOUNT   : INTEGER);
+                               
+              BEGIN (* MLTADDKX *)
+                IF MULTIPLY = 0 THEN
+                  EXIT( MLTADDKX);
+                SETKILLX( AMOUNT);
+                WHILE MULTIPLY > 1 DO
+                  BEGIN
+                    MULTIPLY := MULTIPLY - 1;
+                    ADDLONGS( KILLEXPX, KILLEXPX)
+                  END;
+                ADDLONGS( KILLEXP, KILLEXPX)
+              END;  (* MLTADDKX *)
+              
+          
+            BEGIN (* CALCKILL *)
+              FILLCHAR( KILLEXP, 6, CHR( 0));
+              FILLCHAR( KILLEXPX, 6, CHR( 0));
+              SETKILLX( ENEMYREC.HPREC.LEVEL * ENEMYREC.HPREC.HPFAC);
+              IF ENEMYREC.BREATHE = 0 THEN
+                MULT2040:= 20
+              ELSE
+                MULT2040:= 40;
+              MULTLONG( KILLEXPX, MULT2040);
+              ADDLONGS( KILLEXP, KILLEXPX);
+              MLTADDKX( ENEMYREC.MAGSPELS, 35);
+              MLTADDKX( ENEMYREC.PRISPELS, 35);
+              MLTADDKX( ENEMYREC.DRAINAMT, 200);
+              MLTADDKX( ENEMYREC.HEALPTS, 90);
+              
+              SETKILLX( 40 * (11 - ENEMYREC.AC));
+              ADDLONGS( KILLEXP, KILLEXPX);
+              IF ENEMYREC.RECSN > 1 THEN
+                MLTADDKX( ENEMYREC.RECSN, 30);
+              IF ENEMYREC.UNAFFCT > 0 THEN
+                MLTADDKX( (ENEMYREC.UNAFFCT DIV 10) + 1, 40);
+              LLBASE04 := 0;
+              FOR WEPSTY3I := 1 TO 6 DO
+                IF ENEMYREC.WEPVSTY3[ WEPSTY3I] THEN
+                  LLBASE04 := LLBASE04 + 1;
+              MLTADDKX( LLBASE04, 35);
+              LLBASE04 := 0;
+              FOR SPPCI := 0 TO 6 DO
+                IF ENEMYREC.SPPC[ SPPCI] THEN
+                  LLBASE04 := LLBASE04 + 1;
+              MLTADDKX( LLBASE04, 40)
+            END;  (* CALCKILL *)
+            
+        BEGIN (* TOTALEXP *)
+          MOVELEFT( IOCACHE[ GETREC( ZENEMY,
+                                     BATRESLT.ENMYID[ CHARXXX],
+                                     SIZEOF( TENEMY))],
+                    ENEMYREC,
+                    SIZEOF( TENEMY));
+          CALCKILL;   (* KILLEXP := ENEMYREC.EXPAMT;  LOL *)
+
+          MULTLONG( KILLEXP, BATRESLT.ENMYCNT[ CHARXXX]);
+          ADDLONGS( EXPPERCH, KILLEXP)
+        END;  (* TOTALEXP *)
+      
+      
+      BEGIN  (* CALC1EXP *)
+        FILLCHAR( EXPPERCH, 6, 0);
+        FOR CHARXXX := 1 TO 4 DO
+          IF BATRESLT.ENMYID[ CHARXXX] >= 0 THEN
+            TOTALEXP;
+        DIVLONG( EXPPERCH, ALIVECNT)
+      END;   (* CALC1EXP *)
+      
+      
+    PROCEDURE CHKDRAIN;  (* P010D26 *)
+    
+      VAR
+           EXPTABLE : TEXP;
+           
+           
+      PROCEDURE DROPLEVL( VAR CHAREXP:  TWIZLONG;  (* P010D27 *)
+                              CURRLEVL: INTEGER;
+                              CLASS:    TCLASS);
+                         
+        BEGIN
+          MVCURSOR( 1, 13);
+          PRINTSTR( 'HE HAD ');
+          PRLONG2( CHAREXP);
+          PRINTSTR( ' EP');
+        
+          CURRLEVL := CURRLEVL - 1;
+          IF CURRLEVL = 0 THEN
+            FILLCHAR( CHAREXP, 6, 0)
+          ELSE
+            IF CURRLEVL < 13 THEN
+              CHAREXP := EXPTABLE[ CLASS][ CURRLEVL]
+            ELSE
+              BEGIN
+                CHAREXP := EXPTABLE[ CLASS][ 12];
+                FOR CHARXXX := 13 TO CURRLEVL DO
+                  ADDLONGS( CHAREXP, EXPTABLE[ CLASS][ 0])
+              END;
+          ADDLONGS( CHAREXP, KILLEXP);
+          MVCURSOR( 1, 14);
+          PRINTSTR( 'HE HAS ');
+          PRLONG2( CHAREXP);
+          PRINTSTR( ' EP NOW');
+          PAUSE2
+        END;  (* DROPLEVL *)
+        
+        
+      BEGIN (* CHKDRAIN *)
+        MOVELEFT( IOCACHE[ GETREC( ZEXP, 0, SIZEOF( TEXP))],
+                  EXPTABLE,
+                  SIZEOF( TEXP));
+        KILLEXP.HIGH := 0;
+        KILLEXP.MID  := 0;
+        KILLEXP.LOW  := 1;
+        FOR CHARXXX := 0 TO PARTYCNT - 1 DO
+          BEGIN
+            IF  BATRESLT.DRAINED[ CHARXXX] THEN
+              BEGIN
+                CLRRECT( 1, 11, 38, 4);
+                MVCURSOR( 1, 11);
+                PRINTSTR( CHARACTR[ CHARXXX].NAME);
+                PRINTSTR( ' WAS DRAINED!');
+                DROPLEVL( CHARACTR[ CHARXXX].EXP,
+                          CHARACTR[ CHARXXX].CHARLEV,
+                          CHARACTR[ CHARXXX].CLASS)
+              END
+          END;
+        CLRRECT( 1, 11, 38, 4);
+        IF XGOTO = XREWARD2 THEN
+          EXIT( GIVEEXP);
+        FOR CHARXXX := 0 TO PARTYCNT - 1 DO
+          IF CHARACTR[ CHARXXX].STATUS = OK THEN
+            EXIT( CHKDRAIN);
+        XGOTO := XCEMETRY;
+        EXIT( REWARDS)
+      END;  (* CHKDRAIN *)
+      
+      
+    BEGIN  (* GIVEEXP *)
+      MOVELEFT( IOCACHE, BATRESLT, SIZEOF( TBATRSLT));
+      CACHEWRI := FALSE;
+      CNTALIVE;
+      CHKDRAIN;
+      CALC1EXP;
+      CLRRECT( 13, 1, 26, 4);
+      MVCURSOR( 13, 1);
+      PRINTSTR( 'FOR KILLING THE MONSTERS');
+      MVCURSOR( 13, 2);
+      PRINTSTR( 'EACH SURVIVOR GETS ');
+      PRLONG2( EXPPERCH);
+      MVCURSOR( 13, 3);
+      PRINTSTR( 'EXPERIENCE POINTS');
+      PAUSE2;
+      FOR LLBASE04 := 0 TO PARTYCNT - 1 DO
+        IF CHARACTR[ LLBASE04].STATUS = OK THEN
+          ADDLONGS( CHARACTR[ LLBASE04].EXP, EXPPERCH)
+    END;   (* GIVEEXP *)
+  
+  
+  BEGIN  (* REWARDS *)
+    
+    CASE XGOTO OF
+    
+       XREWARD:  BEGIN
+                   XGOTO := XRUNNER;
+                   GIVEEXP;
+                   CHSTGOLD
+                 END;
+                 
+      XREWARD2:  BEGIN
+                   GIVEEXP;
+                   LLBASE04 := 0;
+                   XGOTO := XSCNMSG
+                 END
+    END
+  END;  (* REWARDS *)
+  

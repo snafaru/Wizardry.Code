@@ -1,0 +1,609 @@
+  
+SEGMENT PROCEDURE SHOPS;  (* P010201 *)
+  
+    PROCEDURE CANT;  (* P010202 *)
+    
+      VAR
+           WHOHELP  : INTEGER;
+           UNUSEDXX : INTEGER;
+           WHOPAY   : INTEGER;
+           WHOHELPX : INTEGER;
+           DISABLED : STRING;
+           WHO      : TCHAR;
+    
+      
+      PROCEDURE CANTSHOP;  (* P010203 *)
+      
+      
+        PROCEDURE DSP2STR( STR1: STRING; STR2: STRING);  (* P010204 *)
+        
+          BEGIN
+            CENTSTR( CONCAT('** ', STR1, STR2, ' **') );
+            EXIT( CANTSHOP)
+          END;
+          
+          
+        PROCEDURE WELCOME;  (* P010205 *)
+        
+          BEGIN
+            GOTOXY( 0, 13);
+            WRITE( CHR( 11));
+            WRITELN( ' WELCOME TO THE TEMPLE OF RADIANT CANT!');
+            WRITELN;
+            WRITE( 'WHO ARE YOU HELPING ? >');
+            GETLINE( DISABLED);
+            IF DISABLED = '' THEN
+              EXIT( CANT);
+            WHOHELPX := 0;
+            MOVELEFT( IOCACHE[ GETREC( ZCHAR, WHOHELPX, SIZEOF( TCHAR))],
+                      WHO,
+                      SIZEOF( TCHAR));
+            WHILE (WHOHELPX < SCNTOC.RECPERDK[ ZCHAR]) AND
+                  (DISABLED <> WHO.NAME) DO
+              BEGIN
+                WHOHELPX := WHOHELPX + 1;
+                MOVELEFT( IOCACHE[ GETREC( ZCHAR, WHOHELPX, SIZEOF( TCHAR))],
+                          WHO,
+                          SIZEOF( TCHAR))
+              END;
+            IF WHOHELPX = SCNTOC.RECPERDK[ ZCHAR] THEN
+              DSP2STR( '', 'WHO?');
+            
+            IF ((WHO.LOSTXYL.LOCATION[ 1] +
+                 WHO.LOSTXYL.LOCATION[ 2] +
+                 WHO.LOSTXYL.LOCATION[ 3] ) <> 0)
+                     OR
+                 WHO.INMAZE THEN
+              DSP2STR( WHO.NAME, ' IS NOT HERE');
+            IF WHO.STATUS = LOST THEN
+              DSP2STR( WHO.NAME, ' IS LOST');
+            IF WHO.STATUS = OK THEN
+              DSP2STR( WHO.NAME, ' IS OK');
+            WHOHELP := WHOHELPX
+          END;
+          
+          
+        PROCEDURE PAYCANT;  (* P010206 *)
+        
+          VAR
+               PAYAMT : TWIZLONG;
+        
+        
+          PROCEDURE GETPAYER;  (* P010207 *)
+          
+            BEGIN
+              PAYAMT.HIGH := 0;
+              PAYAMT.MID := 0;
+              CASE WHO.STATUS OF
+                PLYZE  : PAYAMT.LOW := 100;
+                STONED : PAYAMT.LOW := 200;
+                DEAD   : PAYAMT.LOW := 250;
+                ASHES  : PAYAMT.LOW := 500;
+              END;
+              MULTLONG( PAYAMT, WHO.CHARLEV);
+              GOTOXY( 0, 17);
+              WRITE( CHR( 11));
+              WRITE( 'THE DONATION WILL BE ');
+              PRNTLONG( PAYAMT);
+              WRITELN;
+              WHOPAY := GETCHARX( FALSE, 'WHO WILL TITHE');
+              IF WHOPAY = -1 THEN
+                EXIT( CANTSHOP);
+              IF TESTLONG( PAYAMT, CHARACTR[ WHOPAY].GOLD) > 0 THEN
+                DSP2STR( '', 'CHEAP APOSTATES! OUT!');
+              SUBLONGS( CHARACTR[ WHOPAY].GOLD, PAYAMT)
+            END;
+            
+            
+          PROCEDURE DOCANT;  (* P010208 *)
+          
+          
+            PROCEDURE ASHLOST;  (* P010209 *)
+            
+              BEGIN
+                IF WHO.STATUS = DEAD THEN
+                  WHO.STATUS := ASHES
+                ELSE
+                  WHO.STATUS := LOST;
+                WHO.INMAZE := FALSE;
+                MOVELEFT( WHO,
+                          IOCACHE[ GETRECW( ZCHAR, WHOHELP, SIZEOF( TCHAR))],
+                          SIZEOF( TCHAR));
+                WRITELN;
+                IF WHO.STATUS = LOST THEN
+                  DSP2STR( WHO.NAME, ' WILL BE BURIED') 
+                ELSE
+                  DSP2STR( WHO.NAME, ' NEEDS KADORTO NOW')
+              END; (* ASHLOST *)
+              
+              
+            BEGIN (* DOCANT *)
+              GOTOXY( 0, 17);
+              WRITE( CHR( 11));
+              WRITE( 'MURMUR - ');
+              PAUSE2;
+              WRITE( 'CHANT - ');
+              PAUSE2;
+              WRITE( 'PRAY - ');
+              PAUSE2;
+              WRITE( 'INVOKE!');
+              WRITELN;
+              
+              IF WHO.STATUS = DEAD THEN
+                BEGIN
+                  IF (RANDOM MOD 100) > (50 + 3 * WHO.ATTRIB[ VITALITY]) THEN
+                    ASHLOST
+                  ELSE
+                    WHO.HPLEFT := 1
+                END
+              ELSE IF WHO.STATUS = ASHES THEN
+                BEGIN
+                  IF (RANDOM MOD 100) > (40 + 3 * WHO.ATTRIB[ VITALITY]) THEN
+                    ASHLOST
+                  ELSE
+                    WHO.HPLEFT := WHO.HPMAX
+                END;
+                
+              WHO.AGE := WHO.AGE + (RANDOM MOD 52) + 1;
+              WHO.STATUS := OK;
+              MOVELEFT( WHO, 
+                        IOCACHE[ GETRECW( ZCHAR, WHOHELP, SIZEOF( TCHAR))],
+                        SIZEOF( TCHAR));
+              WRITELN;
+              DSP2STR( WHO.NAME, ' IS WELL')
+            END;
+            
+            
+          BEGIN (* PAYCANT *)
+            GETPAYER;
+            DOCANT
+          END;
+          
+          
+        BEGIN (* CANTSHOP *)
+          WELCOME;
+          PAYCANT
+        END;
+        
+        
+      BEGIN (* CANT *)
+        XGOTO := XCASTLE;
+        REPEAT
+          CANTSHOP
+        UNTIL FALSE;
+        EXIT( SHOPS)
+      END; (* CANT *)
+  
+  
+    PROCEDURE BOLTAC;  (* P01020A *)
+    
+      VAR
+           INVENTX  : INTEGER;
+           HALFPRIC : INTEGER;
+           OBJECT   : TOBJREC;
+           CHARI    : INTEGER;
+           UNUSEDXX : ARRAY[ 1..41] OF INTEGER;
+           
+           
+      PROCEDURE DOPLAYER;  (* P01020B *)
+      
+        CONST
+        
+        (* ACTION *)
+             SELL     = 0;
+             UNCURSE  = 1;
+             IDENTIFY = 2;
+             BUY      = 3;
+             POOLGOLD = 4;
+             LEAVE    = 5;
+      
+        VAR
+            OBJLIST  : ARRAY[ 1..6] OF INTEGER;
+            UNUSEDXX : INTEGER;
+            UNUSEDYY : INTEGER;
+            POSSCNT  : INTEGER;
+      
+      
+        PROCEDURE DOBUY;  (* P01020C *)
+        
+          VAR
+               NOTPURCH : BOOLEAN;
+               SCROLDIR : INTEGER;
+               BUYX     : INTEGER;
+        
+            
+          PROCEDURE SCROLPOS;  (* P01020D *)
+          
+            VAR
+                 X : INTEGER;
+          
+            BEGIN
+              INVENTX := OBJLIST[ 6] - 1;
+              FOR X := 1 TO 6 DO
+                BEGIN
+                  GOTOXY( 0, 12 + X);
+                  WRITE( CHR( 29));
+                  REPEAT
+                    INVENTX := INVENTX + 1;
+                    IF INVENTX >= SCNTOC.RECPERDK[ ZOBJECT] THEN
+                      INVENTX := 1;
+                    MOVELEFT( IOCACHE[ GETREC( ZOBJECT,
+                                               INVENTX,
+                                               SIZEOF( TOBJREC))],
+                              OBJECT,
+                              SIZEOF( TOBJREC));
+                  UNTIL (OBJECT.BOLTACXX <> 0) AND
+                        (NOT OBJECT.CURSED);
+                  OBJLIST[ X] := INVENTX;
+                  WRITE( X : 1);
+                  WRITE( ')');
+                  WRITE( OBJECT.NAME : 15);
+                  WRITE( ' ');
+                  PRNTLONG( OBJECT.PRICE);
+                  IF NOT OBJECT.CLASSUSE[ CHARACTR[ CHARI].CLASS] THEN
+                    WRITE( ' UNUSABLE')
+                END
+            END;
+            
+            
+          PROCEDURE SCROLNEG;  (* P01020E *)
+          
+            VAR
+                 X : INTEGER;
+          
+            BEGIN
+              INVENTX := OBJLIST[ 1] + 1;
+              FOR X := 6 DOWNTO 1 DO
+                BEGIN
+                  GOTOXY( 0, 12 + X);
+                  WRITE( CHR( 29));
+                  REPEAT
+                    INVENTX := INVENTX - 1;
+                    IF INVENTX < 1 THEN
+                      INVENTX := SCNTOC.RECPERDK[ ZOBJECT] - 1;
+                    MOVELEFT( IOCACHE[ GETREC( ZOBJECT,
+                                               INVENTX,
+                                               SIZEOF( TOBJREC))],
+                              OBJECT,
+                              SIZEOF( TOBJREC))
+                  UNTIL (OBJECT.BOLTACXX <> 0) AND
+                        (NOT OBJECT.CURSED);
+                  OBJLIST[ X] := INVENTX;
+                  WRITE( X : 1);
+                  WRITE( ')');
+                  WRITE( OBJECT.NAME : 15);
+                  WRITE( ' ');
+                  PRNTLONG( OBJECT.PRICE);
+                  IF NOT OBJECT.CLASSUSE[ CHARACTR[ CHARI].CLASS] THEN
+                    WRITE( ' UNUSABLE')
+                END
+            END;
+          
+          
+          PROCEDURE PURCHASE;  (* P01020F *)
+          
+            VAR
+                 INSERTX : INTEGER;
+          
+          
+            PROCEDURE AASTRAA( ASTR: STRING);  (* P010210 *)
+            
+              BEGIN
+                CENTSTR( CONCAT( '** ', ASTR, ' **'));
+                EXIT( PURCHASE);
+              END;
+              
+              
+            BEGIN (* PURCHASE *)
+              REPEAT
+                NOTPURCH := FALSE;
+                GOTOXY( 0, 21);
+                WRITELN( CHR( 11));
+                WRITE( 'PURCHASE WHICH ITEM ([RETURN] EXITS) ? >');
+                GETKEY;
+                BUYX := ORD( INCHAR) - ORD( '0');
+                IF INCHAR = CHR( CRETURN) THEN
+                  EXIT( PURCHASE);
+              UNTIL (BUYX > 0) AND (BUYX <= 6);
+              
+              MOVELEFT( IOCACHE[ GETREC( ZOBJECT,
+                                         OBJLIST[ BUYX],
+                                         SIZEOF( TOBJREC))],
+                        OBJECT,
+                        SIZEOF( TOBJREC));
+                        
+              IF OBJECT.BOLTACXX = 0 THEN
+                AASTRAA( 'YOU BOUGHT THE LAST ONE')
+              ELSE IF CHARACTR[ CHARI].POSS.POSSCNT = 8 THEN
+                AASTRAA( 'YOU CANT CARRY ANYTHING MORE')
+              ELSE IF TESTLONG( CHARACTR[ CHARI].GOLD, OBJECT.PRICE) < 0 THEN
+                AASTRAA( 'YOU CANNOT AFFORD IT');
+                
+              IF NOT (OBJECT.CLASSUSE[ CHARACTR[ CHARI].CLASS]) THEN
+                BEGIN
+                  GOTOXY( 0, 22);
+                  WRITE( CHR( 11));
+                  WRITE( 'UNUSABLE ITEM - CONFIRM BUY (Y/N) ? >');
+                  REPEAT
+                    GETKEY
+                  UNTIL (INCHAR = 'Y') OR (INCHAR = 'N');
+                  IF INCHAR = 'N' THEN
+                    AASTRAA( 'WE ALL MAKE MISTAKES')
+                END
+              ELSE
+                INCHAR := ' ';
+              SUBLONGS( CHARACTR[ CHARI].GOLD, OBJECT.PRICE);
+              INSERTX := CHARACTR[ CHARI].POSS.POSSCNT + 1;
+              
+              WITH CHARACTR[ CHARI].POSS.POSSESS[ INSERTX] DO
+                BEGIN
+                  EQUIPED := FALSE;
+                  IDENTIF := TRUE;
+                  CURSED  := FALSE;
+                  EQINDEX := OBJLIST[ BUYX];
+                END;
+              CHARACTR[ CHARI].POSS.POSSCNT := INSERTX;
+              IF OBJECT.BOLTACXX > 0 THEN
+                OBJECT.BOLTACXX := OBJECT.BOLTACXX - 1;
+              MOVELEFT( OBJECT,
+                        IOCACHE[ GETRECW( ZOBJECT,
+                                          OBJLIST[ BUYX],
+                                          SIZEOF( TOBJREC))],
+                        SIZEOF( TOBJREC));
+              IF ORD( INCHAR) = ORD( 'Y') THEN
+                AASTRAA( 'ITS YOUR MONEY')
+              ELSE
+                AASTRAA( 'JUST WHAT YOU NEEDED')
+            END; (* PURCHASE *)
+            
+            
+          BEGIN (* DOBUY *)
+            INVENTX := 1;
+            NOTPURCH := TRUE;
+            OBJLIST[ 1] := 1;
+            OBJLIST[ 6] := 1;
+            SCROLDIR := 1;
+            GOTOXY( 0, 13);
+            WRITE( CHR(11));
+            REPEAT
+              IF NOTPURCH THEN
+                IF SCROLDIR = 1 THEN
+                  SCROLPOS
+                ELSE
+                  SCROLNEG;
+              NOTPURCH := TRUE;
+              SCROLDIR := 1;
+              GOTOXY(  0, 20);
+              WRITE( CHR( 11));
+              WRITE( 'YOU HAVE ');
+              PRNTLONG( CHARACTR[ CHARI].GOLD);
+              WRITELN( ' GOLD');
+              WRITELN( 'YOU MAY P)URCHASE, SCROLL');
+              WRITE( ' ' :8);
+              WRITELN( 'F)ORWARD OR B)ACK, GO TO THE');
+              WRITE( ' ' :8);
+              WRITE( 'S)TART, OR L)EAVE');
+              GOTOXY( 41, 0);
+              REPEAT
+                GETKEY
+              UNTIL (INCHAR = 'P') OR (INCHAR = 'F') OR
+                    (INCHAR = 'B') OR (INCHAR = 'S') OR
+                    (INCHAR = 'L');
+              
+              CASE INCHAR OF
+                'P': PURCHASE;
+                'S': OBJLIST[ 6] := 1;
+                'B': SCROLDIR := - 1;
+              END
+            UNTIL INCHAR = 'L'
+          END;
+          
+          
+        PROCEDURE SELLIDUN( ACTION: INTEGER);  (* P010211 *)
+        
+          VAR
+               UNUSEDXX : ARRAY[ 1..3] OF INTEGER;
+               TRANOBJX : INTEGER;
+        
+        
+          PROCEDURE LISTPOSS;  (* P010212 *)
+          
+            BEGIN
+              GOTOXY( 0, 13);
+              WRITE( CHR( 11));
+              POSSCNT := CHARACTR[ CHARI].POSS.POSSCNT;
+              FOR TRANOBJX := 1 TO POSSCNT DO
+                BEGIN
+                  OBJLIST[ TRANOBJX] :=
+                    CHARACTR[ CHARI].POSS.POSSESS[ TRANOBJX].EQINDEX;
+                  MOVELEFT( IOCACHE[ GETREC( ZOBJECT,
+                                             OBJLIST[ TRANOBJX],
+                                             SIZEOF( TOBJREC))],
+                            OBJECT,
+                            SIZEOF( TOBJREC));
+                  WRITE( TRANOBJX : 1);
+                  WRITE( CHR( 41));
+                  IF CHARACTR[ CHARI].POSS.POSSESS[ TRANOBJX].IDENTIF THEN
+                    WRITE( OBJECT.NAME : 15)
+                  ELSE
+                    WRITE( OBJECT.NAMEUNK : 15);
+                  WRITE( ' ');
+                  DIVLONG( OBJECT.PRICE, HALFPRIC);
+                  IF ACTION = SELL THEN
+                    BEGIN
+                      IF NOT (CHARACTR[ CHARI].POSS.POSSESS[ TRANOBJX].IDENTIF)
+                      THEN
+                        BEGIN
+                          OBJECT.PRICE.HIGH := 0;
+                          OBJECT.PRICE.MID  := 0;
+                          OBJECT.PRICE.LOW  := 1
+                        END
+                    END;
+                  PRNTLONG(  OBJECT.PRICE);
+                  WRITELN
+                END
+            END;
+            
+            
+          PROCEDURE TRANSACT;  (* P010213 *)
+          
+            VAR
+                 POSSX : INTEGER;
+          
+          
+            PROCEDURE AASTRAA( ASTR: STRING);  (* P010214 *)
+            
+              BEGIN
+                CENTSTR( ASTR);
+                EXIT( TRANSACT)
+              END;
+              
+              
+            BEGIN (* TRANSACT *)
+              MOVELEFT( IOCACHE[ GETREC( ZOBJECT,
+                                         OBJLIST[ TRANOBJX],
+                                         SIZEOF( TOBJREC))],
+                        OBJECT,
+                        SIZEOF( TOBJREC));
+              DIVLONG( OBJECT.PRICE, HALFPRIC);
+              IF ACTION = SELL THEN
+                BEGIN
+                  IF NOT CHARACTR[ CHARI].POSS.POSSESS[ TRANOBJX].IDENTIF THEN
+                    BEGIN
+                      OBJECT.PRICE.HIGH := 0;
+                      OBJECT.PRICE.MID  := 0;
+                      OBJECT.PRICE.LOW  := 1
+                    END;
+                  IF CHARACTR[ CHARI].POSS.POSSESS[ TRANOBJX].CURSED THEN
+                    AASTRAA( '** WE DONT BUY CURSED ITEMS **')
+                END
+              ELSE
+                BEGIN
+                  IF NOT (CHARACTR[ CHARI].POSS.POSSESS[ TRANOBJX].CURSED) AND
+                     (ACTION = UNCURSE) THEN
+                    AASTRAA( '** THAT IS NOT A CURSED ITEM **');
+                    
+                  IF CHARACTR[ CHARI].POSS.POSSESS[ TRANOBJX].IDENTIF AND
+                      (ACTION = IDENTIFY) THEN
+                    AASTRAA( '** THAT HAS BEEN IDENTIFIED **');
+                    
+                  IF TESTLONG( CHARACTR[ CHARI].GOLD, OBJECT.PRICE) < 0 THEN
+                    AASTRAA( '** YOU CANT AFFORD THE FEE **');
+                END;
+              
+              IF ACTION = SELL THEN
+                ADDLONGS( CHARACTR[ CHARI].GOLD, OBJECT.PRICE)
+              ELSE
+                SUBLONGS( CHARACTR[ CHARI].GOLD, OBJECT.PRICE);
+                
+              IF ACTION = IDENTIFY THEN
+                CHARACTR[ CHARI].POSS.POSSESS[ TRANOBJX].IDENTIF := TRUE
+              ELSE
+                BEGIN
+                  IF TRANOBJX < CHARACTR[ CHARI].POSS.POSSCNT THEN
+                    FOR POSSX := (TRANOBJX + 1) TO
+                                   CHARACTR[ CHARI].POSS.POSSCNT DO
+                      CHARACTR[ CHARI].POSS.POSSESS[ POSSX - 1] :=
+                        CHARACTR[ CHARI].POSS.POSSESS[ POSSX];
+                        
+                  CHARACTR[ CHARI].POSS.POSSCNT :=
+                                             CHARACTR[ CHARI].POSS.POSSCNT - 1;
+                  MOVELEFT( IOCACHE[ GETREC( ZOBJECT,
+                                             OBJLIST[ TRANOBJX],
+                                             SIZEOF( TOBJREC))],
+                            OBJECT,
+                            SIZEOF( TOBJREC));
+                  IF ACTION = SELL THEN
+                    IF OBJECT.BOLTACXX > - 1 THEN
+                      OBJECT.BOLTACXX := OBJECT.BOLTACXX + 1;
+                    
+                  MOVELEFT( OBJECT,
+                            IOCACHE[ GETRECW( ZOBJECT,
+                                              OBJLIST[ TRANOBJX],
+                                              SIZEOF( TOBJREC))],
+                            SIZEOF( TOBJREC));
+                END;
+                
+              CENTSTR( '** ANYTHING ELSE, SIRE? **');
+              LISTPOSS
+            END; (* TRANSACT *)
+            
+            
+          BEGIN (* SELLIDUN *)
+            LISTPOSS;
+            REPEAT
+              IF POSSCNT = 0 THEN
+                EXIT( SELLIDUN);
+              GOTOXY(  0, 22);
+              IF ACTION = SELL THEN
+                BEGIN
+                  WRITE( CHR( 11));
+                  WRITE( 'WHICH DO YOU WISH TO SELL ? >')
+                END
+              ELSE IF ACTION = UNCURSE THEN
+                BEGIN
+                  WRITE( CHR( 11));
+                  WRITE( 'WHICH DO YOU WISH UNCURSED ? >')
+                END
+              ELSE
+                BEGIN
+                  WRITE( CHR( 11));
+                  WRITE( 'WHICH DO YOU WISH IDENTIFIED ? >')
+                END;
+              GETKEY;
+              IF ORD( INCHAR) = CRETURN THEN
+                EXIT( SELLIDUN);
+              TRANOBJX := ORD( INCHAR) - ORD( '0');
+              IF (TRANOBJX > 0) AND (TRANOBJX <= POSSCNT) THEN
+                TRANSACT
+            UNTIL FALSE
+          END;
+          
+          
+        BEGIN (* DOPLAYER *)
+          REPEAT
+            GOTOXY( 0, 13);
+            WRITE( CHR( 11));
+            WRITE( '      WELCOME ');
+            WRITE(  CHARACTR[ CHARI].NAME);
+            WRITELN;
+            WRITE( '     YOU HAVE ');
+            PRNTLONG( CHARACTR[ CHARI].GOLD);
+            WRITELN( ' GOLD');
+            WRITELN;
+            WRITELN( 'YOU MAY B)UY  AN ITEM,');
+            WRITELN( '        S)ELL AN ITEM, HAVE AN ITEM');
+            WRITELN( '        U)NCURSED,  OR HAVE AN ITEM');
+            WRITELN( '        I)DENTIFIED, OR L)EAVE');
+            GOTOXY( 41, 0);
+            GETKEY;
+                           
+            CASE INCHAR OF
+              'U': SELLIDUN( UNCURSE);
+              'I': SELLIDUN( IDENTIFY);
+              'S': SELLIDUN( SELL);
+              'B': DOBUY;
+              'L': EXIT( DOPLAYER);
+            END
+          UNTIL FALSE
+        END; (* DOPLAYER *)
+        
+        
+      BEGIN (* BOLTAC *)
+        HALFPRIC := 2;
+        XGOTO := XCASTLE;
+        REPEAT
+          GOTOXY( 0, 13);
+          WRITE( CHR( 11));
+          WRITE( '       WELCOME TO THE TRADING POST');
+          WRITELN;
+          CHARI := GETCHARX( FALSE, 'WHO WILL ENTER');
+          IF CHARI = -1 THEN
+            EXIT( SHOPS);
+          
+          IF (CHARI < PARTYCNT) THEN
+            DOPLAYER
+        UNTIL FALSE
+      END;
+      
+      

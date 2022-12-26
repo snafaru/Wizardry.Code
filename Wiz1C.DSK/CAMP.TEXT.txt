@@ -1,0 +1,562 @@
+SEGMENT PROCEDURE CAMP;  (* P010C01 *)
+
+    VAR
+         OBJIDS   : ARRAY[ 0..7] OF INTEGER;
+         OBJNAMES : ARRAY[ 0..7] OF ARRAY[ FALSE..TRUE] OF STRING[ 15];
+         CURSEDXX : PACKED ARRAY[ 0..7] OF BOOLEAN;
+         CANUSE   : PACKED ARRAY[ 0..7] OF BOOLEAN;
+         DISPSTAT : BOOLEAN;
+         OBJI     : INTEGER;
+         
+    
+    PROCEDURE AASTRAA( ASTRA: STRING);  (* P010C02 *)
+    
+      BEGIN
+        CENTSTR( CONCAT( '** ', ASTRA, ' **'));
+      END;
+      
+      
+    PROCEDURE INSPECT;  (* P010C03 *)
+    
+      VAR
+           UNUSEDXX : INTEGER;
+           CAMPCHAR : INTEGER;
+         
+         
+      PROCEDURE DSPSPELS;  (* P010C04 *)
+      
+        VAR
+             INDX : INTEGER;
+      
+        BEGIN
+          WITH CHARACTR[ CAMPCHAR] DO
+            BEGIN
+              GOTOXY(  0, 9);
+              WRITE( ' ' : 7);
+              WRITE( ' MAGE ');
+              FOR INDX := 1 TO 7 DO
+                BEGIN
+                  WRITE( MAGESP[ INDX]);
+                  IF INDX < 7 THEN
+                    WRITE( '/')
+                END;
+              WRITELN;
+              WRITE( ' ' :6);
+              WRITE( 'PRIEST ');
+              FOR INDX := 1 TO 7 DO
+                BEGIN
+                  WRITE( PRIESTSP[ INDX]);
+                  IF INDX < 7 THEN
+                    WRITE( '/')
+                END
+            END
+        END;
+        
+        
+      PROCEDURE DSPITEMS;  (* P010C05 *)
+      
+      VAR
+           ITEMX   : INTEGER;
+           OBJECT  : TOBJREC;
+           
+        BEGIN
+          GOTOXY( 0, 12);
+          WRITE( '*=EQUIP, -=CURSED, ?=UNKNOWN, #=UNUSABLE');
+          FOR ITEMX := 14 TO 17 DO
+            BEGIN
+              GOTOXY( 0, ITEMX);
+              WRITE( CHR( 29))
+            END;
+            
+          WITH CHARACTR[ CAMPCHAR] DO
+            BEGIN
+              IF POSS.POSSCNT = 0 THEN
+                EXIT( DSPITEMS);
+            
+              FOR ITEMX := 1 TO POSS.POSSCNT DO
+                BEGIN
+                  GOTOXY( 20 -  20 * (ITEMX MOD 2),
+                          14 + ((ITEMX - 1) DIV 2) );
+                  IF OBJIDS[ ITEMX - 1] <>
+                       POSS.POSSESS[ ITEMX].EQINDEX  THEN
+                    BEGIN
+                      MOVELEFT( IOCACHE[ GETREC(
+                                   ZOBJECT,
+                                   POSS.POSSESS[ ITEMX].EQINDEX,
+                                   SIZEOF( TOBJREC))],
+                                OBJECT,
+                                SIZEOF( TOBJREC));
+                      OBJIDS[ ITEMX - 1] := POSS.POSSESS[ ITEMX].EQINDEX;
+                      OBJNAMES[ ITEMX - 1][ TRUE]  := OBJECT.NAME;
+                      OBJNAMES[ ITEMX - 1][ FALSE] := OBJECT.NAMEUNK;
+                      CANUSE[ ITEMX - 1] := OBJECT.CLASSUSE[ CLASS];
+                      CURSEDXX[ ITEMX - 1] := OBJECT.CURSED
+                    END;
+                    
+                  WRITE( ITEMX :1);
+                  WRITE( ')');
+                  IF POSS.POSSESS[ ITEMX].EQUIPED THEN
+                    IF CURSEDXX[ ITEMX - 1] THEN
+                      WRITE( '-')
+                    ELSE
+                      WRITE( '*')
+                  ELSE
+                    IF POSS.POSSESS[ ITEMX].IDENTIF THEN
+                      IF CANUSE[ ITEMX - 1] THEN
+                        WRITE( ' ')
+                      ELSE
+                        WRITE( '#')  (* WAS '^' IN LOL *)
+                    ELSE
+                      WRITE( '?');
+                  WRITE( OBJNAMES[ ITEMX - 1][ POSS.POSSESS[ ITEMX].IDENTIF])
+                END
+            END
+        END;
+        
+        
+      PROCEDURE CASTSPEL( SPELHASH: INTEGER);  (* P010C06 *)
+        
+        CONST
+
+              HALITO   =  4178;
+              MOGREF   =  2409;
+              KATINO   =  3983;
+              DUMAPIC  =  3245;
+              
+              DILTO    =  3340;
+              SOPIC    =  1953;
+              
+              MAHALITO =  6181;
+              MOLITO   =  4731;
+              
+              MORLIS   =  4744;
+              DALTO    =  3180;
+              LAHALITO =  6156;
+              
+              MAMORLIS =  7525;
+              MAKANITO =  6612;
+              MADALTO  =  4925;
+              
+              LAKANITO =  6587;
+              ZILWAN   =  4573;
+              MASOPIC  =  3990;
+              HAMAN    =  1562;
+              
+              MALOR    =  3128;
+              MAHAMAN  =  2597;
+              TILTOWAI = 11157;
+              
+              
+              KALKI    =  1449;
+              DIOS     =  2301;
+              BADIOS   =  3675;
+              MILWA    =  2889;
+              PORFIC   =  2287;
+              
+              MATU     =  3139;
+              CALFO    =     0; (* 1717 *)
+              MANIFO   =  2619;
+              MONTINO  =  5970;
+              
+              LOMILWA  =  5333;
+              DIALKO   =  2718;
+              LATUMAPI =  6491;
+              BAMATU   =  5169;
+              
+              DIAL     =   761;
+              BADIAL   =  1253;
+              LATUMOFI =  9463;
+              MAPORFIC =  4322;
+              
+              DIALMA   =  1614;
+              BADIALMA =  2446;
+              LITOKAN  =  4396;
+              KANDI    =  1185; (* 1885 *)
+              DI       =   180;
+              BADI     =   382;
+              
+              LORTO    =  4296;
+              MADI     =   547;
+              MABADI   =   759;
+              LOKTOFEI =  8330;
+              
+              MALIKTO  =  5514;
+              KADORTO  =  6673;
+        
+        VAR
+             USEITEM  : BOOLEAN;
+             SPELNAME : STRING;
+             UNUSEDXX : INTEGER;
+             HASHCALC : INTEGER;
+             SPELLI   : INTEGER;
+             HEALME   : INTEGER;
+      
+      
+        PROCEDURE EXITCAST( EXITSTR: STRING);  (* P010C07 *)
+        
+          BEGIN
+            AASTRAA( EXITSTR);
+            DSPSPELS;
+            EXIT( CASTSPEL)
+          END;
+          
+          
+        PROCEDURE HEALWHO;  (* P010C08 *)
+        
+          VAR
+               UNUSED : ARRAY[ 0..41] OF INTEGER;
+        
+          BEGIN
+            HEALME := GETCHARX( TRUE, 'CAST ON WHO');
+            IF HEALME = -1 THEN
+              EXITCAST( 'NOT IN THE PARTY')
+          END;
+          
+          
+        PROCEDURE CHKSPCNT( PRIESTGR: INTEGER; (* P010C09 *)
+                            SPELLIDX: INTEGER);
+        
+          BEGIN
+            IF USEITEM THEN
+              EXIT( CHKSPCNT);
+            IF (CHARACTR[ CAMPCHAR].PRIESTSP[ PRIESTGR] <= 0) OR
+               (NOT CHARACTR[ CAMPCHAR].SPELLSKN[ SPELLIDX]) THEN
+              EXITCAST( 'YOU CANT CAST IT')
+          END;
+          
+          
+        PROCEDURE DECPRIEST( PRIESTGR: INTEGER);  (* P010C0A *)
+        
+          BEGIN
+            IF NOT USEITEM THEN
+              CHARACTR[ CAMPCHAR].PRIESTSP[ PRIESTGR] :=
+                CHARACTR[ CAMPCHAR].PRIESTSP[ PRIESTGR] - 1;
+            IF FIZZLES > 0 THEN
+              EXITCAST( 'SPELL HAS NO EFFECT')
+          END;
+          
+          
+        PROCEDURE DOHEAL( HPTRIES:  INTEGER;  (* P010C0B *)
+                          MAXHPTRY: INTEGER;
+                          PRIESTGR: INTEGER;
+                          SPELLIDX: INTEGER);
+        
+          VAR
+               HPHEALED : INTEGER;
+        
+          BEGIN
+            CHKSPCNT( PRIESTGR, SPELLIDX);
+            HEALWHO;
+            DECPRIEST( PRIESTGR);
+            HPHEALED := 0;
+            IF HPTRIES = -1 THEN
+              BEGIN
+                  (* MADI *)
+                HPHEALED := CHARACTR[ HEALME].HPMAX;
+                CHARACTR[ HEALME].LOSTXYL.POISNAMT[ 1] := 0;
+                IF CHARACTR[ HEALME].STATUS < DEAD THEN
+                  CHARACTR[ HEALME].STATUS := OK
+              END
+            ELSE
+              WHILE HPTRIES > 0 DO
+                BEGIN
+                  HPHEALED := HPHEALED + (RANDOM MOD MAXHPTRY) + 1;
+                  HPTRIES := HPTRIES - 1
+                END;
+            CHARACTR[ HEALME].HPLEFT := CHARACTR[ HEALME].HPLEFT + HPHEALED;
+            IF CHARACTR[ HEALME].HPLEFT > CHARACTR[ HEALME].HPMAX THEN
+              CHARACTR[ HEALME].HPLEFT := CHARACTR[ HEALME].HPMAX;
+            GOTOXY( 0, 23);
+            WRITE( 'CURED ');
+            WRITE( HPHEALED);
+            WRITE( ' HP - NOW ');
+            WRITE( CHARACTR[ HEALME].HPLEFT);
+            WRITE( '/');
+            WRITE( CHARACTR[ HEALME].HPMAX);
+            GOTOXY( 41, 0);
+            PAUSE2;
+            DSPSPELS;
+            EXIT( CASTSPEL)
+          END;  (* DOHEAL *)
+          
+          
+        PROCEDURE DOKANDI;  (* P010C0C *)
+        
+          BEGIN
+            CHKSPCNT( 5, 42);
+            DECPRIEST( 5);
+            DISPSTAT := TRUE;
+            LLBASE04 := CAMPCHAR;
+            BASE12.GOTOX := XCASTLE;
+            XGOTO := XCAMPSTF;
+            EXIT( CAMP)
+          END;
+          
+          
+        PROCEDURE DODIKADO( DIKADOXX: INTEGER);  (* P010C0D *)
+        
+        
+          PROCEDURE DIKADORT;  (* P010C0E *)
+          
+            BEGIN
+              IF (RANDOM MOD 100) <=
+                 4 * CHARACTR[ HEALME].ATTRIB[ VITALITY] THEN
+                BEGIN
+                  CHARACTR[ HEALME].STATUS := OK;
+                  IF DIKADOXX = 5 THEN
+                    CHARACTR[ HEALME].HPLEFT := 1
+                  ELSE
+                    CHARACTR[ HEALME].HPLEFT := 
+                      CHARACTR[ HEALME].HPMAX;
+                  IF CHARACTR[ HEALME].ATTRIB[ VITALITY] = 3 THEN
+                    CHARACTR[ HEALME].STATUS := LOST
+                  ELSE
+                    CHARACTR[ HEALME].ATTRIB[ VITALITY] :=
+                      CHARACTR[ HEALME].ATTRIB[ VITALITY] - 1
+                END;
+              IF CHARACTR[ HEALME].STATUS = OK THEN
+                EXITCAST( 'EXCELSIOR')
+              ELSE
+                BEGIN
+                  CHARACTR[ HEALME].STATUS := SUCC( CHARACTR[ HEALME].STATUS);
+                  EXITCAST( 'OOPPS!')
+                END
+            END;  (* DIKADORT *)
+            
+            
+          BEGIN  (* DODIKADO *)
+            IF DIKADOXX = 5 THEN
+              CHKSPCNT( DIKADOXX, 43)
+            ELSE
+              CHKSPCNT( DIKADOXX, 50);
+            HEALWHO;
+            DECPRIEST( DIKADOXX);
+            IF DIKADOXX = 5 THEN
+              BEGIN
+                IF CHARACTR[ HEALME].STATUS = DEAD THEN
+                  DIKADORT
+                ELSE
+                  IF CHARACTR[ HEALME].STATUS = ASHES THEN
+                    EXITCAST( '"KADORTO" NEEDED')
+              END
+            ELSE
+              IF (CHARACTR[ HEALME].STATUS = DEAD) OR
+                 (CHARACTR[ HEALME].STATUS = ASHES) THEN
+                DIKADORT
+              ELSE
+                IF CHARACTR[ HEALME].STATUS = LOST THEN
+                  EXITCAST( 'LOST');
+            EXITCAST( 'NOT DEAD')
+          END;  (* DODIKADO *)
+          
+          
+        PROCEDURE DODUMAPI;  (* P010C0F *)
+        
+          BEGIN
+            IF NOT (USEITEM) THEN
+              IF (CHARACTR[ CAMPCHAR].MAGESP[ 1] = 0) OR
+                 NOT CHARACTR[ CAMPCHAR].SPELLSKN[ 4] THEN
+                EXITCAST( 'YOU CANT CAST IT');
+            IF FIZZLES > 0 THEN
+              EXITCAST( 'SPELL FAILS');
+            IF NOT USEITEM THEN
+              CHARACTR[ CAMPCHAR].MAGESP[ 1] :=
+                CHARACTR[ CAMPCHAR].MAGESP[ 1] - 1;
+            LLBASE04 := CAMPCHAR;
+            BASE12.GOTOX := XGILGAMS;
+            XGOTO := XCAMPSTF;
+            EXIT( CAMP)
+          END;  (* DODUMAPI *)
+          
+          
+        PROCEDURE DOMALOR;  (* P010C10 *)
+        
+          BEGIN
+            IF NOT USEITEM THEN
+              IF (CHARACTR[ CAMPCHAR].MAGESP[ 7] = 0) OR
+                 (NOT CHARACTR[ CAMPCHAR].SPELLSKN[ 19]) THEN
+                EXITCAST( 'YOU CANT CAST IT');
+            IF FIZZLES > 0 THEN
+              EXITCAST( 'SPELL FAILS');
+            IF NOT USEITEM THEN
+              CHARACTR[ CAMPCHAR].MAGESP[ 7] :=
+                CHARACTR[ CAMPCHAR].MAGESP[ 7] - 1;
+            LLBASE04 := CAMPCHAR;
+            BASE12.GOTOX := XINSPECT;
+            XGOTO := XCAMPSTF;
+            EXIT( CAMP)
+          END;  (* DOMALOR *)
+          
+          
+        BEGIN (* CASTSPEL *)
+          DISPSTAT := FALSE;
+          USEITEM := SPELHASH > 0;
+          IF SPELHASH = -1 THEN
+            BEGIN
+              GOTOXY( 0, 18);
+              WRITE( CHR( 11));
+              WRITE( 'WHAT SPELL ? >' : 24);
+              GETLINE( SPELNAME);
+              SPELHASH := LENGTH( SPELNAME);
+              FOR SPELLI := 1 TO LENGTH( SPELNAME) DO
+                BEGIN
+                  HASHCALC := ORD( SPELNAME[ SPELLI]) - 64;
+                  SPELHASH := SPELHASH + HASHCALC * HASHCALC * SPELLI
+                END;
+            END;
+            
+          GOTOXY( 41, 0);
+          WRITE( SPELHASH : 6);
+          WRITE( ' ');
+          
+          IF SPELHASH = DIOS THEN
+            DOHEAL( 1, 8, 1, 23)
+          ELSE IF SPELHASH = MILWA THEN
+            BEGIN
+              CHKSPCNT( 1, 25);
+              DECPRIEST( 1);
+              LIGHT := 15 + (RANDOM MOD 15)
+            END
+          ELSE IF SPELHASH = DUMAPIC THEN
+            DODUMAPI
+          ELSE IF SPELHASH = KANDI THEN
+            DOKANDI
+          ELSE IF SPELHASH = LOMILWA THEN
+            BEGIN
+              CHKSPCNT( 3, 31);
+              DECPRIEST( 3);
+              LIGHT := 32000
+            END
+          ELSE IF SPELHASH = LATUMOFI THEN
+            BEGIN
+              CHKSPCNT( 4, 37);
+              HEALWHO;
+              DECPRIEST( 4);
+              CHARACTR[ HEALME].LOSTXYL.POISNAMT[ 1] := 0
+            END
+          ELSE IF SPELHASH = DIALKO THEN
+            BEGIN
+              CHKSPCNT( 3, 32);
+              HEALWHO;
+              DECPRIEST( 3);
+              IF (CHARACTR[ HEALME].STATUS = PLYZE) OR
+                 (CHARACTR[ HEALME].STATUS = ASLEEP) THEN
+                CHARACTR[ HEALME].STATUS := OK;
+            END
+          ELSE IF SPELHASH = DIAL THEN
+            DOHEAL( 2, 8, 4, 35)
+          ELSE IF SPELHASH = MAPORFIC THEN
+            BEGIN
+              CHKSPCNT( 4, 38);
+              DECPRIEST( 4);
+              ACMOD2 := 2
+            END
+          ELSE IF SPELHASH = DIALMA THEN
+            DOHEAL( 3, 8, 5, 39)
+          ELSE IF SPELHASH = DI THEN
+            DODIKADO( 5)
+          ELSE IF SPELHASH = MADI THEN
+            DOHEAL( -1, -1, 6, 46)
+          ELSE IF SPELHASH = KADORTO THEN
+            DODIKADO( 7)
+          ELSE IF SPELHASH = MALOR THEN
+            DOMALOR
+          ELSE
+            EXITCAST( 'WHAT?');
+          EXITCAST( 'DONE!')
+        END;  (* CASTSPEL *)
+        
+        
+      PROCEDURE USEITEM;  (* P010C11 *)
+        
+        VAR
+             THEITEM  : TOBJREC;
+             UNUSEDXX : INTEGER;
+             UNUSEDYY : INTEGER;
+             UNUSEDZZ : INTEGER;
+             ITEMX    : INTEGER;
+             
+             
+        PROCEDURE EXITUSE( EXITSTR: STRING);  (* P010C12 *)
+        
+          BEGIN
+            AASTRAA( EXITSTR);
+            EXIT( USEITEM)
+          END;
+          
+          
+        BEGIN (* USEITEM *)
+          DISPSTAT := FALSE;
+          REPEAT
+            GOTOXY( 0, 18);
+            WRITE( CHR( 11));
+            WRITE( 'USE ITEM (0=EXIT) ? >');
+            GETKEY;
+            WRITELN;
+            ITEMX := ORD( INCHAR) - ORD( '0');
+            IF ITEMX = 0 THEN
+              EXIT( USEITEM);
+          UNTIL (ITEMX > 0) AND
+                (ITEMX <= CHARACTR[ CAMPCHAR].POSS.POSSCNT);
+          MOVELEFT( IOCACHE[ GETREC(
+                       ZOBJECT,
+                       CHARACTR[ CAMPCHAR].POSS.POSSESS[ ITEMX].EQINDEX,
+                       SIZEOF( TOBJREC))],
+                    THEITEM,
+                    SIZEOF( TOBJREC));
+          IF THEITEM.SPELLPWR = 0 THEN
+            EXITUSE( 'POWERLESS');
+          IF THEITEM.OBJTYPE <> SPECIAL THEN
+            IF NOT CHARACTR[ CAMPCHAR].POSS.POSSESS[ ITEMX].EQUIPED THEN
+              EXITUSE( 'NOT EQUIPPED');
+          IF (RANDOM MOD 100) < THEITEM.CHGCHANC THEN
+            CHARACTR[ CAMPCHAR].POSS.POSSESS[ ITEMX].EQINDEX := 
+              THEITEM.CHANGETO;
+          CASTSPEL( SCNTOC.SPELLHSH[ THEITEM.SPELLPWR])
+        END;  (* USEITEM *)
+        
+        
+
+      
+  PROCEDURE DROPITEM;  (* P010C13 *)
+      
+      VAR
+           UNUSEDXX : INTEGER;
+           UNUSEDYY : INTEGER;
+           POSSX    : INTEGER;
+           POSSI    : INTEGER;
+        
+        
+        PROCEDURE EXITDROP( EXITSTR: STRING);  (* P010C14 *)
+        
+          BEGIN
+            AASTRAA( EXITSTR);
+            EXIT( DROPITEM)
+          END;
+          
+          
+        BEGIN  (* DROPITEM *)
+          DISPSTAT := FALSE;
+          REPEAT
+            GOTOXY( 0, 18);
+            WRITE( CHR( 11));
+            WRITE(  'DROP ITEM (0=EXIT) ? >');
+            GETKEY;
+            POSSI := ORD( INCHAR) - ORD( '0');
+            IF POSSI = 0 THEN
+              EXIT( DROPITEM);
+          UNTIL (POSSI > 0) AND
+                (POSSI <= CHARACTR[ CAMPCHAR].POSS.POSSCNT);
+          IF CHARACTR[ CAMPCHAR].POSS.POSSESS[ POSSI].CURSED THEN
+            EXITDROP( 'CURSED');
+          IF CHARACTR[ CAMPCHAR].POSS.POSSESS[ POSSI].EQUIPED THEN
+            EXITDROP( 'EQUIPPED');
+          FOR POSSX := POSSI + 1 TO CHARACTR[ CAMPCHAR].POSS.POSSCNT DO
+            CHARACTR[ CAMPCHAR].POSS.POSSESS[ POSSX - 1] :=
+              CHARACTR[ CAMPCHAR].POSS.POSSESS[ POSSX];
+          CHARACTR[ CAMPCHAR].POSS.POSSCNT :=
+                                          CHARACTR[ CAMPCHAR].POSS.POSSCNT - 1;
+          DSPITEMS;
+          EXITDROP( 'DROPPED')
+        END;  (* DROPITEM *)
+        

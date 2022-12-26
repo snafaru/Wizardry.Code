@@ -1,0 +1,435 @@
+    
+SEGMENT PROCEDURE SPECIALS;   (* P010301 *)
+    
+    CONST
+          SERIALBL = 5;
+  
+    VAR
+         SPCINDEX : INTEGER;
+         UNUSED   : INTEGER;
+         NUM2000  : RECORD CASE INTEGER OF
+                      1: (I: INTEGER);
+                      2: (P: ^INTEGER);
+                    END;
+  
+  
+    PROCEDURE INSPECT;  (* P010302 *)
+    
+      VAR
+           PICKCNT  : INTEGER;
+           PICKLIST : ARRAY[ 1..6] OF INTEGER;
+           UNUSEDXX : INTEGER;
+           PICKCHAR : INTEGER;
+           PICKREC  : TCHAR;
+           MAZE     : TMAZE;
+           INMYROOM : PACKED ARRAY[ 0..19] OF PACKED ARRAY[ 0..19] OF BOOLEAN;
+           CHECKED  : PACKED ARRAY[ 0..19] OF PACKED ARRAY[ 0..19] OF BOOLEAN;
+           
+        
+        
+      PROCEDURE LOOKLOST;  (* P010303 *)
+      
+      
+        PROCEDURE FOUNDLOS;  (* P010304 *)
+        
+          BEGIN
+            IF PICKCNT = 5 THEN
+              EXIT( LOOKLOST);
+            PICKCNT := PICKCNT + 1;
+            PICKLIST[ PICKCNT] := PICKCHAR;
+            WRITE( PICKCNT : 1);
+            WRITE( ') ');
+            WRITE( PICKREC.NAME);
+            WRITELN
+          END;  (* FOUNDLOS *)
+          
+          
+        BEGIN  (* LOOKLOST *)
+          PICKCNT := 0;
+          WRITE( CHR( 12));
+          WRITELN( 'FOUND:');
+          WRITELN;
+          WRITELN;
+          WRITELN;
+          FOR PICKCHAR := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+            BEGIN
+              MOVELEFT( IOCACHE[ GETREC( ZCHAR, PICKCHAR, SIZEOF( TCHAR))],
+                        PICKREC,
+                        SIZEOF( TCHAR));
+              IF NOT PICKREC.INMAZE THEN
+                IF PICKREC.LOSTXYL.LOCATION[ 3] = MAZELEV THEN
+                  IF INMYROOM[ PICKREC.LOSTXYL.LOCATION[ 1],
+                               PICKREC.LOSTXYL.LOCATION[ 2] ] THEN
+                    FOUNDLOS
+            END;
+          IF PICKCNT = 0 THEN
+            WRITELN( '** NO ONE **')
+        END;  (* LOOKLOST *)
+        
+        
+      PROCEDURE PICKUP;  (* P010305 *)
+      
+        BEGIN
+          IF PARTYCNT = 6 THEN
+            BEGIN
+              GOTOXY( 0, 20);
+              WRITE( CHR( 11));
+              WRITELN( 'YOU HAVE 6 - PRESS [RET]');
+              GOTOXY( 41, 0);
+              REPEAT
+                GETKEY
+              UNTIL INCHAR = CHR( CRETURN);
+              EXIT( PICKUP)
+            END;
+              
+          REPEAT
+            GOTOXY( 0, 20);
+            WRITE( CHR( 11));
+            WRITE( 'GET WHO (0=EXIT) >');
+            GETKEY;
+            PICKCHAR := ORD( INCHAR) - ORD( '0');
+            IF PICKCHAR = 0 THEN
+              EXIT( PICKUP)
+          UNTIL (PICKCHAR > 0) AND (PICKCHAR <= PICKCNT);
+          
+          IF PICKLIST[ PICKCHAR] = -1 THEN
+            EXIT( PICKUP);
+          MOVELEFT( IOCACHE[ GETREC( ZCHAR,
+                                     PICKLIST[ PICKCHAR],
+                                     SIZEOF( TCHAR))],
+                    CHARACTR[ PARTYCNT],
+                    SIZEOF( TCHAR));
+          CHARDISK[ PARTYCNT] := PICKLIST[ PICKCHAR];
+          CHARACTR[ PARTYCNT].LOSTXYL.LOCATION[ 1] := 0;
+          CHARACTR[ PARTYCNT].LOSTXYL.LOCATION[ 2] := 0;
+          CHARACTR[ PARTYCNT].LOSTXYL.LOCATION[ 3] := 0;
+          CHARACTR[ PARTYCNT].INMAZE := TRUE;
+          MOVELEFT( CHARACTR[ PARTYCNT],
+                    IOCACHE[ GETRECW( ZCHAR,
+                                      PICKLIST[ PICKCHAR],
+                                      SIZEOF( TCHAR))],
+                    SIZEOF( TCHAR));
+          PICKLIST[ PICKCHAR] := - 1;
+          PARTYCNT := PARTYCNT + 1;
+          GOTOXY( 0, 3 + PICKCHAR);
+          WRITE( CHR( 29))
+        END;  (* PICKUP *)
+        
+        
+      PROCEDURE EXPLROOM;  (* P010306 *)
+      
+        VAR
+             VERT     : INTEGER;
+             HORZ     : INTEGER;
+             DONELOOK : BOOLEAN;
+      
+      
+        PROCEDURE CHECKLOC( X:    INTEGER;    (* P010307 *)
+                            Y:    INTEGER;
+                            WALL: TWALL);
+        
+          BEGIN
+            IF WALL <> OPEN THEN
+              EXIT( CHECKLOC);
+            X := (X + 20) MOD 20;
+            Y := (Y + 20) MOD 20;
+            IF INMYROOM[ X][ Y] THEN
+              EXIT( CHECKLOC);
+            DONELOOK := FALSE;
+            INMYROOM[ X][ Y] := TRUE
+          END;  (* CHECKLOC *)
+          
+          
+        BEGIN (* EXPLROOM *)
+          MOVELEFT( IOCACHE[ GETREC( ZMAZE, MAZELEV - 1, SIZEOF( TMAZE))],
+                    MAZE,
+                    SIZEOF( TMAZE));
+          FILLCHAR( INMYROOM, 80, 0);
+          INMYROOM[ MAZEX][ MAZEY] := TRUE;
+          FILLCHAR( CHECKED, 80, 0);
+          REPEAT
+            WRITE( '.');
+            DONELOOK := TRUE;
+            FOR HORZ := 0 TO 19 DO
+              FOR VERT := 0 TO 19 DO
+                IF INMYROOM[ HORZ][ VERT] THEN
+                  IF NOT CHECKED[ HORZ][ VERT] THEN
+                    BEGIN
+                      CHECKLOC( HORZ + 1, VERT, MAZE.E[ HORZ][ VERT]);
+                      CHECKLOC( HORZ - 1, VERT, MAZE.W[ HORZ][ VERT]);
+                      CHECKLOC( HORZ, VERT - 1, MAZE.S[ HORZ][ VERT]);
+                      CHECKLOC( HORZ, VERT + 1, MAZE.N[ HORZ][ VERT]);
+                      CHECKED[ HORZ][ VERT] := TRUE
+                    END
+          UNTIL DONELOOK
+        END;  (* EXPLROOM *)
+        
+        
+      BEGIN (* INSPECT *)
+        WRITE( CHR( 12));
+        WRITE( 'LOOKING');
+        TEXTMODE;
+        EXPLROOM;
+        LOOKLOST;
+        REPEAT
+          GOTOXY( 0, 20);
+          WRITE( 'OPTIONS: ');
+          IF PICKCNT > 0 THEN
+            WRITE( 'P)ICK UP, ');
+          WRITE( 'L)EAVE');
+          REPEAT
+            GOTOXY( 41, 0);
+            GETKEY
+          UNTIL (INCHAR = 'P') OR (INCHAR = 'L');
+          IF INCHAR = 'P' THEN
+            IF PICKCNT > 0 THEN
+              PICKUP;
+        UNTIL INCHAR = 'L';
+        XGOTO := XRUNNER;
+        GRAPHICS;
+        EXIT( SPECIALS)
+      END;  (* INSPECT *)
+      
+      
+    FUNCTION FINDFILE( DRIVE:  INTEGER;  (* P010308 *)
+                       FILENM: STRING) : INTEGER;
+                       
+      TYPE
+           DIRENTRY = RECORD
+             FIRSTBLK : INTEGER;
+             LASTBLK  : INTEGER;
+             FILEKIND : PACKED RECORD
+                 FT : (VOLHEAD, BADBLK, MACH6502, TEXT, DEBUG,
+                       DATA, GRAFFILE, FOTOFILE, SUBDIR);
+               END;
+             FILENAME : STRING[ 7];
+             VOLLB    : INTEGER;
+             FILECNT  : INTEGER;
+             LOADTIM  : INTEGER;
+             BOOTDATE : INTEGER;
+             RES1     : INTEGER;
+             RES2     : INTEGER;
+         END;
+               
+      VAR
+           DIR   : ARRAY[ 0..3] OF DIRENTRY;
+           FILEI : INTEGER;
+           FILEX : INTEGER;
+                       
+      BEGIN
+        NUM2000.I := 8192;
+        UNITREAD( DRIVE, DIR, 104, 2, 0);
+        IF IORESULT <> 0 THEN
+          FINDFILE := - ABS( IORESULT)
+        ELSE
+          BEGIN
+            FILEI := 0;
+            FOR FILEX := 1 TO DIR[ 0].FILECNT DO
+              IF (DIR[ FILEX].FILEKIND.FT >= BADBLK) AND
+                 (DIR[ FILEX].FILEKIND.FT <= FOTOFILE) THEN
+                IF DIR[ FILEX].FILENAME = FILENM THEN
+                  FILEI := FILEX;
+            IF FILEI = 0 THEN
+              FINDFILE := - 9
+            ELSE
+              FINDFILE := DIR[ FILEI].FIRSTBLK
+          END
+      END;  (* FINDFILE *)
+      
+      
+      
+    PROCEDURE INITGAME;  (* P010309 *)
+    
+      VAR
+           CPTEMP   : INTEGER;                 (* COPY PROTECTION CODE USES *)
+           UNUSED   : INTEGER;                 (* CP CODE *)
+           SAVEI    : INTEGER;                 (* CP CODE *)
+           SYNCH    : ARRAY[ 0..3] OF INTEGER; (* CP CODE *)
+           
+           DUPLSER : STRING[ 7];
+           MASTSER : STRING[ 7];
+    
+    
+    PROCEDURE MAZESCRN;  (* P01030A *)
+      
+      
+        PROCEDURE HORZHYPH;  (* P01030B *)
+        
+          BEGIN
+            FOR LLBASE04 := 1 TO 38 DO
+              PRINTCHR( CHR( 34))        (* HYPHEN GRAPHIC *)
+          END;
+          
+          
+        PROCEDURE HORZLINE( LINE : INTEGER);  (* P01030C *)
+        
+          BEGIN
+            MVCURSOR( 0, LINE);
+            PRINTCHR( CHR( 39));         (* TILTED "T" ON LEFT OF LINE  *)
+            HORZHYPH;
+            PRINTCHR( CHR( 40))          (* TILTED "T" ON RIGHT OF LINE *)
+          END;
+          
+          
+        PROCEDURE SCRNOUTL;  (* P01030D *)
+        
+          BEGIN
+            MVCURSOR( 0, 0);
+            PRINTCHR( CHR( 33));         (* UPPER LEFT CORNER *)
+            FOR LLBASE04 := 1 TO 38 DO
+              PRINTCHR( CHR( 34));       (* HYPHEN *)
+            PRINTCHR( CHR( 35));         (* UPPER RIGHT CORNER *)
+            FOR LLBASE04 := 1 TO 22 DO
+              BEGIN
+                MVCURSOR( 0, LLBASE04);
+                PRINTCHR( CHR( 36));     (* VERTICAL BAR ON LEFT  *)
+                MVCURSOR( 39, LLBASE04);
+                PRINTCHR( CHR( 36))      (* VERTICAL BAR ON RIGHT *)
+              END;
+            MVCURSOR( 0, 23);
+            PRINTCHR( CHR( 37));         (* BOTTOM LEFT CORNER *)
+            FOR LLBASE04 := 1 TO 38 DO
+              PRINTCHR( CHR( 34));       (* HYPHEN *)
+            PRINTCHR( CHR( 38))          (* BOTTOM RIGHT CORNER *)
+          END;
+          
+          
+        PROCEDURE INITSCRN;  (* P01030E *)
+        
+          VAR
+               UNUSED : ARRAY[ 0..1] OF INTEGER;
+              
+          BEGIN
+            CLRRECT( 0, 0, 40, 24);
+            UNITREAD( DRIVE1, CHARSET, BLOCKSZ, SCNTOCBL + 2, 0);
+            SCRNOUTL;
+            HORZLINE( 10);
+            HORZLINE( 15);
+            MVCURSOR( 12, 0);           
+            PRINTCHR( CHR( 91));         (* TILTED "T" TOP OF LINE *)
+            FOR LLBASE04 := 1 TO 9 DO
+              BEGIN
+                MVCURSOR( 12, LLBASE04);
+                PRINTCHR( CHR( 92))      (* VERTICAL BAR *)
+              END;
+            MVCURSOR( 12, 5);
+            PRINTCHR( CHR( 93));         (* TILTED "T" LEFT OF LINE *)
+            FOR LLBASE04 := 13 TO 38 DO
+              PRINTCHR( CHR( 34));       (* HYPHEN *)
+            PRINTCHR( CHR( 40));         (* TILTED "T" RIGHT OF LINE *)
+            MVCURSOR( 12, 10);
+            PRINTCHR( CHR( 94));         (* TILTED "T" BOTTOM OF LINE *)
+            UNITREAD( DRIVE1, CHARSET, BLOCKSZ, SCNTOCBL + 1, 0);
+            MVCURSOR( 1, 16);
+            PRINTSTR( '# CHARACTER NAME  CLASS AC HITS STATUS')
+          END;
+          
+        BEGIN (* MAZESCRN *)
+          CLRRECT( 0, 0, 40, 24);  (* REPEATED IN INITSCRN!? *)
+          INITSCRN
+        END;
+        
+        
+      PROCEDURE GTSERIAL;  (* P01030F *)
+      
+        (* GOOFY TRACK SYNCH COPYPROTECTION CODE *)
+      
+        BEGIN
+          UNITREAD( DRIVE1, IOCACHE, BLOCKSZ, SERIALBL, 0);
+          CPTEMP := 31;  (* OFFSET TO MANGLED SYNCH COUNTS *)
+          FOR SAVEI := 10 TO 13 DO
+            BEGIN
+              MOVELEFT( IOCACHE[ CPTEMP], SYNCH[ (SAVEI - 10)], 2);
+              CPTEMP := CPTEMP + 2 * (SYNCH[ SAVEI - 10] MOD 13) + 5
+            END;
+          MOVELEFT( IOCACHE, MASTSER, 8)
+        END;
+        
+        
+      PROCEDURE COPYPROT;  (* P010310 *)
+      
+        VAR
+             CPCALC   : INTEGER;
+             TRIES    : INTEGER;
+             GOODCOPY : BOOLEAN;
+      
+        BEGIN
+          FOR TRIES := 1 TO 5 DO
+            BEGIN
+               GOODCOPY := TRUE;
+              FOR SAVEI := 10 TO 13 DO
+                BEGIN
+                  UNITREAD( DRIVE1, IOCACHE, BLOCKSZ, 8 * SAVEI, 0);
+                  MVCURSOR( 60, 0);  (* JUMP TO $2002 AND EXECUTE *)
+                  CPTEMP := NUM2000.P^;  (* SYNCH COUNT FROM $2002
+                                              READING DISK TRACKS *)
+                  IF SAVEI = 10 THEN
+                    CPCALC := CPTEMP - SYNCH[ 10 - 10];
+                  CPTEMP := CPTEMP - CPCALC;
+                  IF ABS( CPTEMP -  SYNCH[ SAVEI - 10]) > 29 THEN
+                     GOODCOPY := FALSE;
+                END;
+              IF GOODCOPY THEN
+                EXIT( COPYPROT);
+            END;
+            
+          MVCURSOR( 70, 0);  (* CRASH AND BURN *)
+          HALT
+        END;
+        
+        
+        
+      BEGIN (* INITGAME *)
+      
+        IF LLBASE04 = -1 THEN
+          BEGIN
+            REPEAT
+              WRITE( CHR( 12));
+              GOTOXY( 0, 11);
+              WRITE( ' SCENARIO MASTER IN DRV 1, PRESS [RET]');
+              REPEAT
+                GOTOXY( 41, 0);
+                GETKEY
+              UNTIL INCHAR = CHR( CRETURN);
+              SCNTOCBL := FINDFILE( DRIVE1, 'SCENARIO.DATA')
+            UNTIL SCNTOCBL >= 0;
+            
+            UNITREAD( DRIVE1, NUM2000.P^, BLOCKSZ, SCNTOCBL + 3, 0);
+                (* SCNTOCBL + 3 FOLLOWS MAGE AND PRIEST SPELL NAMES *)
+                (* COPY PROTECTION CODE GETS LOADED TO $2000        *)
+            GTSERIAL; (* AND SOME COPY PROTECTION *)
+            COPYPROT; (* MORE COPY PROTECTION     *)
+            
+            REPEAT
+              WRITE( CHR( 12));
+              GOTOXY( 0, 11);
+              WRITE( ' MASTER/DUPLICATE IN DRV 1, PRESS [RET]');
+              REPEAT
+                GOTOXY( 41, 0);
+                GETKEY
+              UNTIL INCHAR = CHR( CRETURN);
+              SCNTOCBL := FINDFILE( DRIVE1, 'SCENARIO.DATA');
+              UNITREAD( DRIVE1, IOCACHE, BLOCKSZ, SERIALBL, 0);
+              MOVELEFT( IOCACHE, DUPLSER, 8)
+            UNTIL (SCNTOCBL >= 0) AND (MASTSER = DUPLSER);
+            
+            TIMEDLAY := 2000;
+            CACHEWRI := FALSE;
+            CACHEBL := 0;
+            UNITREAD( DRIVE1, IOCACHE, SIZEOF( IOCACHE), SCNTOCBL, 0);
+            MOVELEFT( IOCACHE, SCNTOC, SIZEOF( TSCNTOC))
+          END;
+          
+        XGOTO := XCASTLE;
+        WRITE( CHR( 12));
+        TEXTMODE;
+        MAZESCRN;
+        MAZEX    := 0;
+        MAZEY    := 0;
+        MAZELEV  := 0;
+        PARTYCNT := 0;
+        DIRECTIO := 0;
+        ACMOD2   := 0;
+        EXIT( SPECIALS)
+      END;
+    

@@ -1,0 +1,503 @@
+(*$S++*)
+(*$L PRINTER: *)
+(* "$S++" OPTION BEFORE "$L" *)
+(*$R-*)
+(*$I-*)
+(*$V-*)
+
+(*
+  WIZARDRY I (PROVING GROUNDS), WIZARDRY.CODE
+  REVERSE ENGINEERED BY:
+    
+    THOMAS WILLIAM EWERS
+      (MAR - JUN 2014)
+*)
+
+
+PROGRAM WIZARDRY;
+
+  CONST
+        BLOCKSZ = 512;
+        DRIVE1  = 4;
+        CRETURN = 13;
+        
+  TYPE
+  
+        TXGOTO = (XDONE,    XTRAININ, XCASTLE,  XGILGAMS, XINSPECT, XBOLTAC,
+                  XCANT,    XRUNNER,  XCOMBAT,  XNEWMAZE, XCHK4WIN, XREWARD,
+                  XINSPCT2, XEQUIP6,  XEQPDSP,  XREORDER, XCEMETRY, XINSPCT3,
+                  XBCK2CMP, XBCK2ROL, XCMP2EQ6, XUNUSED,  XREWARD2, XSCNMSG,
+                  XCAMPSTF, XEDGTOWN, XINSAREA, XBK2CMP2);
+                  
+        TWIZLONG = RECORD
+            LOW  : INTEGER;
+            MID  : INTEGER;
+            HIGH : INTEGER;
+          END;
+                   
+        TRACE = (NORACE, HUMAN, ELF, DWARF, GNOME, HOBBIT);
+        
+        TCLASS = (FIGHTER, MAGE, PRIEST, THIEF,
+                  BISHOP, SAMURAI, LORD, NINJA);
+          
+        TALIGN = (UNALIGN, GOOD, NEUTRAL, EVIL);
+          
+        TSTATUS = (OK, AFRAID, ASLEEP, PLYZE, 
+                   STONED, DEAD, ASHES, LOST);
+        
+        TATTRIB = (STRENGTH, IQ, PIETY, VITALITY, AGILITY, LUCK);
+        
+        TSPELL7G = ARRAY[ 1..7] OF INTEGER;
+        
+        THPREC = RECORD
+            LEVEL   : INTEGER;
+            HPFAC   : INTEGER;
+            HPMINAD : INTEGER;
+          END;
+                 
+        TCHAR = RECORD
+            NAME     : STRING[ 15];
+            PASSWORD : STRING[ 15];
+            INMAZE   : BOOLEAN;
+            RACE     : TRACE;
+            CLASS    : TCLASS;
+            AGE      : INTEGER;
+            STATUS   : TSTATUS;
+            ALIGN    : TALIGN;
+            ATTRIB   : PACKED ARRAY[ STRENGTH..LUCK] OF 0..18;
+            LUCKSKIL : PACKED ARRAY[ 0..4] OF 0..31;
+            GOLD     : TWIZLONG;
+            POSS     : RECORD
+                POSSCNT : INTEGER;
+                POSSESS : ARRAY[ 1..8] OF RECORD
+                    EQUIPED : BOOLEAN;
+                    CURSED  : BOOLEAN;
+                    IDENTIF : BOOLEAN;
+                    EQINDEX : INTEGER;
+                  END;
+              END;
+            EXP      : TWIZLONG;
+            MAXLEVAC : INTEGER;
+            CHARLEV  : INTEGER;
+            HPLEFT   : INTEGER;
+            HPMAX    : INTEGER;
+            SPELLSKN : PACKED ARRAY[ 0..49] OF BOOLEAN;
+            MAGESP   : TSPELL7G;
+            PRIESTSP : TSPELL7G;
+            HPCALCMD : INTEGER;
+            ARMORCL  : INTEGER;
+            HEALPTS  : INTEGER;
+            CRITHITM : BOOLEAN;
+            SWINGCNT : INTEGER;
+            HPDAMRC  : THPREC;
+            WEPVSTY2 : PACKED ARRAY[ 0..1, 0..13] OF BOOLEAN;
+            WEPVSTY3 : PACKED ARRAY[ 0..1, 0..6] OF BOOLEAN;
+            WEPVSTYP : PACKED ARRAY[ 0..13] OF BOOLEAN;
+            LOSTXYL  : RECORD CASE INTEGER OF
+                1:  (LOCATION : ARRAY[ 1..4] OF INTEGER);
+                2:  (POISNAMT : ARRAY[ 1..4] OF INTEGER);
+                3:  (AWARDS   : ARRAY[ 1..4] OF INTEGER);
+              END;
+          END;
+              
+        TOBJTYPE = (WEAPON, ARMOR, SHIELD, HELMET, GAUNTLET,
+                    SPECIAL, MISC);
+                          
+        TOBJREC = RECORD
+            NAME     : STRING[ 15];
+            NAMEUNK  : STRING[ 15];
+            OBJTYPE  : TOBJTYPE;
+            ALIGN    : TALIGN;
+            CURSED   : BOOLEAN;
+            SPECIAL  : INTEGER;
+            CHANGETO : INTEGER;
+            CHGCHANC : INTEGER;
+            PRICE    : TWIZLONG;
+            BOLTACXX : INTEGER;
+            SPELLPWR : INTEGER;
+            CLASSUSE : PACKED ARRAY[ TCLASS] OF BOOLEAN;
+            HEALPTS  : INTEGER;
+            WEPVSTY2 : PACKED ARRAY[ 0..15] OF BOOLEAN;
+            WEPVSTY3 : PACKED ARRAY[ 0..15] OF BOOLEAN;
+            ARMORMOD : INTEGER;
+            WEPHITMD : INTEGER;
+            WEPHPDAM : THPREC;
+            XTRASWNG : INTEGER;
+            CRITHITM : BOOLEAN;
+            WEPVSTYP : PACKED ARRAY[ 0..13] OF BOOLEAN;
+          END;
+
+        TWALL = (OPEN, WALL, DOOR, HIDEDOOR);
+   
+        TSQUARE = (NORMAL, STAIRS, PIT, CHUTE, SPINNER, DARK, TRANSFER,
+                   OUCHY, BUTTONZ, ROCKWATE, FIZZLE, SCNMSG, ENCOUNTE);
+   
+        TMAZE = RECORD
+            W : PACKED ARRAY[ 0..19] OF PACKED ARRAY[ 0..19] OF TWALL;
+            S : PACKED ARRAY[ 0..19] OF PACKED ARRAY[ 0..19] OF TWALL;
+            E : PACKED ARRAY[ 0..19] OF PACKED ARRAY[ 0..19] OF TWALL;
+            N : PACKED ARRAY[ 0..19] OF PACKED ARRAY[ 0..19] OF TWALL;
+            
+            FIGHTS : PACKED ARRAY[ 0..19] OF PACKED ARRAY[ 0..19] OF 0..1;
+                       
+            SQREXTRA : PACKED ARRAY[ 0..19] OF PACKED ARRAY[ 0..19] OF 0..15;
+                       
+            SQRETYPE : PACKED ARRAY[ 0..15] OF TSQUARE;
+            
+            AUX0   : PACKED ARRAY[ 0..15] OF INTEGER;
+            AUX1   : PACKED ARRAY[ 0..15] OF INTEGER;
+            AUX2   : PACKED ARRAY[ 0..15] OF INTEGER;
+                       
+            ENMYCALC : PACKED ARRAY[ 1..3] OF RECORD
+                         MINENEMY : INTEGER;
+                         MULTWORS : INTEGER;
+                         WORSE01  : INTEGER;
+                         RANGE0N  : INTEGER;
+                         PERCWORS : INTEGER;
+                       END;
+          END;
+        
+        TENEMY = RECORD
+            NAMEUNK  : STRING[ 15];
+            NAMEUNKS : STRING[ 15];
+            NAME     : STRING[ 15];
+            NAMES    : STRING[ 15];
+            PIC      : INTEGER;
+            CALC1    : TWIZLONG;
+            HPREC    : THPREC;
+            CLASS    : INTEGER;
+            AC       : INTEGER;
+            RECSN    : INTEGER;
+            RECS     : ARRAY[ 1..7] OF THPREC;
+            EXPAMT   : TWIZLONG;
+            DRAINAMT : INTEGER;
+            HEALPTS  : INTEGER;
+            REWARD1  : INTEGER;
+            REWARD2  : INTEGER;
+            ENMYTEAM : INTEGER;
+            TEAMPERC : INTEGER;
+            MAGSPELS : INTEGER;
+            PRISPELS : INTEGER;
+            UNIQUE   : INTEGER;
+            BREATHE  : INTEGER;
+            UNAFFCT  : INTEGER;
+            WEPVSTY3 : PACKED ARRAY[ 0..15] OF BOOLEAN;
+            SPPC     : PACKED ARRAY[ 0..15] OF BOOLEAN;
+          END;
+                 
+        TENEMY2 = RECORD
+            A : RECORD
+                    IDENTIFI : BOOLEAN;
+                    ALIVECNT : INTEGER;
+                    ENMYCNT  : INTEGER;
+                    ENEMYID  : INTEGER;
+                    TEMP04   : ARRAY[ 0..8] OF RECORD
+                        VICTIM   : INTEGER;
+                        SPELLHSH : INTEGER;
+                        AGILITY  : INTEGER;
+                        HPLEFT   : INTEGER;
+                        ARMORCL  : INTEGER;
+                        INAUDCNT : INTEGER;
+                        STATUS   : TSTATUS;
+                      END;
+                  END;
+                
+            B : TENEMY;
+          END;
+                   
+        TEXP = ARRAY[ FIGHTER..NINJA] OF ARRAY[ 0..12] OF TWIZLONG;
+        
+        TBCD = ARRAY[ 0..13] OF INTEGER;
+                   
+        TSPEL012 = (GENERIC, PERSON, GROUP);
+        
+        TZSCN = (ZZERO, ZMAZE, ZENEMY, ZREWARD, ZOBJECT,
+                        ZCHAR, ZSPCCHRS, ZEXP);
+                   
+        TSCNTOC = RECORD
+            GAMENAME : STRING[ 40];
+            RECPER2B : ARRAY[ ZZERO..ZEXP] OF INTEGER;
+            RECPERDK : ARRAY[ ZZERO..ZEXP] OF INTEGER;
+            UNUSEDXX : ARRAY[ ZZERO..ZEXP] OF INTEGER;
+            BLOFF    : ARRAY[ ZZERO..ZEXP] OF INTEGER;
+            RACE     : ARRAY[ NORACE..HOBBIT]         OF STRING[ 9];
+            CLASS    : PACKED ARRAY[ FIGHTER..NINJA]  OF STRING[ 9];
+            STATUS   : ARRAY[ OK..LOST]               OF STRING[ 8];
+            ALIGN    : PACKED ARRAY[ UNALIGN..EVIL]   OF STRING[ 9];
+            SPELLHSH : PACKED ARRAY[ 0..50] OF INTEGER;
+            SPELLGRP : PACKED ARRAY[ 0..50] OF 0..7;
+            SPELL012 : PACKED ARRAY[ 0..50] OF TSPEL012;
+          END;
+    
+        TBATRSLT = RECORD
+            ENMYCNT : ARRAY[ 1..4] OF INTEGER;
+            ENMYID  : ARRAY[ 1..4] OF INTEGER;
+            DRAINED : ARRAY[ 0..5] OF BOOLEAN;
+          END;
+          
+        TCHRIMAG = PACKED ARRAY[ 0..7] OF 0..255;
+        
+        
+  VAR
+  
+       PARTYCNT : INTEGER;
+       CACHEBL  : INTEGER;
+       SCNTOCBL : INTEGER;
+       LLBASE04 : INTEGER;  (* REALLY BASE.06 IN WIZ1, BUT IS BASE04 IN LOL *)
+       TIMEDLAY : INTEGER;
+       CACHEWRI : BOOLEAN;
+       INCHAR   : CHAR;
+       XGOTO    : TXGOTO;
+       XGOTO2   : TXGOTO;
+       ATTK012  : INTEGER;
+       FIZZLES  : INTEGER;
+       CHSTALRM : INTEGER;
+       LIGHT    : INTEGER;
+       ACMOD2   : INTEGER;
+       ENSTRENG : INTEGER;
+       BASE12   : RECORD CASE INTEGER OF      (* BASE291 IN LOL *)
+                    1: (MYSTRENG : INTEGER);
+                    2: (GOTOX    : TXGOTO);
+                  END;
+       ENEMYINX : INTEGER;
+       SAVELEV  : INTEGER;
+       SAVEY    : INTEGER;
+       SAVEX    : INTEGER;
+       DIRECTIO : INTEGER;
+       MAZELEV  : INTEGER;
+       MAZEY    : INTEGER;
+       MAZEX    : INTEGER;
+       ENCB4RUN : BOOLEAN;
+       FIGHTMAP : PACKED ARRAY[ 0..19, 0..19] OF BOOLEAN;
+       CHARDISK : ARRAY[ 0..5] OF INTEGER;
+       CHARACTR : ARRAY[ 0..5] OF TCHAR;
+       SCNTOC   : TSCNTOC;
+       IOCACHE  : PACKED ARRAY[ 0..1023] OF CHAR;
+       CHARSET  : PACKED ARRAY[ 0..63] OF TCHRIMAG;
+       BASE06B6 : INTEGER; (* UNUSED *)
+       MEMPTR   : RECORD CASE INTEGER OF
+                    1: (I : INTEGER);
+                    2: (P : ^INTEGER);
+                  END;
+       
+
+(* ---------- BEGIN FORWARD DECLARATIONS ---------- *)
+
+PROCEDURE PRINTBEL; FORWARD;                   (* P010002 *)
+
+FUNCTION GETREC( DATATYPE: TZSCN;              (* P010003 *)
+                 DATAINDX: INTEGER;
+                 DATASIZE: INTEGER) : INTEGER; FORWARD;
+                 
+FUNCTION GETRECW( DATATYPE: TZSCN;             (* P010004 *)
+                  DATAINDX: INTEGER;
+                  DATASIZE: INTEGER) : INTEGER; FORWARD;
+                  
+PROCEDURE ADDLONGS( VAR FIRST:  TWIZLONG;      (* P010005 *)
+                    VAR SECOND: TWIZLONG); FORWARD;
+                    
+PROCEDURE SUBLONGS( VAR FIRST:  TWIZLONG;      (* P010006 *)
+                    VAR SECOND: TWIZLONG); FORWARD;
+                    
+PROCEDURE BCD2LONG( VAR LONGNUM: TWIZLONG;     (* P010007 *)
+                    VAR BCDNUM:  TBCD); FORWARD;
+                    
+PROCEDURE LONG2BCD( VAR LONGNUM: TWIZLONG;     (* P010008 *)
+                    VAR BCDNUM:  TBCD); FORWARD;
+                   
+PROCEDURE MULTLONG( VAR LONGNUM: TWIZLONG;     (* P010009 *)
+                    VAR INTNUM:  INTEGER); FORWARD;
+
+PROCEDURE DIVLONG( VAR LONGNUM: TWIZLONG;      (* P01000A *)
+                   VAR INTNUM:  INTEGER); FORWARD;
+
+FUNCTION TESTLONG( FIRST:  TWIZLONG;           (* P01000B *)
+                   SECOND: TWIZLONG) : INTEGER; FORWARD;
+
+PROCEDURE PRNTLONG( LONGNUM: TWIZLONG); FORWARD;  (* P01000C *)
+                         
+PROCEDURE GETKEY; FORWARD;                     (* P01000D *)
+
+PROCEDURE GETLINE( VAR GTSTRING: STRING); FORWARD; (* P01000E *)
+
+FUNCTION GETCHARX( DSPNAMES: BOOLEAN;          (* P01000F *)
+                   SOLICIT: STRING) : INTEGER; FORWARD;
+
+PROCEDURE CENTSTR( ASTRING: STRING); FORWARD;  (* P010010 *)
+
+PROCEDURE PAUSE1; FORWARD;                     (* P010011 *)
+
+PROCEDURE PAUSE2; FORWARD;                     (* P010012 *)
+
+PROCEDURE CLEARPIC; FORWARD;                   (* P010013 *)
+
+PROCEDURE GRAPHICS; FORWARD;                   (* P010014 *)
+
+PROCEDURE TEXTMODE; FORWARD;                   (* P010015 *)
+
+PROCEDURE PRINTCHR( ACHAR: CHAR); FORWARD;     (* P010016 *)
+
+PROCEDURE PRINTSTR( ASTRING: STRING); FORWARD; (* P010017 *)
+
+PROCEDURE PRINTNUM( ANUM: INTEGER;             (* P010018 *)
+                    FIELDSZ: INTEGER); FORWARD;
+
+PROCEDURE GETSTR( VAR ASTRING: STRING;         (* P010019 *)
+                      WINXPOS: INTEGER;
+                      WINYPOS: INTEGER); FORWARD;
+
+
+(* ---------- END FORWARD DECLARATIONS ---------- *)
+
+(* ---------- BEGIN EXTERNALS ------------------- *)
+
+
+PROCEDURE CLRPICT( A1:  INTEGER;               (* P01001A *)
+                   A2:  INTEGER;
+                   A3:  INTEGER;
+                   A4:  INTEGER); EXTERNAL;
+
+  (* WHEN A4 === 100, THEN CLEAR PICTURE
+     WHEN A4 <> 100 AND A4 <> 101 THEN:
+     
+     DRAWING MAZE USES THIS FOR DRAWING PICTURE (82 X 79 PIXELS).
+     
+       $0679 = A1   X LOWER BOUNDS (FIRST TIME IT IS 0)
+       $06F9 = A2   Y LOWER BOUNDS (0 ALWAYS)
+       $0779 = A3   X UPPER BOUNDS (FIRST TIME IT IS 81)
+       $07F9 = A4   Y UPPER BOUNDS (79 ALWAYS)
+          ...AND NO PICTURE CLEARING           *)
+       
+PROCEDURE DRAWLINE( X:       INTEGER;          (* P01001B *)
+                    Y:       INTEGER;
+                    DELTAH:  INTEGER;
+                    DELTAV:  INTEGER;
+                    LINELEN: INTEGER); EXTERNAL;
+ 
+FUNCTION RANDOM : INTEGER;  EXTERNAL;          (* P01001C *)
+
+  (* RETURNS A VALUE FROM 0 TO 32,767 *)
+  
+
+FUNCTION KEYAVAIL : BOOLEAN; EXTERNAL;         (* P01001D *)
+
+PROCEDURE CLRRECT( X:      INTEGER;            (* P01001E *)
+                   Y:      INTEGER;
+                   WIDTH:  INTEGER;
+                   HEIGHT: INTEGER); EXTERNAL;
+
+PROCEDURE MVCURSOR( X: INTEGER;                (* P01001F *)
+                    Y: INTEGER); EXTERNAL;
+                   
+    (* STORE X AT $4F9.  (SLOT #1 RAM SPACE)
+       STORE Y AT $579.  (SLOT #1 RAM SPACE)
+       
+       MVCURSOR( 40, Y)  TURN ON GRAPHICS MODE
+       MVCURSOR( 50, Y)  TURN ON TEXT MODE
+       MVCURSOR( 60, Y)  JUMP TO $2002  (COPY PROTECTION)
+       MVCURSOR( 70, Y)  CRASH AND BURN (COPY PROTECTION)
+       MVCURSOR( 80, Y)  ADJUST RANDOM # (UNTIL KEY IS AVAILABLE)
+                                      $47A, $47B, $47C, $47D  (???)
+                           RNG USES:  $47A, $4FA, $57A, $5FB  (!!!)  *)
+       
+                    
+PROCEDURE PRGRCHR( VAR A1: TCHRIMAG); EXTERNAL; (* P010020 *)
+
+  (* PRINT A CHARACTER TO HI RES SCREEN *)
+
+(* ---------- END EXTERNALS --------------------- *)
+
+(* ---------- BEGIN SEGMENTS -------------------- *)
+
+(*$I WIZ1C:UTILITIE  *)
+(*$I WIZ1B:UTILITIE2 *)
+(*$I WIZ1B:UTILITIE3 *)
+
+(*$I WIZ1B:SHOPS     *)
+(*$I WIZ1A:SHOPS2    *)
+
+(*$I WIZ1B:SPECIALS  *)
+(*$I WIZ1B:SPECIALS2 *)
+
+(*$I WIZ1B:COMBAT    *)
+(*$I WIZ1B:COMBAT2   *)
+(*$I WIZ1B:COMBAT3   *)
+(*$I WIZ1B:COMBAT4   *)
+(*$I WIZ1B:COMBAT5   *)
+
+(*$I WIZ1C:CASTLE    *)
+(*$I WIZ1C:CASTLE2   *)
+                      
+(*$I WIZ1C:ROLLER    *)
+
+(*$I WIZ1C:CAMP      *)
+(*$I WIZ1C:CAMP2     *)
+                        
+(*$I WIZ1C:REWARDS   *)
+(*$I WIZ1C:REWARDS2  *)
+                      
+(*$I WIZ1C:RUNNER    *)
+(*$I WIZ1C:RUNNER2   *)
+
+(* ---------- END SEGMENTS ---------------------- *)
+
+(*$I WIZ1A:WIZ2.TEXT *)
+
+(* ----- BEGIN WIZARDRY MAINLINE ----- *)
+
+BEGIN  (* P010001 *)
+  
+  MEMPTR.I := 16384;  (* $4000 *)
+  RELEASE( MEMPTR.P);
+  
+  REPEAT
+    LLBASE04 := -1;
+    SPECIALS;
+    REPEAT
+      CASE XGOTO OF
+      
+       XSCNMSG,
+       XINSAREA:  SPECIALS;
+       
+       XCASTLE,
+       XGILGAMS:  CASTLE;
+       
+       XBOLTAC,
+       XCANT,
+       XCHK4WIN,
+       XCEMETRY,
+       XEDGTOWN:  SHOPS;
+       
+       XNEWMAZE,
+       XEQUIP6,
+       XEQPDSP,
+       XREORDER,
+       XCMP2EQ6,
+       XCAMPSTF:  UTILITIE;
+       
+       XTRAININ,
+       XBCK2ROL:  ROLLER;
+       
+       XRUNNER:   RUNNER;
+       
+       XREWARD,
+       XREWARD2:  REWARDS;
+       
+       XCOMBAT,
+       XUNUSED:   COMBAT;
+       
+       XINSPECT,
+       XINSPCT2,
+       XINSPCT3,
+       XBCK2CMP,
+       XBK2CMP2:  CAMP;
+       
+      END;
+    UNTIL XGOTO = XDONE;
+    
+    WRITE( CHR( 12));
+    GOTOXY( 0, 10);
+    WRITE( '    PRESS [RETURN] FOR MORE WIZARDRY    ');
+    READLN
+  UNTIL FALSE
+END.

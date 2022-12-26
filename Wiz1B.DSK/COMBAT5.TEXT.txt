@@ -1,0 +1,574 @@
+
+SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
+    
+    
+    PROCEDURE ARMATTK;  (* P010902 *)
+      
+        BEGIN
+          CASE (RANDOM MOD 5) OF
+            0:  PRINTSTR( 'SWINGS');
+            1:  PRINTSTR( 'THRUSTS');
+            2:  PRINTSTR( 'STABS');
+            3:  PRINTSTR( 'SLASHES');
+            4:  PRINTSTR( 'CHOPS')
+          END
+        END;
+      
+      
+    PROCEDURE PRNAME( GROUPI: INTEGER;  (* P010903 *)
+                      CHARX:  INTEGER);
+                     
+      BEGIN
+        IF GROUPI = 0 THEN
+          PRINTSTR(  CHARACTR[ CHARX].NAME)
+        ELSE IF BATTLERC[ GROUPI].A.IDENTIFI THEN
+          PRINTSTR(  BATTLERC[ GROUPI].B.NAME)
+        ELSE
+          PRINTSTR( BATTLERC[ GROUPI].B.NAMEUNK);
+        PRINTSTR( ' ')
+      END;
+        
+
+      PROCEDURE UNAFFECT( GROUPI: INTEGER;
+                          CHARI:  INTEGER;
+                          HITDAM: INTEGER);  (* P010904 *)
+      
+        (* COMBINATION OF UNAFFECT AND BREATHDM IN LOL *)
+      
+        BEGIN
+          CLRRECT( 1, 12, 38, 3);
+          IF BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS >= DEAD THEN
+            EXIT( UNAFFECT);
+          MVCURSOR( 1, 12);
+          PRNAME( GROUPI, CHARI);
+          IF GROUPI <> 0 THEN
+            BEGIN
+              IF BATTLERC[ GROUPI].B.UNAFFCT > (RANDOM MOD 100) THEN
+                 HITDAM := 0;
+            END;
+          IF HITDAM = 0 THEN
+            PRINTSTR( 'IS UNAFFECTED!')
+          ELSE
+            BEGIN
+              PRINTSTR( 'TAKES ');
+              PRINTNUM( HITDAM, 4);
+              PRINTSTR( ' DAMAGE');
+              WITH BATTLERC[ GROUPI].A.TEMP04[ CHARI] DO
+                BEGIN
+                  HPLEFT := HPLEFT - HITDAM;
+                  IF HPLEFT <= 0 THEN
+                    BEGIN
+                      HPLEFT := 0;
+                      STATUS := DEAD;
+                      MVCURSOR( 1, 14);
+                      PRNAME( GROUPI, CHARI);
+                      PRINTSTR( 'IS SLAIN!');
+                    END
+                END
+            END;
+          PAUSE1
+        END;
+        
+        
+      FUNCTION CALCHP( AHPREC: THPREC) : INTEGER;  (* P010905 *)
+                           
+        VAR
+             HITPTS : INTEGER;
+             
+        BEGIN
+          HITPTS := 0;
+          WHILE AHPREC.LEVEL > 0 DO
+            BEGIN
+              HITPTS := HITPTS + (RANDOM MOD AHPREC.HPFAC) + 1;
+              AHPREC.LEVEL := AHPREC.LEVEL - 1
+            END;
+          CALCHP := HITPTS + AHPREC.HPMINAD
+        END;
+        
+        
+      PROCEDURE DOBREATH;  (* P010906 *)
+      
+        VAR
+             UNUSED : INTEGER;
+             HITDAM : INTEGER;
+             CHARX  : INTEGER;
+      
+        BEGIN
+          PRINTSTR(  'BREATHES!');
+          FOR CHARX := 0 TO PARTYCNT - 1 DO
+            BEGIN
+              IF BATTLERC[ 0].A.TEMP04[ CHARX].STATUS < DEAD THEN
+                BEGIN
+                  CLRRECT( 1, 12, 38, 3);
+                  MVCURSOR( 1, 12);
+                  HITDAM := BATTLERC[ BATG].A.TEMP04[ BATI].HPLEFT DIV 2;
+                  IF (RANDOM MOD 20) >= CHARACTR[ CHARX].LUCKSKIL[ 3] THEN
+                    HITDAM := (HITDAM + 1) DIV 2;
+                  IF CHARACTR[ CHARX].WEPVSTY3[ 1][ BATTLERC[ BATG].B.BREATHE] 
+                      THEN
+                    HITDAM := (HITDAM + 1) DIV 2;
+                  UNAFFECT( 0, CHARX, HITDAM)
+                END
+            END
+        END;
+    
+        
+      
+      PROCEDURE DOFIGHT;  (* P010907 *)
+      
+        PROCEDURE DAM2ME;  (* P010908 *)
+        
+          VAR
+               HPCALCPC : INTEGER;
+               RECSI    : INTEGER;
+               MYVICTIM : INTEGER;
+               HPDAMAGE : INTEGER;
+               HITSCNT  : INTEGER;
+        
+        
+          PROCEDURE CASEDAMG;  (* P010909 *)
+          
+            PROCEDURE DRAINLEV;  (* P01090A *)
+            
+              BEGIN 
+                IF CHARACTR[ MYVICTIM].WEPVSTY3[ 1][ 4] THEN
+                  EXIT( DRAINLEV);
+                CHARACTR[ MYVICTIM].CHARLEV := CHARACTR[ MYVICTIM].CHARLEV -
+                  BATTLERC[ BATG].B.DRAINAMT;
+                MVCURSOR( 1, 14);
+                CLRRECT( 1, 14, 38, 1);
+                PRINTNUM( BATTLERC[ BATG].B.DRAINAMT, 2);
+                IF BATTLERC[ BATG].B.DRAINAMT = 1 THEN
+                  PRINTSTR( ' LEVEL')
+                ELSE
+                  PRINTSTR( ' LEVELS');
+                PRINTSTR( ' ARE DRAINED!');
+                IF CHARACTR[ MYVICTIM].CHARLEV < 1 THEN
+                  BEGIN
+                    CHARACTR[ MYVICTIM].CHARLEV := 0;
+                    BATTLERC[ 0].A.TEMP04[ MYVICTIM].HPLEFT := 0;
+                    BATTLERC[ 0].A.TEMP04[ MYVICTIM].STATUS := LOST
+                  END
+                ELSE
+                  BEGIN
+                    CHARACTR[ MYVICTIM].HPMAX := 
+                      (CHARACTR[ MYVICTIM].HPMAX DIV
+                       CHARACTR[ MYVICTIM].MAXLEVAC) *
+                                                   CHARACTR[ MYVICTIM].CHARLEV;
+                    CHARACTR[ MYVICTIM].MAXLEVAC :=
+                                                   CHARACTR[ MYVICTIM].CHARLEV;
+                    IF CHARACTR[ MYVICTIM].HPLEFT >
+                                                 CHARACTR[ MYVICTIM].HPMAX THEN
+                      CHARACTR[ MYVICTIM].HPLEFT := CHARACTR[ MYVICTIM].HPMAX;
+                    DRAINED[ MYVICTIM] := TRUE
+                  END;
+                PAUSE1
+              END;   (* DRAINLEV *)
+              
+              
+            PROCEDURE RESULT( ATTK0123: INTEGER;  (* P01090B *)
+                              STONFLAG: INTEGER;
+                              POISSTON: INTEGER;
+                              DAMSTR:   STRING);
+            
+              VAR
+                   CHANCBAD : INTEGER;
+            
+              BEGIN
+                IF (RANDOM MOD 20) >
+                                  CHARACTR[ MYVICTIM].LUCKSKIL[ STONFLAG] THEN
+                  EXIT( RESULT);
+                IF ATTK0123 = 3 THEN
+                  BEGIN
+                    CHANCBAD := BATTLERC[ BATG].B.HPREC.LEVEL * 2;
+                    IF CHANCBAD > 50 THEN
+                      CHANCBAD := 50;
+                    IF (RANDOM MOD 100) > CHANCBAD THEN
+                      EXIT( RESULT)
+                  END;
+                IF POISSTON > 0 THEN
+                  IF CHARACTR[ MYVICTIM].WEPVSTY3[ 1][ POISSTON] THEN
+                    EXIT( RESULT);
+                IF CHARACTR[ MYVICTIM].STATUS >= DEAD THEN
+                  EXIT( RESULT);
+                CLRRECT( 1, 14, 38, 1);
+                MVCURSOR( 1, 14);
+                PRNAME( 0, MYVICTIM);
+                PRINTSTR( 'IS ');
+                PRINTSTR( DAMSTR );
+                CASE ATTK0123 OF
+                
+                  0:  IF BATTLERC[ 0].A.TEMP04[ MYVICTIM].STATUS < STONED THEN
+                        BATTLERC[ 0].A.TEMP04[ MYVICTIM].STATUS := STONED;
+                
+                  1:  CHARACTR[ MYVICTIM].LOSTXYL.POISNAMT[ 1] := 1;
+                     
+                  2:  IF BATTLERC[ 0].A.TEMP04[ MYVICTIM].STATUS < PLYZE THEN
+                        BATTLERC[ 0].A.TEMP04[ MYVICTIM].STATUS := PLYZE;
+                       
+                  3:  BEGIN
+                        BATTLERC[ 0].A.TEMP04[ MYVICTIM].STATUS := DEAD;
+                        BATTLERC[ 0].A.TEMP04[ MYVICTIM].HPLEFT := 0
+                      END
+                END;
+                PAUSE1
+              END;  (* RESULT *)
+            
+            
+            BEGIN  (* CASEDAMG *)
+              WITH BATTLERC[ BATG].B DO
+                BEGIN
+                  IF SPPC[ 1] THEN
+                    RESULT( 1, 0, 3, 'POISONED');
+                  IF SPPC[ 2] THEN
+                    RESULT( 2, 0, 0, 'PARALYZED');
+                  IF SPPC[ 0] THEN
+                    RESULT( 0, 1, 5, 'STONED');
+                    
+                  IF DRAINAMT > 0 THEN
+                    DRAINLEV;
+                    
+                  IF SPPC[ 3] THEN
+                    RESULT( 3, 0, 0, 'CRITICALLY HIT')
+                END
+            END;  (* CASEDAMG *)
+            
+            
+          PROCEDURE ATTKSTRG;  (* P01090C *)
+          
+            PROCEDURE RIPBITCL;  (* P01090D *)
+            
+              BEGIN
+                CASE (RANDOM MOD 5) OF
+                  0:  PRINTSTR( 'TEARS');
+                  1:  PRINTSTR( 'RIPS');
+                  2:  PRINTSTR( 'GNAWS');
+                  3:  PRINTSTR( 'BITES');
+                  4:  PRINTSTR( 'CLAWS')
+                END
+              END;
+              
+              
+            PROCEDURE ARMRIP;  (* P01090E *)
+            
+              BEGIN
+                IF (RANDOM MOD 2) = 1 THEN
+                  RIPBITCL
+                ELSE
+                  ARMATTK
+              END;
+            
+            
+            BEGIN (* ATTKSTRG *)
+              CASE BATTLERC[ BATG].B.CLASS OF
+                0, 1, 2, 3, 4, 5, 10, 11: ARMATTK;
+                            6, 8, 12, 13: RIPBITCL;
+                                    7, 9: ARMRIP;
+              END
+            END;
+          
+          
+          BEGIN (* DAM2ME *)
+            IF BATTLERC[ 0].A.TEMP04[ VICTIM].STATUS >= DEAD THEN
+              EXIT( DAM2ME);
+            PRNAME( BATG, BATI);
+            ATTKSTRG;
+            PRINTSTR( ' AT');
+            MVCURSOR( 1, 12);
+            PRINTSTR( CHARACTR[ VICTIM].NAME);
+            MYVICTIM := VICTIM;
+            IF BATTLERC[ 0].A.TEMP04[ MYVICTIM].STATUS < DEAD THEN
+              BEGIN
+                HPCALCPC :=
+                  20
+                  - CHARACTR[ MYVICTIM].ARMORCL 
+                  - BATTLERC[ BATG].B.HPREC.LEVEL
+                  + ACMOD2
+                  + BATTLERC[ 0].A.TEMP04[ MYVICTIM].ARMORCL
+                  + 2 * (ORD( BATTLERC[ BATG].A.TEMP04[ MYVICTIM].SPELLHSH = 0));
+              
+                IF HPCALCPC < 1 THEN
+                  HPCALCPC := 1
+                ELSE
+                  IF HPCALCPC > 19 THEN
+                    HPCALCPC := 19;
+                HPDAMAGE := 0;
+                HITSCNT := 0;
+                MVCURSOR( 1, 13);
+                FOR RECSI := 1 TO BATTLERC[ BATG].B.RECSN DO
+                  IF (RANDOM MOD 20) >= HPCALCPC THEN
+                    BEGIN
+                      HPDAMAGE := HPDAMAGE +
+                       CALCHP( BATTLERC[ BATG].B.RECS[ RECSI]);
+                      HITSCNT := HITSCNT + 1
+                    END;
+                IF BATTLERC[ 0].A.TEMP04[ MYVICTIM].STATUS = ASLEEP THEN
+                  HPDAMAGE := HPDAMAGE * 2;
+                IF HPDAMAGE = 0 THEN
+                    PRINTSTR( 'AND MISSES!')
+                ELSE
+                  BEGIN
+                    PRINTSTR( 'AND HITS ');
+                    PRINTNUM( HITSCNT, 3);
+                    PRINTSTR( ' TIMES FOR ');
+                    PRINTNUM( HPDAMAGE, 3);
+                    PRINTSTR( ' DAMAGE');
+                    CASEDAMG
+                  END;
+                
+                BATTLERC[ 0].A.TEMP04[ MYVICTIM].HPLEFT :=
+                  BATTLERC[ 0].A.TEMP04[ MYVICTIM].HPLEFT - HPDAMAGE;
+                IF BATTLERC[ 0].A.TEMP04[ MYVICTIM].HPLEFT <= 0 THEN
+                  BEGIN
+                    CLRRECT( 1, 14, 38, 1);
+                    MVCURSOR( 1, 14);
+                    PRINTSTR( CHARACTR[ MYVICTIM].NAME);
+                    PRINTSTR( ' IS SLAIN!');
+                    BATTLERC[ 0].A.TEMP04[ MYVICTIM].HPLEFT := 0;
+                    IF BATTLERC[ 0].A.TEMP04[ MYVICTIM].STATUS < DEAD THEN
+                      BATTLERC[ 0].A.TEMP04[ MYVICTIM].STATUS := DEAD
+                  END
+              END
+          END;  (* DAM2ME *)
+          
+          
+        PROCEDURE DAM2ENMY;  (* P01090F *)
+        
+          VAR
+               HPCALCPC : INTEGER;
+               TEMPX    : INTEGER;  (* MULTIPLE USES *)
+               SINGLEX  : INTEGER;
+               HPDAMAGE : INTEGER;
+               HITSCNT  : INTEGER;
+        
+          BEGIN
+            SINGLEX := BATI MOD BATTLERC[ VICTIM].A.ALIVECNT;
+            IF BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].STATUS < DEAD THEN
+              BEGIN
+                PRNAME( BATG, BATI);
+                ARMATTK;
+                PRINTSTR( ' AT A');
+                MVCURSOR( 1, 12);
+                PRNAME( VICTIM, BATI);
+                HPCALCPC := 21
+                              - BATTLERC[ VICTIM].B.AC
+                              - CHARACTR[ BATI].HPCALCMD
+                              + BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].ARMORCL
+                              - 3 * VICTIM;
+                IF HPCALCPC < 1 THEN
+                  HPCALCPC := 1
+                ELSE
+                  IF HPCALCPC > 19 THEN
+                    HPCALCPC := 19;
+                HPDAMAGE := 0;
+                MVCURSOR( 1, 13);
+                HITSCNT := 0;
+                FOR TEMPX := 1 TO CHARACTR[ BATI].SWINGCNT DO
+                  IF (RANDOM MOD 20) >= HPCALCPC THEN
+                    BEGIN
+                      HPDAMAGE := HPDAMAGE + CALCHP( CHARACTR[ BATI].HPDAMRC);
+                      HITSCNT := HITSCNT + 1
+                    END;
+                IF BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].STATUS = ASLEEP THEN
+                  HPDAMAGE := 2 * HPDAMAGE;
+                IF CHARACTR[ BATI].WEPVSTYP[ BATTLERC[ VICTIM].B.CLASS] THEN
+                  HPDAMAGE := 2 * HPDAMAGE;
+                IF HPDAMAGE = 0 THEN
+                  PRINTSTR( 'AND MISSES')
+                ELSE
+                  BEGIN
+                    PRINTSTR( 'AND HITS ');
+                    PRINTNUM( HITSCNT, 3);
+                    PRINTSTR( ' TIMES FOR ');
+                    PRINTNUM( HPDAMAGE, 3);
+                    PRINTSTR( ' DAMAGE!');
+                  END;
+                BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].HPLEFT :=
+                  BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].HPLEFT - HPDAMAGE;
+                IF (CHARACTR[ BATI].CRITHITM) AND (HPDAMAGE > 0) THEN
+                  BEGIN
+                    TEMPX := CHARACTR[ BATI].CHARLEV * 2;
+                    IF TEMPX > 50 THEN
+                      TEMPX := 50;
+                    IF (RANDOM MOD 100) < TEMPX THEN
+                      IF (RANDOM MOD 35) >
+                         BATTLERC[ VICTIM].B.HPREC.LEVEL + 10 THEN
+                        BEGIN
+                          MVCURSOR( 1, 14);
+                          PRINTSTR( 'A CRITICAL HIT!');
+                          WRITE( '');
+                          BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].HPLEFT := 0;
+                          PAUSE1;
+                          CLRRECT( 1, 14, 38, 1)
+                        END;
+                  END;
+                IF BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].HPLEFT <= 0 THEN
+                  BEGIN
+                    MVCURSOR( 1, 14);
+                    PRNAME( 0, BATI);
+                    PRINTSTR( 'KILLS ONE!');
+                    BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].HPLEFT := 0;
+                    BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].STATUS := DEAD
+                  END
+              END
+          END;
+          
+          
+        BEGIN  (* DOFIGHT *)
+          IF BATG = 0 THEN
+            DAM2ENMY
+          ELSE
+            DAM2ME
+        END;
+        
+      
+      
+      PROCEDURE YELLHELP;  (* P010910 *)
+      
+        VAR
+             YHTEMP2 : INTEGER;
+      
+      
+        PROCEDURE NONECOME;  (* P010911 *)
+        
+          BEGIN
+            PRINTSTR( 'BUT NONE COMES!');
+            EXIT( YELLHELP)
+          END;
+        
+        
+        BEGIN  (* YELLHELP *)
+          PRINTSTR( 'CALLS FOR HELP!');
+          MVCURSOR( 1, 12);
+          IF BATTLERC[ BATG].A.ALIVECNT = 9 THEN
+            NONECOME;
+          IF (RANDOM MOD 200) > 10 * BATTLERC[ BATG].B.HPREC.LEVEL THEN
+            NONECOME;
+          PRINTSTR( 'AND IS HEARD!');
+          YHTEMP2 := BATTLERC[ BATG].A.ALIVECNT;
+          BATTLERC[ BATG].A.ALIVECNT := YHTEMP2 + 1;
+          BATTLERC[ BATG].A.ENMYCNT := BATTLERC[ BATG].A.ENMYCNT + 1;
+          WITH BATTLERC[ BATG].A.TEMP04[ YHTEMP2] DO
+            BEGIN
+              AGILITY  := -1;
+              SPELLHSH := 0;
+              INAUDCNT := BATTLERC[ BATG].A.TEMP04[ BATI].INAUDCNT;
+              ARMORCL  := 0;
+              HPLEFT   := CALCHP( BATTLERC[ BATG].B.HPREC);
+              STATUS   := OK;
+            END
+        END;  (* YELLHELP *)
+        
+        
+      PROCEDURE DORUN;  (* P010912 *)
+      
+        BEGIN
+          PRINTSTR( 'FLEES!');
+          BATTLERC[ BATG].A.ENMYCNT := BATTLERC[ BATG].A.ENMYCNT - 1;
+          WITH BATTLERC[ BATG].A.TEMP04[ BATI] DO
+            BEGIN
+              STATUS := DEAD;
+              HPLEFT := 0
+            END
+        END;
+        
+        
+      PROCEDURE DODISPEL;  (* P010913 *)
+      
+        VAR
+             DISPLCNT : INTEGER;
+             CHARX    : INTEGER;
+             DISPCALC : INTEGER;
+             
+        BEGIN
+          PRINTSTR( 'DISPELLS!');
+          DISPCALC := 50 + 5 * CHARACTR[ BATI].CHARLEV -
+                      10 * BATTLERC[ VICTIM].B.HPREC.LEVEL;
+                      
+          CASE CHARACTR[ BATI].CLASS OF
+            LORD:    DISPCALC := DISPCALC - 40;
+            BISHOP:  DISPCALC := DISPCALC - 20;
+          END;
+          
+          DISPLCNT := 0;
+          FOR CHARX := 0 TO BATTLERC[ VICTIM].A.ALIVECNT - 1 DO
+            IF BATTLERC[ VICTIM].A.TEMP04[ CHARX].STATUS = OK THEN
+              IF (RANDOM MOD 100) < DISPCALC THEN
+                IF BATTLERC[ VICTIM].B.CLASS = 10 THEN
+                  BEGIN
+                    DISPLCNT := DISPLCNT + 1;
+                    BATTLERC[ VICTIM].A.ENMYCNT := 
+                      BATTLERC[ VICTIM].A.ENMYCNT - 1;
+                    BATTLERC[ VICTIM].A.TEMP04[ CHARX].STATUS := DEAD;
+                    BATTLERC[ VICTIM].A.TEMP04[ CHARX].HPLEFT := 0
+                  END;
+          MVCURSOR( 1, 12);
+          IF DISPLCNT = 0 THEN
+            PRINTSTR( 'TO NO AVAIL!')
+          ELSE
+            IF DISPLCNT = 1 THEN
+              PRINTSTR( '1 DISSOLVES!')
+            ELSE
+              BEGIN
+                PRINTNUM( DISPLCNT, 1);
+                PRINTSTR( ' DISSOLVE!')
+              END
+        END;
+        
+        
+      BEGIN  (* SWINGASW P010901 *)
+        IF ATTACKTY < -1 THEN
+          PRNAME( BATG, BATI);
+        CASE ATTACKTY OF
+          -5:  DODISPEL;
+          -4:  YELLHELP;
+          -3:  DOBREATH;
+          -2:  DORUN;
+          -1:  DOFIGHT;
+        END
+      END;   (* SWINGASW P010901 *)
+      
+      
+    BEGIN (* MELEE *)
+      FOR AGILELEV := 1 TO 10 DO
+        FOR BATG := 0 TO 4 DO
+          FOR BATI := 0 TO BATTLERC[ BATG].A.ALIVECNT - 1 DO
+            IF BATTLERC[ BATG].A.TEMP04[ BATI].STATUS = OK THEN
+              IF BATTLERC[ BATG].A.TEMP04[ BATI].AGILITY = AGILELEV THEN
+                BEGIN
+                  VICTIM := BATTLERC[ BATG].A.TEMP04[ BATI].VICTIM;
+                  ATTACKTY := BATTLERC[ BATG].A.TEMP04[ BATI].SPELLHSH;
+                  MVCURSOR( 1, 11);
+                  IF (ATTACKTY >= -5) AND
+                     (ATTACKTY <   0) THEN
+                    SWINGASW                (* -5..-1 *)
+                  ELSE IF ATTACKTY > 0 THEN
+                    CASTASPE;
+                  IF ATTACKTY <> 0 THEN
+                    BEGIN
+                      PAUSE1;
+                      CLRRECT( 1, 11, 38, 4)
+                    END
+                END
+    END;  (* MELEE *)
+    
+    
+(* COMBAT SEGMENT *)
+      
+      
+    
+    BEGIN (* COMBAT P010401 *)
+    
+      DONEFIGH := FALSE;
+      CINITFL1 := 0;
+      CINIT;
+      XGOTO := XREWARD;
+      REPEAT
+        CUTIL;
+        IF NOT DONEFIGH THEN
+          MELEE;
+      UNTIL DONEFIGH;
+      CINITFL1 := 2;
+      CINIT
+    END;  (* COMBAT *)
+  

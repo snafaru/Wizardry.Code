@@ -1,0 +1,35 @@
+    
+  BEGIN (* UTILITIE *)
+  
+    IF XGOTO <> XNEWMAZE THEN
+      TEXTMODE;
+      
+    CASE XGOTO OF
+    
+      XCAMPSTF:
+                CASE BASE12.GOTOX OF
+                  XDONE    : RDSPELLS;
+                  XTRAININ : IDITEM;
+                  XCASTLE  : KANDIFND;
+                  XGILGAMS : DUMAPIC;
+                  XINSPECT : MALOR;
+                END;
+        
+      XNEWMAZE:  NEWMAZE;
+      
+      XEQUIP6,
+      XCMP2EQ6:  EQUIP6;
+      
+      XREORDER:  REORDER;
+      
+      XEQPDSP:   IF LLBASE04 >= 0 THEN
+                   EQUIP1( LLBASE04)
+                 ELSE
+                   BEGIN
+                     FOR CHARI := 0 TO PARTYCNT - 1 DO
+                       EQUIP1( CHARI);
+                     XGOTO := XINSPCT2
+                   END;
+    END;
+
+  END; (* UTILITIE *)

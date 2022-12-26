@@ -1,0 +1,339 @@
+  SEGMENT PROCEDURE COMBAT;  (* P010401 *)
+
+    CONST
+    
+        HALITO   =  4178;
+        MOGREF   =  2409;
+        KATINO   =  3983;
+        DUMAPIC  =  3245;
+        
+        DILTO    =  3340;
+        SOPIC    =  1953;
+        
+        MAHALITO =  6181;
+        MOLITO   =  4731;
+        
+        MORLIS   =  4744;
+        DALTO    =  3180;
+        LAHALITO =  6156;
+        
+        MAMORLIS =  7525;
+        MAKANITO =  6612;
+        MADALTO  =  4925;
+        
+        LAKANITO =  6587;
+        ZILWAN   =  4573;
+        MASOPIC  =  3990;
+        HAMAN    =  1562;
+        
+        MALOR    =  3128;
+        MAHAMAN  =  2597;
+        TILTOWAI = 11157;
+        
+        
+        KALKI    =  1449;
+        DIOS     =  2301;
+        BADIOS   =  3675;
+        MILWA    =  2889;
+        PORFIC   =  2287;
+        
+        MATU     =  3139;
+        CALFO    =     0; (* 1717 *)
+        MANIFO   =  2619;
+        MONTINO  =  5970;
+        
+        LOMILWA  =  5333;
+        DIALKO   =  2718;
+        LATUMAPI =  6491;
+        BAMATU   =  5169;
+        
+        DIAL     =   761;
+        BADIAL   =  1253;
+        LATUMOFI =  9463;
+        MAPORFIC =  4322;
+        
+        DIALMA   =  1614;
+        BADIALMA =  2446;
+        LITOKAN  =  4396;
+        KANDI    =  1185; (* 1885 *)
+        DI       =   180;
+        BADI     =   382;
+        
+        LORTO    =  4296;
+        MADI     =   547;
+        MABADI   =   759;
+        LOKTOFEI =  8330;
+        
+        MALIKTO  =  5514;
+        KADORTO  =  6673;
+        
+    VAR
+         CINITFL1 : INTEGER;
+         SURPRISE : INTEGER;
+         DONEFIGH : BOOLEAN;
+         PREBATOR : ARRAY[ 0..5] OF INTEGER;
+         DRAINED  : ARRAY[ 0..5] OF BOOLEAN;
+         BATTLERC : ARRAY[ 0..4] OF TENEMY2;
+
+    
+(* CINIT *)
+    
+    SEGMENT PROCEDURE CINIT;  (* P010501 *)
+      
+      
+      PROCEDURE ENEMYPIC( ENEMYID : INTEGER);  (* P010502 *)
+      
+        VAR
+             PICLINE  : INTEGER;
+             UNUSED   : INTEGER;
+             SCRNADDR : RECORD CASE INTEGER OF
+                 1: (I: INTEGER);
+                 2: (P: ^INTEGER);
+               END;
+                     
+        BEGIN
+          CLRPICT( 0, 0, 0, 100);  (* CLEAR PICTURE *)
+          IF ENEMYID < 0 THEN
+            BEGIN
+              ENEMYID := 0;  (* NO MONSTER PICTURE (?) SO USE FIRST ONE *)
+              WRITE( CHR(7)) (*   AND RING THE BELL                     *)
+            END;
+          FOR PICLINE := 23 TO 72 DO
+            BEGIN
+              SCRNADDR.I := (8193 +  (1024 *  (PICLINE MOD 8))) +
+                            (128 * ((PICLINE MOD 64) DIV 8)) +
+                            40 * (PICLINE DIV 64);
+              MOVELEFT( IOCACHE[ ENEMYID], SCRNADDR.P^, 10);
+              ENEMYID := ENEMYID + 10    (* 10 BYTES === 70 PIXELS PER LINE *)
+            END;
+        END;
+        
+        
+      PROCEDURE SVREWARD;  (* P010503 *)
+      
+        VAR
+             BATRESLT : TBATRSLT;
+             UNUSEDX  : INTEGER;
+             X        : INTEGER;
+             
+             
+        BEGIN
+          FOR X := 0 TO PARTYCNT - 1 DO
+            IF (CHARACTR[ X].STATUS = ASLEEP) OR
+               (CHARACTR[ X].STATUS = AFRAID) THEN
+              CHARACTR[ X].STATUS := OK;
+              
+          MOVELEFT( IOCACHE[ GETREC( ZZERO, 0, SIZEOF( SCNTOC))],
+                    LLBASE04,
+                    2);
+          MOVELEFT( DRAINED, BATRESLT.DRAINED, 12);
+          FOR X := 1 TO 4 DO
+            BEGIN
+              BATRESLT.ENMYID[ X] := BATTLERC[ X].A.ENEMYID;
+              BATRESLT.ENMYCNT[ X] := BATTLERC[ X].A.ENMYCNT
+            END;
+            
+          MOVELEFT( BATRESLT, IOCACHE, SIZEOF( TBATRSLT))
+        END;
+        
+        
+        
+      PROCEDURE INITATTK;  (* P010504 *)
+      
+        VAR
+             UNUSEDWW : INTEGER;
+             UNUSEDXX : INTEGER;
+             UNUSEDYY : INTEGER;
+             UNUSEDZZ : INTEGER;
+             CHARX    : INTEGER;
+             GROUPI   : INTEGER;
+      
+      
+        PROCEDURE INITGRUP;  (* P010505 *)
+        
+          PROCEDURE ENGROUPS( ENMYI:    INTEGER;     (* P010506 *)
+                              ENMYGRUP: INTEGER);
+          
+            BEGIN
+              REPEAT
+                MOVELEFT( IOCACHE[ GETREC( ZENEMY, ENMYI, SIZEOF( TENEMY))],
+                          BATTLERC[ ENMYGRUP].B,
+                          SIZEOF( TENEMY));
+                          
+                IF BATTLERC[ ENMYGRUP].B.UNIQUE = 0 THEN
+                  ENMYI := BATTLERC[ ENMYGRUP].B.ENMYTEAM;
+                
+              UNTIL BATTLERC[ ENMYGRUP].B.UNIQUE <> 0;
+              
+              BATTLERC[ ENMYGRUP].A.ENEMYID := ENMYI;
+              IF ENMYGRUP < 4 THEN
+                IF BATTLERC[ ENMYGRUP].B.ENMYTEAM >= 0 THEN
+                  IF ENMYGRUP <= MAZELEV THEN
+                    IF RANDOM MOD 100 < BATTLERC[ ENMYGRUP].B.TEAMPERC THEN
+                      ENGROUPS( BATTLERC[ ENMYGRUP].B.ENMYTEAM, ENMYGRUP + 1)
+            END;
+            
+            
+            
+          FUNCTION ENEMYCNT( HPREC: THPREC) : INTEGER;  (* P010507 *)
+          
+            BEGIN
+              LLBASE04 := HPREC.HPMINAD;
+              WHILE HPREC.LEVEL > 0 DO
+                BEGIN
+                  LLBASE04 := LLBASE04 + (RANDOM MOD HPREC.HPFAC) + 1;
+                  HPREC.LEVEL := HPREC.LEVEL - 1
+                END;
+              ENEMYCNT := LLBASE04
+            END;
+            
+        
+          BEGIN (* INITGRUP *)
+            FOR GROUPI := 1 TO 4 DO
+              BEGIN
+                BATTLERC[ GROUPI].A.ENMYCNT  := 0;
+                BATTLERC[ GROUPI].A.ALIVECNT := 0;
+                BATTLERC[ GROUPI].A.ENEMYID  := -1
+              END;
+            ENGROUPS( ENEMYINX, 1);
+            
+            ENEMYINX := BATTLERC[ 1].A.ENEMYID;
+            ENEMYPIC( GETREC( ZSPCCHRS, BATTLERC[ 1].B.PIC, 512));
+            
+            FOR GROUPI := 1 TO 4 DO
+              BEGIN
+                IF BATTLERC[ GROUPI].A.ENEMYID <> -1 THEN
+                  BEGIN
+                    BATTLERC[ GROUPI].A.ENMYCNT := 
+                      ENEMYCNT( BATTLERC[ GROUPI].B.CALC1);
+                    IF BATTLERC[ GROUPI].A.ENMYCNT > (4 + MAZELEV) THEN
+                      BATTLERC[ GROUPI].A.ENMYCNT := 4 + MAZELEV;
+                    IF BATTLERC[ GROUPI].A.ENMYCNT > 9 THEN
+                      BATTLERC[ GROUPI].A.ENMYCNT := 9;
+                    IF BATTLERC[ GROUPI].A.ENMYCNT < 1 THEN
+                      BATTLERC[ GROUPI].A.ENMYCNT := 1;
+                    BATTLERC[ GROUPI].A.ALIVECNT :=
+                      BATTLERC[ GROUPI].A.ENMYCNT;
+                    BATTLERC[ GROUPI].A.IDENTIFI := FALSE;
+                    
+                    FOR CHARX := 0 TO (BATTLERC[ GROUPI].A.ENMYCNT - 1) DO
+                      WITH BATTLERC[ GROUPI].A.TEMP04[ CHARX] DO
+                        BEGIN
+                          ARMORCL  := 0;
+                          INAUDCNT := 0;
+                          HPLEFT   :=
+                                    ENEMYCNT( BATTLERC[ GROUPI].B.HPREC);
+                          STATUS   := OK
+                        END
+                  END
+                END;
+                
+          END;  (* INITGRUP *)
+        
+        
+        PROCEDURE INTPARTY;  (* P010508 *)
+        
+          BEGIN
+            BATTLERC[ 0].A.ENMYCNT := PARTYCNT;
+            BATTLERC[ 0].A.ALIVECNT := PARTYCNT;
+            FOR CHARX := 0 TO (PARTYCNT - 1) DO
+              BEGIN
+                WITH BATTLERC[ 0].A.TEMP04[ CHARX] DO
+                  BEGIN
+                    ARMORCL  := 0;
+                    INAUDCNT := 0;
+                    HPLEFT   := CHARACTR[ CHARX].HPLEFT;
+                    STATUS   := CHARACTR[ CHARX].STATUS;
+                    CHARACTR[ CHARX].WEPVSTY3[ 1] :=
+                      CHARACTR[ CHARX].WEPVSTY3[ 0];
+                    CHARACTR[ CHARX].WEPVSTY2[ 1] :=
+                      CHARACTR[ CHARX].WEPVSTY2[ 0]
+                  END
+              END
+          END;
+          
+          
+        PROCEDURE FRIENDLY;  (* P010509 *)
+        
+          VAR
+              GOODLEAV : BOOLEAN; (* MULTIPLE USES *)
+              UNUSEDYY : BOOLEAN;
+              ZERO99   : INTEGER;
+              INDEX    : INTEGER;
+        
+          BEGIN (* FRIENDLY *)
+            GOODLEAV := FALSE;
+            FOR INDEX := 0 TO PARTYCNT - 1 DO
+              BEGIN
+                GOODLEAV := GOODLEAV OR (CHARACTR[ INDEX].ALIGN = GOOD)
+              END;
+            IF NOT GOODLEAV THEN
+              EXIT( FRIENDLY);
+            
+            ZERO99  := RANDOM MOD 100;
+            INDEX := 50;
+            CASE BATTLERC[ 1].B.CLASS OF
+              0:  INDEX := 60;
+              1:  INDEX := 55;
+              2:  INDEX := 65;
+              3:  INDEX := 53;
+              4:  INDEX := 80;
+              
+              7:  INDEX := 75;
+            END;
+            IF (ZERO99 > INDEX) OR (ZERO99 < 50) THEN
+              EXIT( FRIENDLY);
+              
+            FOR INDEX := 1 TO 4 DO
+              BATTLERC[ INDEX].A.IDENTIFI := TRUE;
+            CLRRECT( 1, 11, 38, 4);
+            MVCURSOR( 1, 11);
+            PRINTSTR( 'A FRIENDLY GROUP OF ');
+            PRINTSTR( BATTLERC[ 1].B.NAMES);
+            PRINTSTR( '.');
+            MVCURSOR( 1, 12);
+            PRINTSTR( 'THEY HAIL YOU IN WELCOME!');
+            MVCURSOR( 1, 14);
+            PRINTSTR( 'YOU MAY F)IGHT OR L)EAVE IN PEACE.');
+            SURPRISE := 0;
+            REPEAT
+              GETKEY
+            UNTIL (INCHAR = 'F') OR (INCHAR = 'L');
+            IF INCHAR = 'L' THEN
+              BEGIN
+                XGOTO := XRUNNER;
+                EXIT( COMBAT)
+              END;
+            FOR INDEX := 0 TO PARTYCNT - 1 DO
+              IF CHARACTR[ INDEX].ALIGN = GOOD THEN
+                IF (RANDOM MOD 2000) = 565 THEN
+                  CHARACTR[ INDEX].ALIGN := EVIL
+          END;  (* FRIENDLY *)
+        
+        
+        BEGIN  (* INITATTK *)
+          CLRRECT( 13, 1, 26, 4);
+          CLRRECT( 13, 6, 26, 4);
+          CLRRECT( 1, 11, 38, 4);
+          INITGRUP;
+          INTPARTY;
+          FILLCHAR( DRAINED, 12, 0);
+          FOR LLBASE04 := 0 TO PARTYCNT - 1 DO
+            PREBATOR[ LLBASE04] := CHARDISK[ LLBASE04];
+          IF (RANDOM MOD 100) > 80 THEN
+            SURPRISE := 1
+          ELSE IF (RANDOM MOD 100) > 80 THEN
+            SURPRISE := 2
+          ELSE
+            SURPRISE := 0;
+          FRIENDLY
+        END;  (* INITATTK *)
+        
+      
+      BEGIN (* CINIT *)
+        IF CINITFL1 = 0 THEN
+          INITATTK
+        ELSE
+          SVREWARD
+      END;  (* CINIT *)
+  
