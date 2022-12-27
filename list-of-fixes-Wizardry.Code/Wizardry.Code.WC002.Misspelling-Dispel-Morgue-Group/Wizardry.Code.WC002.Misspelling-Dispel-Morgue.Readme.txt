@@ -1,0 +1,130 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC002 - Misspelling Dispel, Morgue and Group #
+==============================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	26-Dec-2022
+
+Contributor:	E. Labelle (Information source: D. Molony, E. Labelle)
+
+The Issue:	Misspelling Dispel and Morgue. Also fixing spelling of "GROUP # ?" for consistency.
+
+- While in the maze, you can cast the Kandi spell to find where a character is. If the character you are looking for is dead but has been brought back to the castle, you get the following message - "The soul of Werdna is.. in the mourge". Corrected "mourge" to "morgue".
+
+- The word "Dispel" was misspelled "Dispell" throughout the game, they are corrected here:
+Old Spelling		New Spelling
+D)ISPELL		D)ISPEL
+DISPELL WHICH GROUP# ?	DISPEL WHICH GROUP # ?
+DISPELLS!		DISPELS!
+
+
+The fix:	Edit the text.
+
+Why this fix:	To correct misspelling and consistency in display.
+
+
+Source Disk:	Wiz1C.dsk
+
+File:		UTILITIE.TEXT
+
+Segment:	PROCEDURE KANDILOC;  (* P01010C *)
+
+Code From:
+
+              WRITELN( 'IN THE MOURGE')
+
+Code To:
+
+              (* WC002 CHANGE -MOURGE- TO -MORGUE- *)
+              WRITELN( 'IN THE MORGUE')
+
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT2.TEXT
+
+Segment:	PROCEDURE SPGROUP( SPELLI:  INTEGER;  (* P010610 *)
+
+Code From:
+
+                WHICHGRP( 'CAST SPELL ON GROUP #?', SPELLCST)
+
+Code To:
+
+                (* WC002 CHANGE -GROUP #?- TO -GROUP # ?- *)
+                WHICHGRP( 'CAST SPELL ON GROUP # ?', SPELLCST)
+
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT2.TEXT
+
+Segment:	BEGIN (* CACTION *)
+
+Code From:
+
+                          BEGIN
+                            BDISPELL := TRUE;
+                            PRINTSTR( 'D)ISPELL ')
+                          END;
+			.
+			.
+			.
+                        'D':  IF BDISPELL THEN
+                                WHICHGRP( 'DISPELL WHICH GROUP# ?', -5);
+                              
+                        'R':  RUNAWAY;
+                        
+                        'F':  IF MYCHARX < 3 THEN
+                                WHICHGRP( 'FIGHT AGAINST GROUP# ?', -1);
+
+Code To:
+
+                          BEGIN
+                            BDISPELL := TRUE;
+                            (* WC002 CHANGE -'D)ISPELL '- TO -'D)ISPEL  '- *)
+                            PRINTSTR( 'D)ISPEL  ')
+                          END;
+			.
+			.
+			.
+                        'D':  IF BDISPELL THEN
+                                (* WC002 CHANGE -DISPELL WHICH GROUP# ?- *)
+                                (* TO -DISPEL WHICH GROUP # ?- *)
+                                WHICHGRP( 'DISPEL WHICH GROUP # ?', -5);
+                              
+                        'R':  RUNAWAY;
+                        
+                        'F':  IF MYCHARX < 3 THEN
+                                (* WC002 CHANGE -GROUP# ?- TO -GROUP # ?- *)
+                                WHICHGRP( 'FIGHT AGAINST GROUP # ?', -1);
+
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT5.TEXT
+
+Segment:	PROCEDURE DODISPEL;  (* P010913 *)
+
+Code From:
+
+          PRINTSTR( 'DISPELLS!');
+
+Code To:
+
+          (* WC002 CHANGE -DISPELLS!- TO -DISPELS!- *)
+          PRINTSTR( 'DISPELS!');
+
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
+
