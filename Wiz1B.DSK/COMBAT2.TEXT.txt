@@ -1,3 +1,5 @@
+(* VERSION DATE  : 26 DEC 2022 *)
+(* FIX REFERENCES: WC002 *)
     SEGMENT PROCEDURE CUTIL;
 
 
@@ -242,7 +244,8 @@
             
               BEGIN
                 CASTCHK( SPELLI, SPELLGR);
-                WHICHGRP( 'CAST SPELL ON GROUP #?', SPELLCST)
+                (* WC002 CHANGE -GROUP #?- TO -GROUP # ?- *)
+                WHICHGRP( 'CAST SPELL ON GROUP # ?', SPELLCST)
               END;
               
               
@@ -387,7 +390,8 @@
                           
                           BEGIN
                             BDISPELL := TRUE;
-                            PRINTSTR( 'D)ISPELL ')
+                            (* WC002 CHANGE -'D)ISPELL '- TO -'D)ISPEL  '- *)
+                            PRINTSTR( 'D)ISPEL  ')
                           END;
                           
                       REPEAT
@@ -403,12 +407,15 @@
                       CASE INCHAR OF
                       
                         'D':  IF BDISPELL THEN
-                                WHICHGRP( 'DISPELL WHICH GROUP# ?', -5);
+                                (* WC002 CHANGE -DISPELL WHICH GROUP# ?- *)
+                                (* TO -DISPEL WHICH GROUP # ?- *)
+                                WHICHGRP( 'DISPEL WHICH GROUP # ?', -5);
                               
                         'R':  RUNAWAY;
                         
                         'F':  IF MYCHARX < 3 THEN
-                                WHICHGRP( 'FIGHT AGAINST GROUP# ?', -1);
+                                (* WC002 CHANGE -GROUP# ?- TO -GROUP # ?- *)
+                                WHICHGRP( 'FIGHT AGAINST GROUP # ?', -1);
                               
                         'P':  BEGIN
                                  BATTLERC[ 0].A.TEMP04[ MYCHARX].SPELLHSH := 0;

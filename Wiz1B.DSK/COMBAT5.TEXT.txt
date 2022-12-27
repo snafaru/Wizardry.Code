@@ -1,3 +1,5 @@
+(* VERSION DATE  : 26 DEC 2022 *)
+(* FIX REFERENCES: WC002 *)
 
 SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
     
@@ -481,7 +483,8 @@ SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
              DISPCALC : INTEGER;
              
         BEGIN
-          PRINTSTR( 'DISPELLS!');
+          (* WC002 CHANGE -DISPELLS!- TO -DISPELS!- *)
+          PRINTSTR( 'DISPELS!');
           DISPCALC := 50 + 5 * CHARACTR[ BATI].CHARLEV -
                       10 * BATTLERC[ VICTIM].B.HPREC.LEVEL;
                       
