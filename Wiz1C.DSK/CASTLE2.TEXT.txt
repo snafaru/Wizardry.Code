@@ -1,3 +1,5 @@
+(* VERSION DATE  : 28 DEC 2022 *)
+(* FIX REFERENCES: WC004 *)
     
     PROCEDURE ADVNTINN;  (* P010A0F *)
     
@@ -516,7 +518,8 @@
         WRITE( ' ' : 13);
         WRITELN( 'YOU MAY GO TO:');
         WRITELN;
-        WRITELN( 'THE A)DVENTURER''S INN, G)ILGAMESH''');
+        (* WC004 CHANGE -G)ILGAMESH''');- TO -G)ILGAMESH''S');- *)
+        WRITELN( 'THE A)DVENTURER''S INN, G)ILGAMESH''S');
         WRITELN( 'TAVERN, B)OLTAC''S TRADING POST, THE');
         WRITELN( 'TEMPLE OF C)ANT, OR THE E)DGE OF TOWN.')
       END;
