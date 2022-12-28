@@ -1,0 +1,60 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC004 - Misspelling of Gilgamesh
+================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	28-Dec-2022
+
+Contributor:	E. Labelle (Information source: E. Labelle)
+
+The Issue:	At the Castle Market, the option to go to G)ilgamesh's Tavern missed it possessive "s".
+
+The fix:	Added trailing "s" in "Gilgamesh's".
+
+Why this fix:	In accordance to standard English rules. Matches how it is spelled everywhere else.
+
+Source Disk:	Wiz1C.dsk
+
+File:		CASTLE2.TEXT
+
+Segment:	PROCEDURE P010A26;  (* P010A26 *)
+
+Code From:
+
+      BEGIN
+        GOTOXY( 0, 13);
+        WRITE( CHR( 11));
+        WRITE( ' ' : 13);
+        WRITELN( 'YOU MAY GO TO:');
+        WRITELN;
+        WRITELN( 'THE A)DVENTURER''S INN, G)ILGAMESH''');
+        WRITELN( 'TAVERN, B)OLTAC''S TRADING POST, THE');
+        WRITELN( 'TEMPLE OF C)ANT, OR THE E)DGE OF TOWN.')
+      END;
+
+Code To:
+
+      BEGIN
+        GOTOXY( 0, 13);
+        WRITE( CHR( 11));
+        WRITE( ' ' : 13);
+        WRITELN( 'YOU MAY GO TO:');
+        WRITELN;
+        (* WC004 CHANGE -G)ILGAMESH''');- TO -G)ILGAMESH''S');- *)
+        WRITELN( 'THE A)DVENTURER''S INN, G)ILGAMESH''S');
+        WRITELN( 'TAVERN, B)OLTAC''S TRADING POST, THE');
+        WRITELN( 'TEMPLE OF C)ANT, OR THE E)DGE OF TOWN.')
+      END;
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
+
