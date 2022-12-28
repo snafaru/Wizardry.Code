@@ -1,3 +1,6 @@
+(* VERSION DATE  : 27 DEC 2022 *)
+(* FIX REFERENCES: WC003 *)
+
 (* MELEE *)
 
 SEGMENT PROCEDURE MELEE;  (* P010701 *)
@@ -613,7 +616,8 @@ SEGMENT PROCEDURE MELEE;  (* P010701 *)
           IF SPELL = LATUMAPI THEN
             BEGIN
               FOR GROUPI := 1 TO 4 DO
-                BATTLERC[ LLBASE04].A.IDENTIFI := TRUE;  (* BUG? WITH BASE04*)
+                (* WC003 FROM -BATTLERC[ LLBASE04]- TO -BATTLERC[ GROUPI]- *)
+                BATTLERC[ GROUPI].A.IDENTIFI := TRUE;  (* BUG? WITH BASE04 *)
             END;
           IF SPELL = BAMATU THEN
             MODAC( 0, 4, 0, PARTYCNT - 1);
