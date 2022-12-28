@@ -1,0 +1,50 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC003 - Latumapic does not work
+===============================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	27-Dec-2022
+
+Contributor:	E. Labelle (Information source: DDG Ahab)
+
+The Issue:	Casting the Latumapic spell does not identify the monsters' true names, thus making this spell useless.
+
+The fix:	Change the loop variable from LLBASE04 to GROUPI.
+
+Why this fix:	To make the Latumapic spell work on on all groups of monsters.
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT4.TEXT
+
+Segment:	PROCEDURE DOPRIEST;  (* P01081B *)
+
+Code From:
+
+          IF SPELL = LATUMAPI THEN
+            BEGIN
+              FOR GROUPI := 1 TO 4 DO
+                BATTLERC[ LLBASE04].A.IDENTIFI := TRUE;  (* BUG? WITH BASE04*)
+            END;
+
+Code To:
+
+          IF SPELL = LATUMAPI THEN
+            BEGIN
+              FOR GROUPI := 1 TO 4 DO
+                (* WC003 FROM -BATTLERC[ LLBASE04]- TO -BATTLERC[ GROUPI]- *)
+                BATTLERC[ GROUPI].A.IDENTIFI := TRUE;  (* BUG? WITH BASE04 *)
+            END;
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
+
