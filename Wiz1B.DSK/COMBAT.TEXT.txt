@@ -1,3 +1,6 @@
+(* VERSION DATE  : 30 DEC 2022 *)
+(* FIX REFERENCES: WC005 *)
+
   SEGMENT PROCEDURE COMBAT;  (* P010401 *)
 
     CONST
@@ -262,6 +265,10 @@
               INDEX    : INTEGER;
         
           BEGIN (* FRIENDLY *)
+            (* WC005 EXIT IF FIRST MONSTER GROUP RESISTS BEFRIENDING *)
+            IF BATTLERC[ 1].B.WEPVSTY3[ 0] THEN
+              EXIT (FRIENDLY);
+          
             GOODLEAV := FALSE;
             FOR INDEX := 0 TO PARTYCNT - 1 DO
               BEGIN
