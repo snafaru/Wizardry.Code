@@ -1,0 +1,46 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC005 - No Friends Fix
+======================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	30-Dec-2022
+
+Contributor:	E. Labelle (Information source: E. Labelle)
+
+The Issue:	The monsters' friends/no friends attribute does not work at all. In a monster record, there is an attribute to resist befriending, meaning you cannot have a friendly encounter with them if set to on (or true). The issue was that even if that attribute was on, you could still have a friendly encounter with them.
+
+The fix:	Added a a line of code to the FRIENDLY procedure to check if that monster's attribute is on for the first group of monsters, and if it is then exit the FRIENDLY procedure.
+
+Why this fix:	To make the monster's resistance to befriending work.
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT.TEXT
+
+Segment:	PROCEDURE FRIENDLY;  (* P010509 *)
+
+Code From:
+          BEGIN (* FRIENDLY *)
+            GOODLEAV := FALSE;
+
+Code To: Note that BATTLERC is the monster group where 1 means the first monster group, WEPVSTY3 is the monster resistance where 0 is No Friends, 1 is Fire, 2 is Cold, Etc.
+
+          BEGIN (* FRIENDLY *)
+            (* WC005 EXIT IF FIRST MONSTER GROUP RESISTS BEFRIENDING *)
+            IF BATTLERC[ 1].B.WEPVSTY3[ 0] THEN
+              EXIT (FRIENDLY);
+          
+            GOODLEAV := FALSE;
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
+
