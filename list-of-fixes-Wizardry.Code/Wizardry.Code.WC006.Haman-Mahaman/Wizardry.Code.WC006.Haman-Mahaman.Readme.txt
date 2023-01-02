@@ -1,0 +1,97 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC006 - Haman Mahaman
+=====================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	01-Jan-2023
+
+Contributor:	E. Labelle (Information source: Thomas W. Ewers)
+
+The Bug:	There are supposed to be seven possible effects, with less powerful ones more likely to be selected. Instead, each spell has three possible effects with equal distribution, and two of the effects are impossible.
+
+The fix:	Added parenthesis and changed the Mahaman flag value from 7 to 8.
+
+Why this fix:	To make Haman and Mahaman work as intended.
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT4.TEXT
+
+Segment:	PROCEDURE HAMMAHAM( MAHAMFLG: INTEGER);  (* P01080E *)
+		and
+		PROCEDURE DOMAGE;  (* P01081C *)
+
+Code From:
+        BEGIN  (* HAMMAHAM *)
+          IF MAHAMFLG = 7 THEN
+            PRINTSTR( 'MA');
+          PRINTSTR( 'HAMAN IS INTONED AND...');
+          PAUSE2;
+          MVCURSOR( 1, 13);
+          IF CHARACTR[ BATI].CHARLEV < 13 THEN
+            BEGIN
+              PRINTSTR( 'FAILS!');
+              EXIT( HAMMAHAM)
+            END;
+          CHARACTR[ BATI].CHARLEV := CHARACTR[ BATI].CHARLEV - 1;
+          DRAINED[ BATI] := TRUE;
+          
+          CASE RANDOM MOD 3 * MAHAMFLG OF     (* MAHAMFLG IS 6 OR 7 *)
+             0,  1,  2,  3,  4,  5:  HAMCURE;   (*     1? 2? 3? 4? 5? *)
+                 7,  8,  9, 10, 11:  HAMSILEN;  (*     8? 9? 10? 11?  *)
+                    12, 13, 22, 23:  HAMMAGIC;  (*    13?, 22?, 23?   *)
+                        14, 20, 21:  HAMTELEP;  (*    14?, 20?        *)
+                         6, 15, 19:  HAMHEAL;   (*    15?, 19?        *)
+                                17:  HAMPROT;   (*    17?      DEAD CODE    *)
+                            16, 18:  HAMALIVE;  (*    16?, 18? DEAD CODE    *)
+                            
+          (* MAYBE THEY WANTED "RANDOM MOD (3 * MAHAMFLG)",
+             AND MAHAMFLG = 6 OR 8 DEPENDING ON SPELL *)
+                            
+          END;
+
+Code To:
+        BEGIN  (* HAMMAHAM *)
+          (* WC006 FROM -MAHAMFLG = 7- TO -MAHAMFLG = 8 *)
+           IF MAHAMFLG = 8 THEN
+            PRINTSTR( 'MA');
+          PRINTSTR( 'HAMAN IS INTONED AND...');
+          PAUSE2;
+          MVCURSOR( 1, 13);
+          IF CHARACTR[ BATI].CHARLEV < 13 THEN
+            BEGIN
+              PRINTSTR( 'FAILS!');
+              EXIT( HAMMAHAM)
+            END;
+          CHARACTR[ BATI].CHARLEV := CHARACTR[ BATI].CHARLEV - 1;
+          DRAINED[ BATI] := TRUE;
+          
+          (* WC006 FROM -3 * MAHAMFLG- TO -(3 * MAHAMFLG)- *)
+          CASE RANDOM MOD (3 * MAHAMFLG) OF     (* MAHAMFLG IS 6 OR 8 *)
+             0,  1,  2,  3,  4,  5:  HAMCURE;
+                 7,  8,  9, 10, 11:  HAMSILEN;
+                    12, 13, 22, 23:  HAMMAGIC;
+                        14, 20, 21:  HAMTELEP;
+                         6, 15, 19:  HAMHEAL;
+                                17:  HAMPROT;
+                            16, 18:  HAMALIVE;
+          END;
+
+Code From:
+          IF SPELL = MAHAMAN THEN
+            HAMMAHAM( 7);
+
+Code To:
+          IF SPELL = MAHAMAN THEN
+            (* WC006 CHANGE -HAMMAHAM( 7)- TO -HAMMAHAM( 8)- *)
+            HAMMAHAM( 8);
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
