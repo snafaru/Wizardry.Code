@@ -1,0 +1,46 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC007 - Object Special Number 23
+================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	02-Jan-2023
+
+Contributor:	E. Labelle (Information source: Thomas W. Ewers)
+
+The Bug:	Error in code.
+
+The fix:	Added "- 1" to the code so that the routine applies the effect to characters 1 through 6 instead of 1 through 7.
+
+Why this fix:	To have the correct code.
+
+Source Disk:	Wiz1B.dsk
+
+File:		UTILITIE2.TEXT
+
+Segment:	PROCEDURE CHSPCPOW;  (* P01011A *)
+
+Code From:
+                          23: BEGIN
+                                (* LOOKS LIKE BUG!  PARTYCNT - 1  !!! *)
+                                FOR SPCTEMP := 0 TO PARTYCNT DO
+                                    CHARACTR[ SPCTEMP].HPLEFT :=
+                                      CHARACTR[ SPCTEMP].HPMAX
+                              END;
+
+Code To:
+                          23: BEGIN
+                                (* WC007 FROM -PARTYCNT- TO -PARTYCNT - 1- *)
+                                FOR SPCTEMP := 0 TO PARTYCNT - 1 DO
+                                    CHARACTR[ SPCTEMP].HPLEFT :=
+                                      CHARACTR[ SPCTEMP].HPMAX
+                              END;
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
