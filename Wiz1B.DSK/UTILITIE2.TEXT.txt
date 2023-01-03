@@ -1,3 +1,5 @@
+(* VERSION DATE  : 02 JAN 2023 *)
+(* FIX REFERENCES: WC007 *)
 
 PROCEDURE EQUIPCHR( CHARI : INTEGER);  (* P010119 *)
     
@@ -91,8 +93,8 @@ PROCEDURE EQUIPCHR( CHARI : INTEGER);  (* P010119 *)
                               END;
                           22: HPMAX := HPMAX + 1;
                           23: BEGIN
-                                (* LOOKS LIKE BUG!  PARTYCNT - 1  !!! *)
-                                FOR SPCTEMP := 0 TO PARTYCNT DO
+                                (* WC007 FROM -PARTYCNT- TO -PARTYCNT - 1- *)
+                                FOR SPCTEMP := 0 TO PARTYCNT - 1 DO
                                     CHARACTR[ SPCTEMP].HPLEFT :=
                                       CHARACTR[ SPCTEMP].HPMAX
                               END;
