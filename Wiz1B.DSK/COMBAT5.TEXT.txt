@@ -1,5 +1,5 @@
 (* VERSION DATE  : 26 DEC 2022 *)
-(* FIX REFERENCES: WC002 *)
+(* FIX REFERENCES: WC002 WC008 *)
 
 SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
     
@@ -398,7 +398,8 @@ SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
                         BEGIN
                           MVCURSOR( 1, 14);
                           PRINTSTR( 'A CRITICAL HIT!');
-                          WRITE( '');
+                          (* WC008 REPLACE THREE HIDDEN CTRL-G BY CHR( 7) *)
+                          WRITE( CHR( 7), CHR( 7), CHR( 7));
                           BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].HPLEFT := 0;
                           PAUSE1;
                           CLRRECT( 1, 14, 38, 1)
