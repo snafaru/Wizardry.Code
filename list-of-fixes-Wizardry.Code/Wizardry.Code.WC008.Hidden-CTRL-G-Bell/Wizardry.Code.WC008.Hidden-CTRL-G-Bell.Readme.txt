@@ -1,0 +1,51 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC008 - Hidden CTRL-G Bell
+==========================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	03-Jan-2023
+
+Contributor:	E. Labelle (Information source: Thomas W. Ewers)
+
+The Issue:	The COMBAT5.TEXT contains three hidden CTRL-G ascii characters to ring the BELL 3 times for when your character scores a critical hit. Key word here: hidden.
+
+The fix:	Replace the three hidden CTRL-G by three CHR(7).
+
+Why this fix:	To avoid future problems when editing or viewing COMBAT5.TEXT. To make it clear what is going on in the code.
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT5.TEXT
+
+Segment:	PROCEDURE DAM2ENMY;  (* P01090F *)
+
+Code From:
+                        BEGIN
+                          MVCURSOR( 1, 14);
+                          PRINTSTR( 'A CRITICAL HIT!');
+                          WRITE( '');
+                          BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].HPLEFT := 0;
+                          PAUSE1;
+                          CLRRECT( 1, 14, 38, 1)
+                        END;
+
+Code To:
+                        BEGIN
+                          MVCURSOR( 1, 14);
+                          PRINTSTR( 'A CRITICAL HIT!');
+                          (* WC008 REPLACE THREE HIDDEN CTRL-G BY CHR( 7) *)
+                          WRITE( CHR( 7), CHR( 7), CHR( 7));
+                          BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].HPLEFT := 0;
+                          PAUSE1;
+                          CLRRECT( 1, 14, 38, 1)
+                        END;
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
