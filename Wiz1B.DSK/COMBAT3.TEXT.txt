@@ -1,3 +1,6 @@
+(* VERSION DATE  : 05 JAN 2023 *)
+(* FIX REFERENCES: WC009 *)
+
     PROCEDURE HEAL;  (* P01061F *)
       
         VAR
@@ -133,9 +136,10 @@
           
             BEGIN
               FOR X := 0 TO ALIVECNT - 1 DO
-                IF BATTLERC[ GROUPI].A.TEMP04[ ALIVECNT].INAUDCNT > 0 THEN
-                   BATTLERC[ GROUPI].A.TEMP04[ ALIVECNT].INAUDCNT :=
-                   BATTLERC[ GROUPI].A.TEMP04[ ALIVECNT].INAUDCNT - 1
+                (* WC009 FROM -[ ALIVECNT]- TO -[ X]- *)
+                IF BATTLERC[ GROUPI].A.TEMP04[ X].INAUDCNT > 0 THEN
+                   BATTLERC[ GROUPI].A.TEMP04[ X].INAUDCNT :=
+                   BATTLERC[ GROUPI].A.TEMP04[ X].INAUDCNT - 1
             END;  (* DECINAUD *)
             
             
@@ -143,7 +147,9 @@
             DECINAUD( 0, PARTYCNT);
             DECINAUD( 1, BATTLERC[ 1].A.ALIVECNT);
             DECINAUD( 2, BATTLERC[ 2].A.ALIVECNT);
-            DECINAUD( 3, BATTLERC[ 3].A.ALIVECNT)
+            DECINAUD( 3, BATTLERC[ 3].A.ALIVECNT);
+            (* WC009 ADDED NEXT LINE WAS MISSING LAST GROUP OF MONSTERS *)
+            DECINAUD( 4, BATTLERC[ 4].A.ALIVECNT)
           END; (* HEALHEAR *)
           
           
