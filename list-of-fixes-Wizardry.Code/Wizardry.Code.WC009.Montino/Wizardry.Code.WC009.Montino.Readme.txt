@@ -1,0 +1,65 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC009 - Montino
+===============================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	05-Jan-2023
+
+Contributor:	E. Labelle (Information source: DDG Ahab)
+
+The Issue:	The silencing effect of Montino (silence) is meant to wear off, but it does not.
+
+The fix:	Adjust wrong variable pointer, added missing line of code.
+
+Why this fix:	To have the Montino (silence) effect to wear off as intended.
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT3.TEXT
+
+Segment:	PROCEDURE HEALHEAR;  (* P010623 *)
+
+Code From:
+            BEGIN
+              FOR X := 0 TO ALIVECNT - 1 DO
+                IF BATTLERC[ GROUPI].A.TEMP04[ ALIVECNT].INAUDCNT > 0 THEN
+                   BATTLERC[ GROUPI].A.TEMP04[ ALIVECNT].INAUDCNT :=
+                   BATTLERC[ GROUPI].A.TEMP04[ ALIVECNT].INAUDCNT - 1
+            END;  (* DECINAUD *)
+            
+            
+          BEGIN (* HEALHEAR *)
+            DECINAUD( 0, PARTYCNT);
+            DECINAUD( 1, BATTLERC[ 1].A.ALIVECNT);
+            DECINAUD( 2, BATTLERC[ 2].A.ALIVECNT);
+            DECINAUD( 3, BATTLERC[ 3].A.ALIVECNT)
+          END; (* HEALHEAR *)
+
+Code To:
+            BEGIN
+              FOR X := 0 TO ALIVECNT - 1 DO
+                (* WC009 FROM -[ ALIVECNT]- TO -[ X]- *)
+                IF BATTLERC[ GROUPI].A.TEMP04[ X].INAUDCNT > 0 THEN
+                   BATTLERC[ GROUPI].A.TEMP04[ X].INAUDCNT :=
+                   BATTLERC[ GROUPI].A.TEMP04[ X].INAUDCNT - 1
+            END;  (* DECINAUD *)
+            
+            
+          BEGIN (* HEALHEAR *)
+            DECINAUD( 0, PARTYCNT);
+            DECINAUD( 1, BATTLERC[ 1].A.ALIVECNT);
+            DECINAUD( 2, BATTLERC[ 2].A.ALIVECNT);
+            DECINAUD( 3, BATTLERC[ 3].A.ALIVECNT);
+            (* WC009 ADDED NEXT LINE WAS MISSING LAST GROUP OF MONSTERS *)
+            DECINAUD( 4, BATTLERC[ 4].A.ALIVECNT)
+          END; (* HEALHEAR *)
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
