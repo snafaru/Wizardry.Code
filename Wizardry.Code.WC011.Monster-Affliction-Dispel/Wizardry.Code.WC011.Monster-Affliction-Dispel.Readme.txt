@@ -1,0 +1,37 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC011 - Monster Affliction Dispel
+=================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	07-Jan-2023
+
+Contributor:	E. Labelle (Information source: DDG Ahab)
+
+The Issue:	Dispel does not work on undead monsters with status afflictions. This would be a pretty rare occurrence though; Katino doesn't work on the undead, and casting Manifo when you can just dispel them is a bit crazy.
+
+The fix:	Adjust code to have dispel work on monsters that have an affliction.
+
+Why this fix:	To have dispel work on monsters that have an affliction.
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT5.TEXT
+
+Segment:	PROCEDURE DODISPEL;  (* P010913 *)
+
+Code From:
+            IF BATTLERC[ VICTIM].A.TEMP04[ CHARX].STATUS = OK THEN
+
+Code To:
+            (* WC011 FROM -= OK- TO -<= DEAD- *)
+            IF BATTLERC[ VICTIM].A.TEMP04[ CHARX].STATUS <= DEAD THEN
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
