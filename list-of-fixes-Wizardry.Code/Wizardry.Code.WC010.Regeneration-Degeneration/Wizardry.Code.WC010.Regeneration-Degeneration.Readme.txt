@@ -1,0 +1,41 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC010 - Regeneration Degeneration
+=================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	06-Jan-2023
+
+Contributor:	E. Labelle (Information source: DDG Ahab)
+
+The Issue:	HEALPTS (hit points regeneration and degeneration) is probably meant to stack but instead, it just takes whatever item has the biggest heal value. Consequently, the DEADLY RING's HP draining property has no effect.
+
+The fix:	Adjust code to have regeneration and degeneration items stack. Poison and stacking poison from chest traps are also taken in account.
+
+Why this fix:	To have regeneration and degeneration effects stack. The Deadly Ring is now actually deadly.
+
+Source Disk:	Wiz1B.dsk
+
+File:		UTILITIE2.TEXT
+
+Segment:	PROCEDURE NORMPOW;  (* P01011D *)
+
+Code From:
+              IF CHARACTR[ CHARI].HEALPTS < OBJECT.HEALPTS THEN
+                CHARACTR[ CHARI].HEALPTS := OBJECT.HEALPTS;
+
+Code To:
+              (* WC010 MAKE OBJECT REGEN STACK AND INCLUDE NEGATIVE AMOUNTS *)
+              (* REMOVE -IF CHARACTR[ CHARI].HEALPTS < OBJECT.HEALPTS THEN- *)
+              (* REMOVE -CHARACTR[ CHARI].HEALPTS := OBJECT.HEALPTS;- *)
+              (* ADD NEXT LINE *)
+                CHARACTR[ CHARI].HEALPTS := CHARACTR[ CHARI].HEALPTS + OBJECT.HEALPTS;
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
