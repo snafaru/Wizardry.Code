@@ -496,8 +496,8 @@ SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
           
           DISPLCNT := 0;
           FOR CHARX := 0 TO BATTLERC[ VICTIM].A.ALIVECNT - 1 DO
-            (* WC011 FROM -= OK- TO -<= DEAD- *)
-            IF BATTLERC[ VICTIM].A.TEMP04[ CHARX].STATUS <= DEAD THEN
+            (* WC011 FROM -= OK- TO -< DEAD- *)
+            IF BATTLERC[ VICTIM].A.TEMP04[ CHARX].STATUS < DEAD THEN
               IF (RANDOM MOD 100) < DISPCALC THEN
                 IF BATTLERC[ VICTIM].B.CLASS = 10 THEN
                   BEGIN
