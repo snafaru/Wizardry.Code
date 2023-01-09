@@ -29,8 +29,8 @@ Code From:
             IF BATTLERC[ VICTIM].A.TEMP04[ CHARX].STATUS = OK THEN
 
 Code To:
-            (* WC011 FROM -= OK- TO -<= DEAD- *)
-            IF BATTLERC[ VICTIM].A.TEMP04[ CHARX].STATUS <= DEAD THEN
+            (* WC011 FROM -= OK- TO -< DEAD- *)
+            IF BATTLERC[ VICTIM].A.TEMP04[ CHARX].STATUS < DEAD THEN
 
 Final Compiled File Name:	WIZARDRY.CODE
 
