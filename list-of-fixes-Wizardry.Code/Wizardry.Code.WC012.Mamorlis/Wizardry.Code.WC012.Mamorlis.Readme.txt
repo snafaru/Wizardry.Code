@@ -1,0 +1,41 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC012 - Mamorlis
+================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	09-Jan-2023
+
+Contributor:	E. Labelle
+
+The Issue:	Mamorlis is supposed to fear all the monsters (reduce their armor class by 3) but the 1st monster of each group is not affected.
+
+The fix:	Adjust code to have all monsters affected.
+
+Why this fix:	To have all monsters affected.
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT4.TEXT
+
+Segment:	PROCEDURE DOMAGE;  (* P01081C *)
+
+Code From:
+          IF SPELL = MAMORLIS THEN
+            FOR GROUPI := 1 TO 4 DO
+              MODAC( GROUPI, -3, 1, BATTLERC[ GROUPI].A.ALIVECNT);
+
+Code To:
+          IF SPELL = MAMORLIS THEN
+            FOR GROUPI := 1 TO 4 DO
+              (* WC012 FROM -1-, -ALIVECNT- TO -0-, -ALIVECNT - 1- *)
+              MODAC( GROUPI, -3, 0, BATTLERC[ GROUPI].A.ALIVECNT - 1);
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
