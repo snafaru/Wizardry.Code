@@ -1,5 +1,5 @@
-(* VERSION DATE  : 09 JAN 2023 *)
-(* FIX REFERENCES: WC003 WC006 WC012 *)
+(* VERSION DATE  : 11 JAN 2023 *)
+(* FIX REFERENCES: WC003 WC006 WC012 WC013 *)
 
 (* MELEE *)
 
@@ -655,14 +655,17 @@ SEGMENT PROCEDURE MELEE;  (* P010701 *)
               DOHEAL( 0, CASTGR, 1, 1)
             END;
           IF SPELL = MABADI THEN
-            BEGIN
-              CLRRECT( 1, 12, 38, 3);
-              MVCURSOR( 1, 12);
-              DSPNAMES( CASTGR, CASTI);
-              PRINTSTR( ' IS HIT BY MABADI!');
-               BATTLERC[ CASTGR].A.TEMP04[ CASTI].HPLEFT := 
-                 1 + (RANDOM MOD 8);
-            END;
+            (* WC013 ADD NEXT LINE *)
+            IF BATTLERC[ CASTGR].A.TEMP04[ CASTI].STATUS < DEAD THEN
+              BEGIN
+                CLRRECT( 1, 12, 38, 3);
+                MVCURSOR( 1, 12);
+                DSPNAMES( CASTGR, CASTI);
+                (* WC013 REMOVE EXTRA BEGINNING SPACE *)
+                PRINTSTR( 'IS HIT BY MABADI!');
+                  BATTLERC[ CASTGR].A.TEMP04[ CASTI].HPLEFT := 
+                    1 + (RANDOM MOD 8);
+              END;
           IF SPELL = LOKTOFEI THEN
             SLOKTOFE;
           IF SPELL = MALIKTO THEN
