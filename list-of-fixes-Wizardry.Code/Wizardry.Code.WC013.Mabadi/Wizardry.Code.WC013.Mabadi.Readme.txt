@@ -1,0 +1,55 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC013 - Mabadi
+==============================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	11-Jan-2023
+
+Contributor:	E. Labelle
+
+The Issue:	Monsters " IS HIT BY MABADI!" message is displayed although no monsters are left alive.
+
+The fix:	Added code to skip that effect and message if the monster is dead. Also, removed an extra space at the beginning of " IS HIT...".
+
+Why this fix:	To skip the Mabadi effect and message if the monster is dead.
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT4.TEXT
+
+Segment:	PROCEDURE DOPRIEST;  (* P01081B *)
+
+Code From:
+          IF SPELL = MABADI THEN
+            BEGIN
+              CLRRECT( 1, 12, 38, 3);
+              MVCURSOR( 1, 12);
+              DSPNAMES( CASTGR, CASTI);
+              PRINTSTR( ' IS HIT BY MABADI!');
+               BATTLERC[ CASTGR].A.TEMP04[ CASTI].HPLEFT := 
+                 1 + (RANDOM MOD 8);
+            END;
+
+Code To:
+          IF SPELL = MABADI THEN
+            (* WC013 ADD NEXT LINE *)
+            IF BATTLERC[ CASTGR].A.TEMP04[ CASTI].STATUS < DEAD THEN
+              BEGIN
+                CLRRECT( 1, 12, 38, 3);
+                MVCURSOR( 1, 12);
+                DSPNAMES( CASTGR, CASTI);
+                (* WC013 REMOVE EXTRA BEGINNING SPACE *)
+                PRINTSTR( 'IS HIT BY MABADI!');
+                  BATTLERC[ CASTGR].A.TEMP04[ CASTI].HPLEFT := 
+                    1 + (RANDOM MOD 8);
+              END;
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
