@@ -1,5 +1,5 @@
-(* VERSION DATE  : 11 JAN 2023 *)
-(* FIX REFERENCES: WC003 WC006 WC012 WC013 *)
+(* VERSION DATE  : 12 JAN 2023 *)
+(* FIX REFERENCES: WC003 WC006 WC012 WC013 WC014 *)
 
 (* MELEE *)
 
@@ -100,7 +100,8 @@ SEGMENT PROCEDURE MELEE;  (* P010701 *)
               PRINTSTR( 'IS ');
               CASE DAMTYPE OF
               
-                0, 3:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := ASLEEP;
+                   (* WC014 ENABLED PARALYZE EFFECTS *)
+                   0:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := PLYZE;
                 
                    1:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].INAUDCNT :=
                          (RANDOM MOD 4) + 2;
@@ -108,7 +109,9 @@ SEGMENT PROCEDURE MELEE;  (* P010701 *)
                    2:  BEGIN
                          BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := DEAD;
                          BATTLERC[ GROUPI].A.TEMP04[ CHARI].HPLEFT := 0
-                       END
+                       END;
+                   
+                   3:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := ASLEEP
               END
             END;
           PRINTSTR( SDAMTYPE);
