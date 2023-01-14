@@ -1,0 +1,67 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC014 - Manifo
+==============================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	12-Jan-2023
+
+Contributor:	E. Labelle
+
+The Issue:	Monsters affected by Manifo wrongly get the status Asleep instead of Paralyzed.
+
+The fix:	Adjust the code so that the monsters have the status PLYZE instead of ASLEEP if affected by Manifo.
+
+Why this fix:	To make the Manifo spell work as intended. Also, this makes use of the code that is already in the game for the monsters to recuperate from a paralysis effect. Note: Although Manifo's success chance is lower than Katino, Manifo's effect last much, much longer on average. Changing Manifo's success chance may be done in a future balance project.
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT4.TEXT
+
+Segment:	PROCEDURE ISISNOT( GROUPI:    INTEGER;  (* P010804 *)
+
+Code From:
+            BEGIN
+              PRINTSTR( 'IS ');
+              CASE DAMTYPE OF
+              
+                0, 3:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := ASLEEP;
+                
+                   1:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].INAUDCNT :=
+                         (RANDOM MOD 4) + 2;
+                         
+                   2:  BEGIN
+                         BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := DEAD;
+                         BATTLERC[ GROUPI].A.TEMP04[ CHARI].HPLEFT := 0
+                       END
+              END
+            END;
+
+Code To:
+            BEGIN
+              PRINTSTR( 'IS ');
+              CASE DAMTYPE OF
+              
+                   (* WC014 ENABLED PARALYZE EFFECTS *)
+                   0:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := PLYZE;
+                
+                   1:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].INAUDCNT :=
+                         (RANDOM MOD 4) + 2;
+                         
+                   2:  BEGIN
+                         BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := DEAD;
+                         BATTLERC[ GROUPI].A.TEMP04[ CHARI].HPLEFT := 0
+                       END;
+                   
+                   3:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := ASLEEP
+              END
+            END;
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
