@@ -1,4 +1,4 @@
-(* VERSION DATE  : 12 JAN 2023 *)
+(* VERSION DATE  : 14 JAN 2023 *)
 (* FIX REFERENCES: WC003 WC006 WC012 WC013 WC014 *)
 
 (* MELEE *)
@@ -217,9 +217,11 @@ SEGMENT PROCEDURE MELEE;  (* P010701 *)
                          'HELD',
                          0)
               ELSE
+                (* WC014 FROM -10 *- TO -5 *- *)
                 ISISNOT( CASTGR,
                          CHARX,
-                         50 + 10 * BATTLERC[ CASTGR].B.HPREC.LEVEL,
+                         50 + 5 * BATTLERC[ CASTGR].B.HPREC.LEVEL
+                         ,
                          'HELD',
                          0)
                  
