@@ -9,21 +9,22 @@ Bug/Issue #:	WC014 - Manifo
 
 Status:		Fixed. Recompiled. Verified.
 
-Date of change:	12-Jan-2023
+Date of change:	14-Jan-2023
 
-Contributor:	E. Labelle
+Contributor:	E. Labelle (Information source: DDG Ahab)
 
-The Issue:	Monsters affected by Manifo wrongly get the status Asleep instead of Paralyzed.
+The Issue:	Monsters affected by Manifo wrongly get the status Asleep instead of Paralyzed. Monster resistance to Manifo is so high that the spell is essentially useless.
 
-The fix:	Adjust the code so that the monsters have the status PLYZE instead of ASLEEP if affected by Manifo.
+The fix:	Adjust the code so that the monsters have the status PLYZE instead of ASLEEP if affected by Manifo. Reduce the monsters' resistance to Manifo so that it now sits in between the original setting and Legacy of Llylgamyn (over-powered). Ex: Now a level 3 monster has a 65% chance to resist Manifo, compared to a 60% chance to resist Katino. The second fix was done out of necessity and for negligeable coding space (less than 512 bytes left on disk for coding) and can easily be reversed or changed if necessary.
 
-Why this fix:	To make the Manifo spell work as intended. Also, this makes use of the code that is already in the game for the monsters to recuperate from a paralysis effect. Note: Although Manifo's success chance is lower than Katino, Manifo's effect last much, much longer on average. Changing Manifo's success chance may be done in a future balance project.
+Why this fix:	To make the Manifo spell work as intended. Also, this makes use of the code that is already in the game for the monsters to recuperate from a paralysis effect. Make Manifo a useful spell.
 
 Source Disk:	Wiz1B.dsk
 
 File:		COMBAT4.TEXT
 
 Segment:	PROCEDURE ISISNOT( GROUPI:    INTEGER;  (* P010804 *)
+		PROCEDURE DOHOLD;  (* P010809 *)
 
 Code From:
             BEGIN
@@ -61,6 +62,23 @@ Code To:
                    3:  BATTLERC[ GROUPI].A.TEMP04[ CHARI].STATUS := ASLEEP
               END
             END;
+
+Code From:
+                ISISNOT( CASTGR,
+                         CHARX,
+                         50 + 10 * BATTLERC[ CASTGR].B.HPREC.LEVEL
+                         ,
+                         'HELD',
+                         0)
+
+Code To:
+                (* WC014 FROM -10 *- TO -5 *- *)
+                ISISNOT( CASTGR,
+                         CHARX,
+                         50 + 5 * BATTLERC[ CASTGR].B.HPREC.LEVEL
+                         ,
+                         'HELD',
+                         0)
 
 Final Compiled File Name:	WIZARDRY.CODE
 
