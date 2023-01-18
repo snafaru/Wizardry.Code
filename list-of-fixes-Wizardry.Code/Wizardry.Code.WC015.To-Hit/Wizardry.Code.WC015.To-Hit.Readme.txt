@@ -1,0 +1,45 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC015 - To Hit
+==============================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	17-Jan-2023.
+
+Contributor:	E. Labelle (Information source: DDG Ahab).
+
+The Issue:	Monsters in the front row were harder to hit than monsters in the back row, which made no sense.
+
+The fix:	The variable VICTIM is monster groups 1 to 4. Changed the code to: "+ ((3 * VICTIM) - 6);". Extra set of parentheses here to make sure nothing stupid happens and for clarity. This way, the chance to hit the first monster group does not change, i.e., -3 (-15%), a minus number here is good, but each subsequent monster groups are harder to hit by 3 (15%).
+
+Why this fix:	To make the "To Hit" chance against the monsters work properly and logically.
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT5.TEXT
+
+Segment:	PROCEDURE DAM2ENMY;  (* P01090F *)
+
+Code From:
+                HPCALCPC := 21
+                              - BATTLERC[ VICTIM].B.AC
+                              - CHARACTR[ BATI].HPCALCMD
+                              + BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].ARMORCL
+                              - 3 * VICTIM;
+
+Code To:
+                HPCALCPC := 21
+                              - BATTLERC[ VICTIM].B.AC
+                              - CHARACTR[ BATI].HPCALCMD
+                              + BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].ARMORCL
+                              + ((3 * VICTIM) - 6);
+                              (* WC015 FROM - 3 * VICTIM *)
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
