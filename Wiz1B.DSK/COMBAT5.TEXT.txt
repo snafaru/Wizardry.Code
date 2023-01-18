@@ -1,5 +1,5 @@
-(* VERSION DATE  : 07 JAN 2023 *)
-(* FIX REFERENCES: WC002 WC008 WC011 *)
+(* VERSION DATE  : 17 JAN 2023 *)
+(* FIX REFERENCES: WC002 WC008 WC011 WC015 *)
 
 SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
     
@@ -356,7 +356,8 @@ SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
                               - BATTLERC[ VICTIM].B.AC
                               - CHARACTR[ BATI].HPCALCMD
                               + BATTLERC[ VICTIM].A.TEMP04[ SINGLEX].ARMORCL
-                              - 3 * VICTIM;
+                              + ((3 * VICTIM) - 6);
+                              (* WC015 FROM - 3 * VICTIM *)
                 IF HPCALCPC < 1 THEN
                   HPCALCPC := 1
                 ELSE
