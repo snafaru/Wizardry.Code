@@ -1,5 +1,5 @@
-(* VERSION DATE  : 22 JAN 2023 *)
-(* FIX REFERENCES: WC002 WC008 WC011 WC015 WC016 *)
+(* VERSION DATE  : 24 JAN 2023 *)
+(* FIX REFERENCES: WC002 WC008 WC011 WC015 *)
 
 SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
     
@@ -104,8 +104,7 @@ SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
                   CLRRECT( 1, 12, 38, 3);
                   MVCURSOR( 1, 12);
                   HITDAM := BATTLERC[ BATG].A.TEMP04[ BATI].HPLEFT DIV 2;
-                  (* WC016 FROM -[ 3]- TO -[ 2]- *)
-                  IF (RANDOM MOD 20) >= CHARACTR[ CHARX].LUCKSKIL[ 2] THEN
+                  IF (RANDOM MOD 20) >= CHARACTR[ CHARX].LUCKSKIL[ 3] THEN
                     HITDAM := (HITDAM + 1) DIV 2;
                   IF CHARACTR[ CHARX].WEPVSTY3[ 1][ BATTLERC[ BATG].B.BREATHE] 
                       THEN
