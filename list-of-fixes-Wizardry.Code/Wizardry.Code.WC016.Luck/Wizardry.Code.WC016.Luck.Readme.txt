@@ -9,30 +9,36 @@ Bug/Issue #:	WC016 - Luck (LUCKSKIL)
 
 Status:		Fixed. Recompiled. Verified.
 
-Date of change:	22-Jan-2023.
+Date of change:	24-Jan-2023.
 
 Contributor:	E. Labelle (Information source: E. Labelle, DDG Ahab).
 
 The Issue:	Saving throws inconsistency.
 
-The fix:	Saving throws are based on your character's Luck attribute and a modifier. After a long analysis, everything jives except for saving vs Breath for half damage, in game it pointed to "3" by mistake, changed it to "2". Detailed information at the end of this issue.
+The fix:	Saving throws are based on your character's Luck attribute and a modifier. After a long analysis, everything jives except for saving vs the chests' Poison Gas Trap. It pointed to "3" (Breath) attack, changed it to "2". Wizardry matches the 1979 AD&D Saving Throw table (http://grognardia.blogspot.com/2020/12/saving-throws.html). Detailed information at the end of this issue.
 
-Why this fix:	To have the proper saving throw against the monsters' Breath weapon.
+Why this fix:	This makes use of saving throw category "2", and it did not make sense for the Poison Gas Trap and Breath Attack being in the same category.
 
-Source Disk:	Wiz1B.dsk
+Source Disk:	Wiz1C.dsk
 
-File:		COMBAT5.TEXT
+File:		REWARDS.TEXT
 
-Segment:	PROCEDURE DOBREATH;  (* P010906 *)
+Segment:	PROCEDURE TYPE3DAM;  (* P010D11 *)
 
 Code From:
-                  IF (RANDOM MOD 20) >= CHARACTR[ CHARX].LUCKSKIL[ 3] THEN
-                    HITDAM := (HITDAM + 1) DIV 2;
+              2:  (* GAS *)
+              
+                    FOR CHARX := 0 TO PARTYCNT - 1 DO
+                      IF (RANDOM MOD 20) < CHARACTR[ CHARX].LUCKSKIL[ 3] THEN
+                        CHARACTR[ CHARX].LOSTXYL.POISNAMT[ 1] := 1;
 
 Code To:
-                  (* WC016 FROM -[ 3]- TO -[ 2]- *)
-                  IF (RANDOM MOD 20) >= CHARACTR[ CHARX].LUCKSKIL[ 2] THEN
-                    HITDAM := (HITDAM + 1) DIV 2;
+              2:  (* GAS *)
+              
+                    FOR CHARX := 0 TO PARTYCNT - 1 DO
+                      (* WC016 FROM -[ 3]- TO -[ 2]- *)
+                      IF (RANDOM MOD 20) < CHARACTR[ CHARX].LUCKSKIL[ 2] THEN
+                        CHARACTR[ CHARX].LOSTXYL.POISNAMT[ 1] := 1;
 
 Final Compiled File Name:	WIZARDRY.CODE
 
@@ -40,21 +46,22 @@ Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
 
 Details:
 
-There are the 5 saving throw checks used in game:
+There are the 5 saving throw checks used in the game:
 
 0 - Poison & Paralysis & Critical Hit (Special monster skills).
 1 - Stone.
-2 - Not used, should be Breath.
-3 - Poison Gas chest trap. Breath, error, should be 2.
-4 - Silence, Anti-Mage/Anti-Priest chest traps.
+2 - Was not used, moved the Poison Gas Chest Trap here.
+3 - Breath. Poison Gas Chest Trap, made no sense, moved to 2.
+4 - Silence. Anti-Mage/Anti-Priest Chest Traps.
 
-Here are the compiled resistances, each point is 5%:
+Here are the compiled resistances, after changes, each point is 5%:
 
 - [0] Vs. Poison & Paralysis & Critical Hit: Fighter 15%, Samurai 10%, Lord 10%, Ninja 15%, and if race is Human 5%.
 - [1] Vs. Stoning: Priest 15%, Bishop 10%, Lord 10%, Ninja 10%, and if race is Gnome 10%.
-- [2] Vs. Breath Attacks: Bishop 10%, Ninja 20%, and if race is Elf 10% to reduce the Breath damage by half.
-- [3] Vs. Poison Gas chest trap: Thief 15%, Ninja 15%, and if race is Dwarf 20%.
+- [2] Vs. Poison Gas Chest Trap: Bishop 10%, Ninja 20%, and if race is Elf 10%. 
+- [3] Vs. Breath Attacks: Thief 15%, Ninja 15%, and if race is Dwarf 20% to reduce the Breath damage by half.
 - [4] Vs. Anti-Mage and Anti-Priest chest trap and Silence: Mage 15%, Bishop 10%, Samurai 10%, Ninja 10%, and if the race is Hobbit 15%.
+
 - Vs. all of the above: add 5% for every 5 Levels of your character.
 - Vs. all of the above: add 5% if your Luck is 6, 10% if your Luck is 12, and 15% if your Luck is 18.
 
