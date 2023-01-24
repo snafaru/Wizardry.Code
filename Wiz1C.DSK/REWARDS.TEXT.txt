@@ -1,3 +1,5 @@
+(* VERSION DATE  : 24 JAN 2023 *)
+(* FIX REFERENCES: WC016 *)
     
 SEGMENT PROCEDURE REWARDS;    (* P010D01 *)
     
@@ -395,7 +397,8 @@ SEGMENT PROCEDURE REWARDS;    (* P010D01 *)
               2:  (* GAS *)
               
                     FOR CHARX := 0 TO PARTYCNT - 1 DO
-                      IF (RANDOM MOD 20) < CHARACTR[ CHARX].LUCKSKIL[ 3] THEN
+                      (* WC016 FROM -[ 3]- TO -[ 2]- *)
+                      IF (RANDOM MOD 20) < CHARACTR[ CHARX].LUCKSKIL[ 2] THEN
                         CHARACTR[ CHARX].LOSTXYL.POISNAMT[ 1] := 1;
                         
               3:  (* CROSSBOW BOLT *)
