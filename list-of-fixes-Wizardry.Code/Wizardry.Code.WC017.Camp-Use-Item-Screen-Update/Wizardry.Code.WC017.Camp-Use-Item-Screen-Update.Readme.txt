@@ -1,0 +1,40 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC017 - Camp Use Item Screen Update
+===================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	25-Jan-2023.
+
+Contributor:	E. Labelle.
+
+The Issue:	When in Camp, if using an item and it decays (Ex: Dios Potion > Broken Item), the display still shows the undecayed item name.
+
+The fix:	Add a line of code to refresh the items list after an item has been used.
+
+Why this fix:	To have the correct items' names displayed after use.
+
+Source Disk:	Wiz1C.dsk
+
+File:		CAMP.TEXT
+
+Segment:	PROCEDURE USEITEM;  (* P010C11 *)
+
+Code From:
+          CASTSPEL( SCNTOC.SPELLHSH[ THEITEM.SPELLPWR])
+
+Code To:
+          CASTSPEL( SCNTOC.SPELLHSH[ THEITEM.SPELLPWR]);
+          (* WC017 ADD NEXT LINE *)
+          DSPITEMS
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
