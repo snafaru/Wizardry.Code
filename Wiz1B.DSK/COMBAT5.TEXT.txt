@@ -1,5 +1,6 @@
-(* VERSION DATE  : 24 JAN 2023 *)
+(* VERSION DATE  : 27 JAN 2023 *)
 (* FIX REFERENCES: WC002 WC008 WC011 WC015 *)
+(* ENHANCEMENTS  : WC018 *)
 
 SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
     
@@ -118,6 +119,17 @@ SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
       
       PROCEDURE DOFIGHT;  (* P010907 *)
       
+        
+        (* WC018 DISPLAY HIT PROBABILITY *)
+        PROCEDURE HITPROB( HITP: INTEGER);
+          
+          BEGIN
+            PRINTSTR( 'WITH A HIT PROB OF ');
+            PRINTNUM( (20 - HITP) * 5, 2);
+            PRINTSTR( '%')
+          END;
+        
+        
         PROCEDURE DAM2ME;  (* P010908 *)
         
           VAR
@@ -296,6 +308,9 @@ SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
                     HPCALCPC := 19;
                 HPDAMAGE := 0;
                 HITSCNT := 0;
+                (* WC018 DISPLAY HIT PROBABILITY *)
+                PRINTSTR( ' ');
+                HITPROB( HPCALCPC); 
                 MVCURSOR( 1, 13);
                 FOR RECSI := 1 TO BATTLERC[ BATG].B.RECSN DO
                   IF (RANDOM MOD 20) >= HPCALCPC THEN
@@ -364,8 +379,9 @@ SEGMENT PROCEDURE SWINGASW;  (* P010901 *)
                   IF HPCALCPC > 19 THEN
                     HPCALCPC := 19;
                 HPDAMAGE := 0;
-                MVCURSOR( 1, 13);
                 HITSCNT := 0;
+                HITPROB( HPCALCPC); (* WC018 DISPLAY HIT PROBABILITY *)
+                MVCURSOR( 1, 13);
                 FOR TEMPX := 1 TO CHARACTR[ BATI].SWINGCNT DO
                   IF (RANDOM MOD 20) >= HPCALCPC THEN
                     BEGIN
