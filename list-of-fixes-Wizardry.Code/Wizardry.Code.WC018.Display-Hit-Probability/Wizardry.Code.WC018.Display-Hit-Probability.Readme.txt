@@ -1,0 +1,63 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC018 - Display Hit Probability
+===============================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	27-Jan-2023.
+
+Contributor:	E. Labelle.
+
+The Issue:	Enhance the battle details display by showing the hit probability of characters and monsters on-the-fly.
+
+The fix:	Added code to accomplish this.
+
+Why this fix:	Enhance the display of battle information.
+
+Source Disk:	Wiz1B.dsk
+
+File:		COMBAT5.TEXT
+
+Segments:	PROCEDURE DOFIGHT;  (* P010907 *)
+		PROCEDURE DAM2ME;  (* P010908 *)
+		PROCEDURE DAM2ENMY;  (* P01090F *)
+
+Code From:
+      N/A.
+
+Code To:
+      PROCEDURE DOFIGHT;  (* P010907 *)
+
+        (* WC018 DISPLAY HIT PROBABILITY *)
+        PROCEDURE HITPROB( HITP: INTEGER);
+          
+          BEGIN
+            PRINTSTR( 'WITH A HIT PROB OF ');
+            PRINTNUM( (20 - HITP) * 5, 2);
+            PRINTSTR( '%')
+          END;
+.
+.
+.
+        PROCEDURE DAM2ME;  (* P010908 *)
+...
+                (* WC018 DISPLAY HIT PROBABILITY *)
+                PRINTSTR( ' ');
+                HITPROB( HPCALCPC);
+.
+.
+.
+        PROCEDURE DAM2ENMY;  (* P01090F *)
+...
+                HITPROB( HPCALCPC); (* WC018 DISPLAY HIT PROBABILITY *)
+
+Final Compiled File Name:	WIZARDRY.CODE
+
+Destination Disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
