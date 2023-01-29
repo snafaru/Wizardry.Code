@@ -1,3 +1,6 @@
+(* VERSION DATE  : 29 JAN 2023 *)
+(* ENHANCEMENT   : WC019 *)
+
 SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
   
     VAR
@@ -11,33 +14,6 @@ SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
          SIXATTR2 : ARRAY[ STRENGTH..LUCK] OF INTEGER;
   
   
-    PROCEDURE GETPASS( VAR PASSWORD: STRING);  (* P010B02 *)
-    
-      VAR
-           UNUSEDXX : INTEGER;
-           RANDX    : INTEGER;
-           CHRCNT   : INTEGER;
-      
-      BEGIN
-        CHRCNT := 0;
-        REPEAT
-          GETKEY;
-          IF INCHAR <> CHR( CRETURN) THEN
-            IF CHRCNT < 15 THEN
-              BEGIN
-                FOR RANDX := 0 TO (RANDOM MOD 2) DO
-                  WRITE( CHR( 88));
-                CHRCNT := CHRCNT + 1;
-                PASSWORD[ CHRCNT] := INCHAR
-              END
-            ELSE
-              WRITE( CHR( 7));
-        UNTIL INCHAR = CHR( CRETURN);
-        WRITELN;
-        PASSWORD[ 0] := CHR( CHRCNT)
-      END;
-      
-      
     FUNCTION GTCHGLST : BOOLEAN;  (* P010B03 *)
     
       BEGIN
@@ -190,14 +166,11 @@ SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
         
       PROCEDURE MAKEMENU;  (* P010B0D *)
       
-        VAR
-             PASSWD : STRING;
-             
         BEGIN
           WRITE( CHR( 12));
           WRITE(   'NAME ': 10);
           WRITELN( CHARREC.NAME);
-          WRITELN( 'PASSWORD': 9);
+          WRITELN( '': 9);
           WRITELN( 'RACE': 9);
           WRITELN( 'POINTS': 9);
           WRITELN;
@@ -211,24 +184,6 @@ SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
           WRITELN( 'ALIGNMENT');
           WRITELN( 'CLASS': 9);
           WRITELN;
-          
-          REPEAT
-            P010B0B;
-            WRITELN( 'ENTER A PASSWORD ([RET] FOR NONE)');
-            GOTOXY( 10, 1);
-            WRITE( CHR( 29));
-            GOTOXY( 10, 1);
-            GETPASS( CHARNAME);
-            IF LENGTH( CHARNAME) > 15 THEN
-              CHARNAME := COPY( CHARNAME, 1, 15);
-            P010B0B;
-            WRITELN( 'ENTER IT AGAIN TO BE SURE');
-            GOTOXY( 10, 1);
-            WRITE( CHR( 29));
-            GOTOXY( 10, 1);
-            GETPASS( PASSWD);
-          UNTIL PASSWD = CHARNAME;
-          CHARREC.PASSWORD := CHARNAME
         END;
         
         
@@ -680,57 +635,11 @@ SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
           GTSCNTOC
         END;  (* CHGCLASS *)
         
-
-      PROCEDURE CHGPASS;  (* P010B1C *)
-      
-        VAR
-             NEWPASS2 : STRING[ 40];
-             NEWPASS1 : STRING[ 40];
-      
-        BEGIN;
-          WRITE( CHR(12));
-          WRITE( 'ENTER NEW PASSWORD ([RET] FOR NONE)');
-          REPEAT
-            GOTOXY( 10, 2);
-            GETPASS(  NEWPASS1)
-          UNTIL LENGTH( NEWPASS1) <= 15;
-          WRITE( CHR( 12));
-          WRITE( 'ENTER AGAIN TO BE SURE');
-          REPEAT
-            GOTOXY( 10, 2);
-            GETPASS( NEWPASS2)
-          UNTIL LENGTH( NEWPASS2) <= 15;
-          WRITE( CHR( 12));
-          IF NEWPASS1 = NEWPASS2 THEN
-            BEGIN
-              CHARREC.PASSWORD := NEWPASS1;
-              PUTCHARC( CHARREC, CHARACX);
-              GTSCNTOC;
-              WRITE( 'PASSWORD CHANGED - ')
-            END
-          ELSE
-            BEGIN
-              WRITELN( 'THEY ARE NOT THE SAME - YOUR PASSWORD');
-              WRITELN( 'HAS NOT BEEN CHANGED!');
-              WRITELN
-            END;
-          WRITE( 'PRESS [RET]');
-          GOTOXY( 41, 0);
-          READLN
-        END;
-
         
       BEGIN  (* TRAINING *)
         PARTYCNT := 0;
         IF XGOTO <> XBCK2ROL THEN
           BEGIN
-            REPEAT
-              GOTOXY( 9, 10);
-              WRITE( 'PASSWORD >');
-              GETPASS( PASSSTR)
-            UNTIL LENGTH( PASSSTR) <= 15;
-            IF PASSSTR <> CHARREC.PASSWORD THEN
-              EXIT( TRAINING)
           END
         ELSE
           BEGIN
@@ -756,8 +665,7 @@ SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
           WRITELN( 'YOU MAY I)NSPECT THIS CHARACTER,');
           WRITELN( 'D)ELETE  THIS CHARACTER,' : 32);
           WRITELN( 'R)EROLL  THIS CHARACTER,' : 32);
-          WRITELN( 'C)HANGE  CLASS,' : 23);
-          WRITELN( 'S)ET NEW PASSWORD, OR' : 29);
+          WRITELN( 'C)HANGE  CLASS, OR' : 26);
           WRITELN( '  PRESS [RET] TO LEAVE');
           
           GOTOXY( 41, 0);
@@ -777,7 +685,6 @@ SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
                         MAKECHAR
                       END;
                   END;
-            'S':  CHGPASS;
           END;  
           
         UNTIL FALSE

@@ -1,3 +1,6 @@
+(* VERSION DATE  : 29 JAN 2023 *)
+(* ENHANCEMENT   : WC019 *)
+  
   SEGMENT PROCEDURE CASTLE;     (* P010A01 *)
   
     TYPE
@@ -8,33 +11,6 @@
            1: (I: INTEGER);
            2: (P: ^BYTE);
          END;
-      
-      
-    PROCEDURE GETPASS( VAR PASSWORD: STRING);  (* P010A02 *)
-                        
-      VAR
-           UNUSEDXX : INTEGER;
-           RANDX    : INTEGER;
-           CHRCNT   : INTEGER;
-                        
-      BEGIN
-        CHRCNT := 0;
-        REPEAT
-          GETKEY;
-          IF INCHAR <> CHR( CRETURN) THEN
-            IF CHRCNT < 15 THEN
-              BEGIN
-                FOR RANDX := 0 TO (RANDOM MOD 2) DO
-                  WRITE( CHR( 88));
-                CHRCNT := CHRCNT + 1;
-                PASSWORD[ CHRCNT] := INCHAR
-              END
-            ELSE
-              WRITE( CHR(7))
-        UNTIL INCHAR = CHR( CRETURN);
-        WRITELN;
-        PASSWORD[ 0] := CHR( CHRCNT)
-      END;  (* GETPASS *)
       
       
     PROCEDURE CHARINFO( CHARX: INTEGER);  (* P010A03 *)
@@ -199,12 +175,6 @@
                 IF (CHARACTR[ PARTYCNT].ALIGN <> NEUTRAL) THEN
                   IF (PRTYALGN <> CHARACTR[ PARTYCNT].ALIGN) THEN
                     EXITADDP( '** BAD ALIGNMENT **');
-          GOTOXY( 0, 20);
-          WRITE( 'ENTER PASSWORD  >');
-          GETPASS(  CHARNAME);
-          GOTOXY( 0, 21);
-          IF CHARNAME <> CHARACTR[ PARTYCNT].PASSWORD THEN
-            EXITADDP( '** THATS NOT IT **');
           CHARDISK[ PARTYCNT] := CHARI;
           CHARACTR[ PARTYCNT].INMAZE := TRUE;
           MOVELEFT( CHARACTR[ PARTYCNT],
