@@ -4,7 +4,7 @@ Wizardry Proving Grounds v3.0 - Pascal Code Changes
 The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
 
 
-Bug/Issue #:	WC018 - Display Hit Probability
+Enhancement #:	WC018 - Display Hit Probability
 ===============================================
 
 Status:		Fixed. Recompiled. Verified.
