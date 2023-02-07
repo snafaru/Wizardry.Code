@@ -1,5 +1,5 @@
-(* VERSION DATE  : 26 DEC 2022 *)
-(* FIX REFERENCES: WC002 *)
+(* VERSION DATE  : 05 JAN 2023 *)
+(* FIX REFERENCES: WC002 WC021 *)
     SEGMENT PROCEDURE CUTIL;
 
 
@@ -534,7 +534,7 @@
                 2:  IF TWOTHIRD THEN
                       SPELLCAS := DILTO
                     ELSE
-                      SPELLCAS := HALITO;  (* BUG *)
+                      SPELLCAS := HALITO;
                       
                 3:  IF TWOTHIRD THEN
                       SPELLCAS := MOLITO
@@ -544,17 +544,17 @@
                 4:  IF TWOTHIRD THEN
                       SPELLCAS := DALTO
                     ELSE
-                      SPELLCAS := LAHALITO;  (* ...HMMM *)
+                      SPELLCAS := LAHALITO;
                       
                 5:  IF TWOTHIRD THEN
-                      SPELLCAS := LAHALITO   (* ...HMMM *)
+                      SPELLCAS := LAHALITO
                     ELSE
                       SPELLCAS := MADALTO;
                       
                 6:  IF TWOTHIRD THEN
-                      SPELLCAS := MADALTO    (* ...HMMM *)
+                      SPELLCAS := MADALTO
                     ELSE
-                      SPELLCAS := ZILWAN;
+                      SPELLCAS := MADALTO; (* WC021 FROM ZILWAN *)
                       
                 7:  SPELLCAS := TILTOWAI;
               END;
