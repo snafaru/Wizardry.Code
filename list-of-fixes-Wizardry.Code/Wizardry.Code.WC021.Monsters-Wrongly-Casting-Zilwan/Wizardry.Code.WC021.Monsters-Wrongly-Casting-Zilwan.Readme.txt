@@ -1,0 +1,44 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC021 - Monsters Wrongly Casting Zilwan
+=======================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	05-Feb-2023.
+
+Contributors:	E. Labelle. DDG Ahab.
+
+The issue:	Some monsters are casting the ZILWAN spell which does abolutely nothing to the player characters.
+
+The fix:	Changed the monsters' casting of ZILWAN for MADALTO instead.
+
+Why this fix:	Madalto was the only spell that made sense. Other high level spells like Makanito, Mamorlis, Lakanito, Masopic do nothing at all or nothing useful for the monsters.
+
+Source disk:	Wiz1B.dsk
+
+File:		COMBAT2.TEXT
+
+Procedure:	PROCEDURE GETMAGSP( SPELLLEV: INTEGER);  (* P010618 *)
+		
+Code from:	
+                6:  IF TWOTHIRD THEN
+                      SPELLCAS := MADALTO
+                    ELSE
+                      SPELLCAS := ZILWAN;
+
+Code to:
+                6:  IF TWOTHIRD THEN
+                      SPELLCAS := MADALTO
+                    ELSE
+                      SPELLCAS := MADALTO; (* WC021 FROM ZILWAN *)
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
