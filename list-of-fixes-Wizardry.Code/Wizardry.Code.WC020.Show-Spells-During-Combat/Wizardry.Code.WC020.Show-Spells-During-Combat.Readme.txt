@@ -1,0 +1,162 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Enhancement #:	WC020 - Show Spells During Combat
+=================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	03-Feb-2023.
+
+Contributor:	E. Labelle. Enhancement suggested by DDG Ahab.
+
+The issue:	It would be nice to see what spells the monsters are casting.
+
+The fix:	Added code to show what spells are cast by both the monsters and characters in the combat window.
+
+Why this fix:	This is a useful and nice enhancement of the combat display details.
+
+Source disks:	Wiz1A.dsk, Wiz1B.dsk
+
+Files:		WIZ.TEXT
+		WIZ2.TEXT
+		COMBAT4.TEXT
+
+Segments:	FORWARD DECLARATIONS
+		PROGRAM WIZARDRY
+		SEGMENT PROCEDURE CASTASPE;  (* P010801 *)
+		
+Add code to:	WIZ.TEXT
+
+(* ---------- BEGIN FORWARD DECLARATIONS ---------- *)
+.
+.
+.
+PROCEDURE SHOWMP( SPELLINT: INTEGER); FORWARD; (* WC020 SHOW SPELL NAME *)
+
+
+Add code to:	WIZ2.TEXT	(Note 1: using CASE here will not work because the numbers are bigger than 999.)
+				(Note 2: this was not put in COMBAT4 because of space restrictions.)
+				(Note 3: Although ugly, this is what takes the least lines of code.)
+
+    PROCEDURE SHOWMP; (* WC020 SHOW SPELL NAME *)
+      
+      BEGIN
+          IF SPELLINT = 4178 THEN PRINTSTR( 'HALITO');
+          IF SPELLINT = 2409 THEN PRINTSTR( 'MOGREF');
+          IF SPELLINT = 3983 THEN PRINTSTR( 'KATINO');
+          IF SPELLINT = 3245 THEN PRINTSTR( 'DUMAPIC');
+          IF SPELLINT = 3340 THEN PRINTSTR( 'DILTO');
+          IF SPELLINT = 1953 THEN PRINTSTR( 'SOPIC');
+          IF SPELLINT = 6181 THEN PRINTSTR( 'MAHALITO');
+          IF SPELLINT = 4731 THEN PRINTSTR( 'MOLITO');
+          IF SPELLINT = 4744 THEN PRINTSTR( 'MORLIS');
+          IF SPELLINT = 3180 THEN PRINTSTR( 'DALTO');
+          IF SPELLINT = 6156 THEN PRINTSTR( 'LAHALITO');
+          IF SPELLINT = 7525 THEN PRINTSTR( 'MAMORLIS');
+          IF SPELLINT = 6612 THEN PRINTSTR( 'MAKANITO');
+          IF SPELLINT = 4925 THEN PRINTSTR( 'MADALTO');
+          IF SPELLINT = 6587 THEN PRINTSTR( 'LAKANITO');
+          IF SPELLINT = 4573 THEN PRINTSTR( 'ZILWAN');
+          IF SPELLINT = 3990 THEN PRINTSTR( 'MASOPIC');
+          IF SPELLINT = 1562 THEN PRINTSTR( 'HAMAN');
+          IF SPELLINT = 3128 THEN PRINTSTR( 'MALOR');
+          IF SPELLINT = 2597 THEN PRINTSTR( 'MAHAMAN');
+          IF SPELLINT =11157 THEN PRINTSTR( 'TILTOWAIT');
+          IF SPELLINT = 1449 THEN PRINTSTR( 'KALKI');
+          IF SPELLINT = 2301 THEN PRINTSTR( 'DIOS');
+          IF SPELLINT = 3675 THEN PRINTSTR( 'BADIOS');
+          IF SPELLINT = 2889 THEN PRINTSTR( 'MILWA');
+          IF SPELLINT = 2287 THEN PRINTSTR( 'PORFIC');
+          IF SPELLINT = 3139 THEN PRINTSTR( 'MATU');
+          IF SPELLINT = 1717 THEN PRINTSTR( 'CALFO');
+          IF SPELLINT = 2619 THEN PRINTSTR( 'MANIFO');
+          IF SPELLINT = 5970 THEN PRINTSTR( 'MONTINO');
+          IF SPELLINT = 5333 THEN PRINTSTR( 'LOMILWA');
+          IF SPELLINT = 2718 THEN PRINTSTR( 'DIALKO');
+          IF SPELLINT = 6491 THEN PRINTSTR( 'LATUMAPIC');
+          IF SPELLINT = 5169 THEN PRINTSTR( 'BAMATU');
+          IF SPELLINT =  761 THEN PRINTSTR( 'DIAL');
+          IF SPELLINT = 1253 THEN PRINTSTR( 'BADIAL');
+          IF SPELLINT = 9463 THEN PRINTSTR( 'LATUMOFIS');
+          IF SPELLINT = 4322 THEN PRINTSTR( 'MAPORFIC');
+          IF SPELLINT = 1614 THEN PRINTSTR( 'DIALMA');
+          IF SPELLINT = 2446 THEN PRINTSTR( 'BADIALMA');
+          IF SPELLINT = 4396 THEN PRINTSTR( 'LITOKAN');
+          IF SPELLINT = 1885 THEN PRINTSTR( 'KANDI');
+          IF SPELLINT =  180 THEN PRINTSTR( 'DI');
+          IF SPELLINT =  382 THEN PRINTSTR( 'BADI');
+          IF SPELLINT = 4296 THEN PRINTSTR( 'LORTO');
+          IF SPELLINT =  547 THEN PRINTSTR( 'MADI');
+          IF SPELLINT =  759 THEN PRINTSTR( 'MABADI');
+          IF SPELLINT = 8330 THEN PRINTSTR( 'LOKTOFEIT');
+          IF SPELLINT = 5514 THEN PRINTSTR( 'MALIKTO');
+          IF SPELLINT = 6673 THEN PRINTSTR( 'KADORTO')
+      END;
+
+Code from:	COMBAT4.TEXT
+
+      BEGIN  (* CASTASPE P010801 *)
+        DSPNAMES( BATG, BATI);
+        PRINTSTR( 'CASTS A SPELL');
+        IF BATTLERC[ BATG].A.TEMP04[ BATI].INAUDCNT > 0 THEN
+          EXITCAST( 'WHICH FAILS TO BECOME AUDIBLE!');
+        IF FIZZLES > 0 THEN
+          EXITCAST( 'WHICH FIZZLES OUT');
+        IF BATG = 0 THEN
+          BEGIN
+            CASTGR := BATTLERC[ 0].A.TEMP04[ BATI].VICTIM;
+            IF (CASTGR > 0) AND (CASTGR < 5) THEN
+              IF BATTLERC[ CASTGR].A.ALIVECNT > 0 THEN
+                CASTI := BATI MOD BATTLERC[ CASTGR].A.ALIVECNT;
+            SPELL := BATTLERC[ 0].A.TEMP04[ BATI].SPELLHSH;
+          END
+        ELSE
+          BEGIN
+            CASTGR := 0;
+            CASTI  := BATTLERC[ BATG].A.TEMP04[ BATI].VICTIM;
+            SPELL  := BATTLERC[ BATG].A.TEMP04[ BATI].SPELLHSH
+          END;
+        MVCURSOR( 1, 12);
+        DOMAGE;
+        DOPRIEST
+      END;   (* CASTASPE P010801 *)
+
+Code to:	COMBAT4.TEXT
+
+      BEGIN  (* CASTASPE P010801 *)
+        DSPNAMES( BATG, BATI);
+        (* WC020 FROM -CASTS A SPELL- TO -CASTS - *)
+        PRINTSTR( 'CASTS ');
+        IF BATG = 0 THEN
+          BEGIN
+            CASTGR := BATTLERC[ 0].A.TEMP04[ BATI].VICTIM;
+            IF (CASTGR > 0) AND (CASTGR < 5) THEN
+              IF BATTLERC[ CASTGR].A.ALIVECNT > 0 THEN
+                CASTI := BATI MOD BATTLERC[ CASTGR].A.ALIVECNT;
+            SPELL := BATTLERC[ 0].A.TEMP04[ BATI].SPELLHSH;
+          END
+        ELSE
+          BEGIN
+            CASTGR := 0;
+            CASTI  := BATTLERC[ BATG].A.TEMP04[ BATI].VICTIM;
+            SPELL  := BATTLERC[ BATG].A.TEMP04[ BATI].SPELLHSH
+          END;
+        SHOWMP( SPELL); (* WC020 SHOW SPELL NAME *)
+        IF BATTLERC[ BATG].A.TEMP04[ BATI].INAUDCNT > 0 THEN
+          EXITCAST( 'WHICH FAILS TO BECOME AUDIBLE!');
+        IF FIZZLES > 0 THEN
+          EXITCAST( 'WHICH FIZZLES OUT');
+        MVCURSOR( 1, 12);
+        DOMAGE;
+        DOPRIEST
+      END;   (* CASTASPE P010801 *)
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
