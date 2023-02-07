@@ -1,0 +1,43 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC022 - Treasure Tables Range Bug
+=================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	06-Feb-2023.
+
+Contributors:	E. Labelle, DDG Ahab, D. Molony.
+
+The issue:	In short, the lower range of the treasure tables is off by two, and the upper range off by one.
+
+The fix:	Adjust to code for the monsters' treasure to give the intended treasures.
+
+Why this fix:	The monsters were not giving the intended range of treasures they were set to in the Wizardry database across all the treasure tables. The most blatant example: the monsters are not supposed to drop a Deadly Ring which is a one-time event in the game. The fix also takes care of a division by zero problem, i-e, x MOD 0.
+
+Source disk:	Wiz1C.dsk
+
+File:		REWARDS.TEXT
+
+Procedure:	PPROCEDURE ITEMREWD;  (* P010D1D *)
+		
+Code from:	
+            ITEMINDX := REWARDM.REWDCALC.ITEM.MININDX +
+               (CALCULATE( 1, REWARDM.REWDCALC.ITEM.RANGE, 1)) +
+               (REWARDM.REWDCALC.ITEM.MFACTOR * CHARIIII);
+
+Code to:
+              (* WC022 FIX TREASURE TABLE POINTERS *)
+            ITEMINDX := REWARDM.REWDCALC.ITEM.MININDX +
+               (RANDOM MOD (REWARDM.REWDCALC.ITEM.RANGE + 1)) +
+               (REWARDM.REWDCALC.ITEM.MFACTOR * CHARIIII);
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
