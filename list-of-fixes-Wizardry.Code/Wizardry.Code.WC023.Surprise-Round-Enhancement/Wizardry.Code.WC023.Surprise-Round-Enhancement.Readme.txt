@@ -1,0 +1,64 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Enhancement #:	WC023 - Surprise Round Enhancement
+==================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	07-Feb-2023.
+
+Contributors:	E. Labelle. Suggested by DDG Ahab.
+
+The issue:	Getting your party wiped out on round one because you got surprised by spellcasters or breathers kills the fun factor in the game.
+
+The fix:	Modified the code to disallow casting spells and using breath weapons during surprise rounds for both monsters and characters.
+
+Why this fix:	 Wizardry 3 alleviated this by disallowing spells during surprise rounds. Here we are doing the same and also disallowed breath weapons as well. For example: This way your party does not get wiped out on a surprise breath attack round from the Dragon Zombies.
+
+Source disk:	Wiz1B.dsk
+
+File:		COMBAT2.TEXT
+
+Procedures:	PROCEDURE CACTION;  (* P010602 *) > BEGIN (* CACTION *)
+		PROCEDURE ENATTACK;  (* P010614 *) > BEGIN (* ENATTACK *)
+		
+Code from:	
+                      PRINTSTR( 'S)PELL  P)ARRY');
+.
+.
+.
+                        'S':  GETSPELL;
+.
+.
+.
+                            ENEMYSPL;
+                            IF ATTCKTYP = 0 THEN
+                              BREATHES;
+
+Code to:
+                      IF SURPRISE = 0 THEN
+                          PRINTSTR( 'S)PELL  P)ARRY')
+                        ELSE
+                          PRINTSTR( 'P)ARRY'); (* WC023 *)
+.
+.
+.
+                        'S':  IF SURPRISE = 0 THEN GETSPELL; (* WC023 *)
+.
+.
+.
+                            IF SURPRISE = 0 THEN ENEMYSPL; (* WC023 *)
+                            IF SURPRISE = 0 THEN
+                              IF ATTCKTYP = 0 THEN
+                                BREATHES; (* WC023 *)
+
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
