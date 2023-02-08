@@ -1,5 +1,6 @@
-(* VERSION DATE  : 05 JAN 2023 *)
-(* FIX REFERENCES: WC002 WC021 *)
+(* VERSION DATE  : 07 FEB 2023 *)
+(* FIX REFERENCES: WC002 WC021 WC023 *)
+
     SEGMENT PROCEDURE CUTIL;
 
 
@@ -376,7 +377,10 @@
                         BEGIN
                           PRINTSTR( 'F)IGHT  ')
                         END;
-                      PRINTSTR( 'S)PELL  P)ARRY');
+                      IF SURPRISE = 0 THEN
+                          PRINTSTR( 'S)PELL  P)ARRY')
+                        ELSE
+                          PRINTSTR( 'P)ARRY'); (* WC023 *)
                       MVCURSOR( 13, 9);
                       PRINTSTR( 'R)UN    U)SE    ');
                       BDISPELL := FALSE;
@@ -422,7 +426,7 @@
                                  BATTLERC[ 0].A.TEMP04[ MYCHARX].AGILITY := -1;
                               END;
                               
-                        'S':  GETSPELL;
+                        'S':  IF SURPRISE = 0 THEN GETSPELL; (* WC023 *)
                               
                         'U':  BEGIN
                                 USEITEM;
@@ -794,9 +798,10 @@
                         ATTCKTYP := 0;
                         IF CANATTCK THEN
                           BEGIN
-                            ENEMYSPL;
-                            IF ATTCKTYP = 0 THEN
-                              BREATHES;
+                            IF SURPRISE = 0 THEN ENEMYSPL; (* WC023 *)
+                            IF SURPRISE = 0 THEN
+                              IF ATTCKTYP = 0 THEN
+                                BREATHES; (* WC023 *)
                             IF ATTCKTYP = 0 THEN
                               YELLHELP;
                             IF ATTCKTYP = 0 THEN
