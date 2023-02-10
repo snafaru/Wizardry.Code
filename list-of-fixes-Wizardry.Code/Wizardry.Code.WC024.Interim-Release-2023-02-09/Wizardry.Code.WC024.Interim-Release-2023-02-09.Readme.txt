@@ -1,0 +1,54 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Release #:	WC024 - Interim Release 2023-02-09
+==================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	09-Feb-2023.
+
+Contributors:	E. Labelle.
+
+The issue:	Treasure tables 18 and 19 are off of their intended range. Gather all database fixes in one release.
+
+Database fixes: Updated treasure tables 18 and 19 and merged the database fixes from Wizardry Restored v2.2. The entire list of database fixes can be found here: https://www.zimlab.com/wizardry/proving-grounds-v3
+
+Why this release: 	Now that the WC022 Treasure Tables Range Bug has been fixed is is time to make an interim release by updating treasure tables 18 and 19 and merge the database fixes from Wizardry Restored v2.2.
+
+Treasure tables change details:
+
+Old Rewards Tables before code fix WC022:
+
+				Min	Range	Intended	Intended	Actual		Actual	
+				Index	Range	Minimum		Maximum		Minimum		Maximum
+18C				79	13	80		92		81		93
+19C				78	13	80		92		80		92
+
+
+New Rewards Tables after code fix WC022, with Min Index and Range corrections:
+
+				Min	Range	Intended	Intended	Actual		Actual
+				Index		Minimum		Maximum		Minimum		Maximum
+18C				80	12	80		92		80		92
+19C				80	12	80		92		80		92
+	
+Source disk:	Wiz1E.dsk
+
+File:		OPTIONS.TEXT
+
+Procedure:	SEGMENT PROCEDURE OPTIONS;  (* P070301 *)
+				
+Code from:	
+    WRITE( '  VERSION 3.0 OF 04-JAN-23  SER:');
+
+Code to:
+    WRITE( '  VERSION 3.0 OF 09-FEB-23  SER:');
+
+Final compiled file names:	SYSTEM.STARTUP and WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
