@@ -1,3 +1,6 @@
+(* VERSION DATE  : 11 FEB 2023 *)
+(* FIX REFERENCE : WC026 *)
+      
       
     PROCEDURE IDENTIFY;  (* P010C15 *)
       
@@ -71,7 +74,7 @@
                   ADDLONGS( GOLD2TRA, TEMPGOLD)
                 END;
             IF TEMP0001 = -1 THEN
-              EXITTRAD( 'BAD AMT');
+              EXITTRAD( 'BAD AMOUNT'); (* WC026 FROM -BAD AMT- *)
             IF TESTLONG( CHARACTR[ CAMPCHAR].GOLD, GOLD2TRA) < 0 THEN
               EXITTRAD( 'NOT ENOUGH $');
             ADDLONGS( CHARACTR[ TRADETO].GOLD, GOLD2TRA);
