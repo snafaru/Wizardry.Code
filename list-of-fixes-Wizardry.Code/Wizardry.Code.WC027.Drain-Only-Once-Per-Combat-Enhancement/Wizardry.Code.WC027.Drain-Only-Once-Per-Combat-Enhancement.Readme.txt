@@ -1,0 +1,40 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Enhancement #:	WC027 - Drain Only Once Per Combat Enhancement
+==============================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	11-Feb-2023.
+
+Contributors:	E. Labelle.
+
+The issue:	Monsters can drain your characters several times during combat. This is killing the fun factor in the game.
+
+The fix:	Added code for the monsters to not being able to drain your characters if they have already been drained. This includes a character drained by Haman or Mahaman. Although, casting successively Haman or Mahaman will drain your characters each time.
+
+Why this fix: 	The draining effects are now working the same way they are in Wizardry 3 - Legacy of Llylgamyn.
+
+Source disk:	Wiz1B.dsk
+
+File:		COMBAT5.TEXT
+
+Procedure:	PROCEDURE DRAINLEV;  (* P01090A *)
+				
+Code from:	
+                IF CHARACTR[ MYVICTIM].WEPVSTY3[ 1][ 4] THEN
+                  EXIT( DRAINLEV);
+                   
+Code to:
+                IF DRAINED[ MYVICTIM] OR
+                   CHARACTR[ MYVICTIM].WEPVSTY3[ 1][ 4] THEN
+                  EXIT( DRAINLEV); (* WC027 ADD -DRAINED[ MYVICTIM] OR- *)
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
