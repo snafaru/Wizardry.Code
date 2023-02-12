@@ -13,8 +13,9 @@
       (MAR - JUN 2014)
 *)
 
-(* VERSION DATE : 03 FEB 2023 *)
+(* VERSION DATE : 10 FEB 2023 *)
 (* ENHANCEMENT  : WC020 *)
+(* FIX REFERENCE: WC025 *)
 
 
 PROGRAM WIZARDRY;
@@ -298,7 +299,8 @@ FUNCTION GETRECW( DATATYPE: TZSCN;             (* P010004 *)
                   DATASIZE: INTEGER) : INTEGER; FORWARD;
                   
 PROCEDURE ADDLONGS( VAR FIRST:  TWIZLONG;      (* P010005 *)
-                    VAR SECOND: TWIZLONG); FORWARD;
+                    SECOND: TWIZLONG); FORWARD;
+                    (* WC025 FROM -VAR SECOND- TO -SECOND- *)
                     
 PROCEDURE SUBLONGS( VAR FIRST:  TWIZLONG;      (* P010006 *)
                     VAR SECOND: TWIZLONG); FORWARD;
