@@ -1,0 +1,42 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC025 - Fix Addlongs vs Experience Points
+=========================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	10-Feb-2023.
+
+Contributors:	E. Labelle. Information from DDG Ahab and Denis Molony. Solution from Thomas Ewers.
+
+The issue:	The Addlongs procedure that adds two numbers has a bug where part of the first value is passed on to the second value because they have the same name thus having a addition/multiplication side effect. This causes the experience points of some monsters to be artificially high.
+
+The fix:	 Updated the declaration of the procedure to have the second value as a constant.
+
+Why this fix: 	To fix the Addlongs procedure bug. Also, this makes current monsters or future ones in another scenario to have a more predictable experience allocation.
+
+Source disk:	Wiz1A.dsk
+
+File:		WIZ.TEXT
+
+Procedure:	PROCEDURE ADDLONGS (* P010005 *)
+				
+Code from:	
+
+PROCEDURE ADDLONGS( VAR FIRST:  TWIZLONG;      (* P010005 *)
+                    VAR SECOND: TWIZLONG); FORWARD;
+                   
+Code to:
+
+PROCEDURE ADDLONGS( VAR FIRST:  TWIZLONG;      (* P010005 *)
+                    SECOND: TWIZLONG); FORWARD;
+                    (* WC025 FROM -VAR SECOND- TO -SECOND- *)
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
