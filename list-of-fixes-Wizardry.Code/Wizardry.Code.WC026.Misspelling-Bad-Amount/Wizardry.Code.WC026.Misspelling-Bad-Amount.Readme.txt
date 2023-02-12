@@ -1,0 +1,37 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC026 - Misspelling Bad Amount
+==============================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	11-Feb-2023.
+
+Contributors:	E. Labelle.
+
+The issue:	When trading gold between two characters, and the amount entered is invalid you get a message. The contraction of a word in that message is slightly annoying and unnecessary.
+
+The fix:	Changed the message from "Bad Amt" to "Bad Amount".
+
+Why this fix: 	Clarity. To remove the distration caused by the contraction of a word.
+
+Source disk:	Wiz1C.dsk
+
+File:		CAMP2.TEXT
+
+Procedure:	PROCEDURE TRADGOLD;  (* P010C19 *)
+				
+Code from:	
+              EXITTRAD( 'BAD AMT');
+                   
+Code to:
+              EXITTRAD( 'BAD AMOUNT'); (* WC026 FROM -BAD AMT- *)
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
