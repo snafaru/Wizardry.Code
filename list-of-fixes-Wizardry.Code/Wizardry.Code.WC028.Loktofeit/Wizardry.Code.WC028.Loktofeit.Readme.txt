@@ -1,0 +1,46 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Enhancement #:	WC028 - Loktofeit
+=================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	12-Feb-2023.
+
+Contributors:	E. Labelle.
+
+The issue:	The cast chance and penalty for using Loktofeit is such that it is never used.
+
+The fix:	Updated the code so that the cast chance is the same as Wizardry 3 - Legacy of Llylgamyn which is (65 + Character Level)%.
+
+Why this fix: 	To have the cast chance align with Legacy of Llylgamyn.
+
+Source disk:	Wiz1B.dsk
+
+File:		COMBAT4.TEXT
+
+Procedure:	PROCEDURE SLOKTOFE;  (* P010818 *)
+				
+Code from:	
+          IF (RANDOM MOD 100) >  2 * CHARACTR[ BATI].CHARLEV THEN
+            BEGIN
+              MVCURSOR( 1, 13);
+              PRINTSTR( 'LOKTOFEIT FAILS!');
+              EXIT( SLOKTOFE)
+            END;            
+Code to:
+          IF (RANDOM MOD 100) >  65 + CHARACTR[ BATI].CHARLEV THEN
+            BEGIN
+              MVCURSOR( 1, 13);
+              PRINTSTR( 'LOKTOFEIT FAILS!');
+              EXIT( SLOKTOFE)
+            END;
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
