@@ -1,5 +1,5 @@
-(* VERSION DATE  : 07 FEB 2023 *)
-(* FIX REFERENCES: WC002 WC021 WC023 *)
+(* VERSION DATE  : 14 FEB 2023 *)
+(* FIX REFERENCES: WC002 WC021 WC023 WC029 *)
 
     SEGMENT PROCEDURE CUTIL;
 
@@ -206,7 +206,7 @@
                   IF CHARACTR[ MYCHARX].SPELLSKN[ SPELLI] THEN
                     PRINTSTR( 'SPELL POINTS EXHAUSTED')
                   ELSE
-                    PRINTSTR( 'YOU DONT KNOW THAT SPELL');
+                    PRINTSTR( 'YOU DO NOT KNOW THAT SPELL'); (* WC029 *)
                 PAUSE1;
                 EXIT( GETSPELL)
               END;
