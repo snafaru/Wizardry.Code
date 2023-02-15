@@ -1,5 +1,5 @@
-(* VERSION DATE  : 25 JAN 2023 *)
-(* FIX REFERENCES: WC017 *)
+(* VERSION DATE  : 14 FEB 2023 *)
+(* FIX REFERENCES: WC017 WC029 *)
 
 SEGMENT PROCEDURE CAMP;  (* P010C01 *)
 
@@ -224,7 +224,7 @@ SEGMENT PROCEDURE CAMP;  (* P010C01 *)
               EXIT( CHKSPCNT);
             IF (CHARACTR[ CAMPCHAR].PRIESTSP[ PRIESTGR] <= 0) OR
                (NOT CHARACTR[ CAMPCHAR].SPELLSKN[ SPELLIDX]) THEN
-              EXITCAST( 'YOU CANT CAST IT')
+              EXITCAST( 'YOU CANNOT CAST IT') (* WC029 *)
           END;
           
           
@@ -359,7 +359,7 @@ SEGMENT PROCEDURE CAMP;  (* P010C01 *)
             IF NOT (USEITEM) THEN
               IF (CHARACTR[ CAMPCHAR].MAGESP[ 1] = 0) OR
                  NOT CHARACTR[ CAMPCHAR].SPELLSKN[ 4] THEN
-                EXITCAST( 'YOU CANT CAST IT');
+                EXITCAST( 'YOU CANNOT CAST IT'); (* WC029 *)
             IF FIZZLES > 0 THEN
               EXITCAST( 'SPELL FAILS');
             IF NOT USEITEM THEN
@@ -378,7 +378,7 @@ SEGMENT PROCEDURE CAMP;  (* P010C01 *)
             IF NOT USEITEM THEN
               IF (CHARACTR[ CAMPCHAR].MAGESP[ 7] = 0) OR
                  (NOT CHARACTR[ CAMPCHAR].SPELLSKN[ 19]) THEN
-                EXITCAST( 'YOU CANT CAST IT');
+                EXITCAST( 'YOU CANNOT CAST IT'); (* WC029 *)
             IF FIZZLES > 0 THEN
               EXITCAST( 'SPELL FAILS');
             IF NOT USEITEM THEN
