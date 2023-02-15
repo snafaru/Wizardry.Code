@@ -1,0 +1,57 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Release #:	WC029 - Interim Release 2023-02-14
+==================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	14-Feb-2023.
+
+Contributors:	E. Labelle.
+
+The issue:	Interim release due to several new fixes and enhancements since the last release. Also, corrected spelling of contracted words that also were missing the apostrophe.
+
+The fix:	Updated text display of some words.
+
+Why this fix: 	Interim release. Consistency.
+
+Source disks:	Wiz1B. Wiz1C. Wiz1E.dsk
+
+Files:		COMBAT2.TEXT, SHOPS.TEXT, CAMP.TEXT, OPTIONS.TEXT
+				
+Code from:	
+                    PRINTSTR( 'YOU DONT KNOW THAT SPELL');
+...
+
+                    AASTRAA( 'YOU CANT CARRY ANYTHING MORE')
+                    AASTRAA( '** WE DONT BUY CURSED ITEMS **')
+                    AASTRAA( '** YOU CANT AFFORD THE FEE **');
+...
+                    EXITCAST( 'YOU CANT CAST IT')
+                    EXITCAST( 'YOU CANT CAST IT');
+                    EXITCAST( 'YOU CANT CAST IT');
+...
+                    WRITE( '  VERSION 3.0 OF 09-FEB-23  SER:');
+
+Code to:
+                    PRINTSTR( 'YOU DO NOT KNOW THAT SPELL'); (* WC029 *)
+...
+
+                    AASTRAA( 'YOU CANNOT CARRY ANYTHING MORE') (* WC029 *)
+                    AASTRAA( '** WE DO NOT BUY CURSED ITEMS **') (* WC029 *)
+                    AASTRAA( '** YOU CANNOT AFFORD THE FEE **'); (* WC029 *)
+...
+                    EXITCAST( 'YOU CANNOT CAST IT') (* WC029 *)
+                    EXITCAST( 'YOU CANNOT CAST IT'); (* WC029 *)
+                    EXITCAST( 'YOU CANNOT CAST IT'); (* WC029 *)
+...
+                    WRITE( '  VERSION 3.0 OF 14-FEB-23  SER:');
+
+Final compiled file names:	SYSTEM.STARTUP and WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
