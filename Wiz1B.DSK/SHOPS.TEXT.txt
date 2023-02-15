@@ -1,3 +1,6 @@
+(* VERSION DATE  : 14 FEB 2023 *)
+(* FIX REFERENCE : WC029 *)
+  
   
 SEGMENT PROCEDURE SHOPS;  (* P010201 *)
   
@@ -315,7 +318,7 @@ SEGMENT PROCEDURE SHOPS;  (* P010201 *)
               IF OBJECT.BOLTACXX = 0 THEN
                 AASTRAA( 'YOU BOUGHT THE LAST ONE')
               ELSE IF CHARACTR[ CHARI].POSS.POSSCNT = 8 THEN
-                AASTRAA( 'YOU CANT CARRY ANYTHING MORE')
+                AASTRAA( 'YOU CANNOT CARRY ANYTHING MORE') (* WC029 *)
               ELSE IF TESTLONG( CHARACTR[ CHARI].GOLD, OBJECT.PRICE) < 0 THEN
                 AASTRAA( 'YOU CANNOT AFFORD IT');
                 
@@ -475,7 +478,7 @@ SEGMENT PROCEDURE SHOPS;  (* P010201 *)
                       OBJECT.PRICE.LOW  := 1
                     END;
                   IF CHARACTR[ CHARI].POSS.POSSESS[ TRANOBJX].CURSED THEN
-                    AASTRAA( '** WE DONT BUY CURSED ITEMS **')
+                    AASTRAA( '** WE DO NOT BUY CURSED ITEMS **') (* WC029 *)
                 END
               ELSE
                 BEGIN
@@ -488,7 +491,7 @@ SEGMENT PROCEDURE SHOPS;  (* P010201 *)
                     AASTRAA( '** THAT HAS BEEN IDENTIFIED **');
                     
                   IF TESTLONG( CHARACTR[ CHARI].GOLD, OBJECT.PRICE) < 0 THEN
-                    AASTRAA( '** YOU CANT AFFORD THE FEE **');
+                    AASTRAA( '** YOU CANNOT AFFORD THE FEE **'); (* WC029 *)
                 END;
               
               IF ACTION = SELL THEN
