@@ -1,5 +1,6 @@
-(* VERSION DATE  : 14 FEB 2023 *)
-(* FIX REFERENCES: WC002 WC021 WC023 WC029 *)
+(* VERSION DATE  : 27 FEB 2023 *)
+(* FIX REFERENCES: WC002 WC021 WC023 *)
+(* ENHANCEMENT   : WC030 *)
 
     SEGMENT PROCEDURE CUTIL;
 
@@ -11,6 +12,8 @@
              BDISPELL : BOOLEAN;
              MYCHARX  : INTEGER;
              AGIL1TEN : INTEGER;
+             POSSY    : INTEGER; (* WC030 *)
+             UNARMED2 : BOOLEAN; (* WC030 *)
              
           
         PROCEDURE WHICHGRP( SOLICIT:   STRING;   (* P010603 *)
@@ -206,7 +209,7 @@
                   IF CHARACTR[ MYCHARX].SPELLSKN[ SPELLI] THEN
                     PRINTSTR( 'SPELL POINTS EXHAUSTED')
                   ELSE
-                    PRINTSTR( 'YOU DO NOT KNOW THAT SPELL'); (* WC029 *)
+                    PRINTSTR( 'YOU DONT KNOW THAT SPELL');
                 PAUSE1;
                 EXIT( GETSPELL)
               END;
@@ -362,6 +365,17 @@
                          17:  AGIL1TEN := AGIL1TEN - 3;
                          18:  AGIL1TEN := AGIL1TEN - 4;
                       END;
+              (* WC030 *)
+              IF CHARACTR[ MYCHARX].CLASS = NINJA THEN
+              BEGIN
+                UNARMED2 := TRUE;
+                FOR POSSY := 1 TO CHARACTR[ MYCHARX].POSS.POSSCNT DO
+                  IF CHARACTR[ MYCHARX].POSS.POSSESS[ POSSY].EQUIPED THEN
+                    UNARMED2 := FALSE;
+                IF UNARMED2 THEN
+                  AGIL1TEN := AGIL1TEN - 
+                              (CHARACTR[ MYCHARX].CHARLEV DIV 3)
+              END;
                       IF AGIL1TEN < 1 THEN
                         AGIL1TEN := 1
                       ELSE
@@ -372,6 +386,8 @@
                       MVCURSOR( 13, 6);
                       PRINTSTR( CHARACTR[ MYCHARX].NAME);
                       PRINTSTR( '''S OPTIONS');
+                      (* PRINTSTR( ' INIT:'); WC030 *)
+                      (* PRINTNUM( AGIL1TEN, 2); WC030 *)
                       MVCURSOR( 13, 8);
                       IF MYCHARX < 3 THEN
                         BEGIN

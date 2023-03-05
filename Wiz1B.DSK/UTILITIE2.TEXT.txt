@@ -1,5 +1,6 @@
-(* VERSION DATE  : 06 JAN 2023 *)
+(* VERSION DATE  : 27 FEB 2023 *)
 (* FIX REFERENCES: WC007 WC010 *)
+(* ENHANCEMENT   : WC030 *)
 
 PROCEDURE EQUIPCHR( CHARI : INTEGER);  (* P010119 *)
     
@@ -439,7 +440,7 @@ PROCEDURE EQUIPCHR( CHARI : INTEGER);  (* P010119 *)
             SWINGCNT := 1;
             
             IF CLASS = NINJA THEN
-              HPDAMRC.HPFAC := 4;
+              HPDAMRC.HPFAC := 8; (* WC030 FROM -4- TO -8- *)
               
             ARMORCL := 10;
               
@@ -469,7 +470,8 @@ PROCEDURE EQUIPCHR( CHARI : INTEGER);  (* P010119 *)
           IF CHARACTR[ CHARI].CLASS = NINJA THEN
             IF UNARMED THEN
               CHARACTR[ CHARI].ARMORCL := (CHARACTR[ CHARI].ARMORCL -
-                (CHARACTR[ CHARI].CHARLEV DIV 3)) - 2
+                (CHARACTR[ CHARI].CHARLEV))
+                (* WC030 FROM -CHARLEV DIV 3)) - 2- TO -CHARLEV))- *)
       END;  (* EQUIPCHR *)
 
 
