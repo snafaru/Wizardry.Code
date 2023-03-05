@@ -1,0 +1,126 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Enhancement #:	WC030 - Ninja Enhancements
+==========================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	27-Feb-2023.
+
+Contributors:	Eric Labelle and DDG Ahab.
+
+The issue:	Ninjas are not living up to their unarmed combat performance promise. Here is the Ninja definition in the Wizardry manual:
+
+"NINJA - are inhuman fighting machines. They can use any weapons or
+armor, but work best without any! When fighting without protection with
+their bare hands, they can cause havoc and destruction, and may even kill
+the strongest opponent with a single blow! Their great training gives them a
+lower and lower ARMOR CLASS as they reach higher and higher levels of
+ability. However, they get hit points as does a THIEF and gain no spells.
+Finally, they must be EVIL"
+
+Most of everything above concerning unarmed combat does not happen in-game. In 1981 you did not know that prior to playing the game. And if you succeeded (without cheating) in making a ninja, you found out that its unarmed performance was a total heart-breaking disappointment. The result is that essentially nobody played an unarmed ninja.
+
+Also, to switch class to ninja you needed 17 in all attributes which is almost impossible to get before the end of the game.
+
+The fix:	Made these code enhancements:
+
+- The requirements to change class to ninja are now 15 in all attributes instead of 17. Must still be of evil alignment.
+- Base bare hands damage increased from 2d4 to 2d8.
+- Unarmed Armor Class improved from 1 point every 3 levels, to 1 point every level.
+- Unarmed Combat Initiative Bonus of 1 point (10%) for every 3 levels. Gives the ninja more chances to strike the monsters first.
+
+Note that the ninja has 1 extra attack per round compared to other fighter classes, this has not changed. Critical hit chance has not changed either.
+
+Why this fix: 	Make it worthwhile to role-play an unarmed ninja.
+
+Source disk:	Wiz1B.dsk
+
+File:		UTILITIE2.TEXT
+
+Procedure:	PROCEDURE INITSTUF;  (* P010124 *)
+				
+Code from:
+            IF CLASS = NINJA THEN
+              HPDAMRC.HPFAC := 4;
+...
+   IF CHARACTR[ CHARI].CLASS = NINJA THEN
+            IF UNARMED THEN
+              CHARACTR[ CHARI].ARMORCL := (CHARACTR[ CHARI].ARMORCL -
+                (CHARACTR[ CHARI].CHARLEV DIV 3)) - 2
+
+Code to:
+            IF CLASS = NINJA THEN
+              HPDAMRC.HPFAC := 8; (* WC030 FROM -4- TO -8- *)
+...
+          IF CHARACTR[ CHARI].CLASS = NINJA THEN
+            IF UNARMED THEN
+              CHARACTR[ CHARI].ARMORCL := (CHARACTR[ CHARI].ARMORCL -
+                (CHARACTR[ CHARI].CHARLEV))
+                (* WC030 FROM -CHARLEV DIV 3)) - 2- TO -CHARLEV))- *)
+
+Source disk:	Wiz1B.dsk
+
+File:		COMBAT2.TEXT
+
+Procedure:	PROCEDURE CACTION;  (* P010602 *)
+
+Code From:
+	N/A
+
+Code To:
+...
+        VAR
+             POSSY    : INTEGER; (* WC030 *)
+             UNARMED2 : BOOLEAN; (* WC030 *)
+...
+
+              (* WC030 *)
+              IF CHARACTR[ MYCHARX].CLASS = NINJA THEN
+              BEGIN
+                UNARMED2 := TRUE;
+                FOR POSSY := 1 TO CHARACTR[ MYCHARX].POSS.POSSCNT DO
+                  IF CHARACTR[ MYCHARX].POSS.POSSESS[ POSSY].EQUIPED THEN
+                    UNARMED2 := FALSE;
+                IF UNARMED2 THEN
+                  AGIL1TEN := AGIL1TEN - 
+                              (CHARACTR[ MYCHARX].CHARLEV DIV 3)
+              END;
+...
+                      (* PRINTSTR( ' INIT:'); WC030 *)
+                      (* PRINTNUM( AGIL1TEN, 2); WC030 *)
+
+Note: the last 2 lines above are remarked out, the code was used to verify that the bonus initiative worked.
+
+Source disk:	Wiz1C.dsk
+
+File:		ROLLER.TEXT
+
+Procedure:	SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
+
+Code From:
+        CHG2LST[ NINJA]   := (SIXATTR2[ STRENGTH] >= 17) AND
+                             (SIXATTR2[ IQ] >= 17)       AND
+                             (SIXATTR2[ PIETY] >= 17)    AND
+                             (SIXATTR2[ VITALITY] >= 17) AND
+                             (SIXATTR2[ AGILITY] >= 17)  AND
+                             (SIXATTR2[ LUCK] >= 17)     AND
+                             (CHARREC.ALIGN = EVIL);
+Code To:
+        (* WC030 FROM 17 TO 15 *)
+        CHG2LST[ NINJA]   := (SIXATTR2[ STRENGTH] >= 15) AND
+                             (SIXATTR2[ IQ] >= 15)       AND
+                             (SIXATTR2[ PIETY] >= 15)    AND
+                             (SIXATTR2[ VITALITY] >= 15) AND
+                             (SIXATTR2[ AGILITY] >= 15)  AND
+                             (SIXATTR2[ LUCK] >= 15)     AND
+                             (CHARREC.ALIGN = EVIL);
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
