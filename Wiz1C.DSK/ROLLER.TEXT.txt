@@ -1,5 +1,5 @@
-(* VERSION DATE  : 29 JAN 2023 *)
-(* ENHANCEMENT   : WC019 *)
+(* VERSION DATE  : 27 FEB 2023 *)
+(* ENHANCEMENTS  : WC019 WC030 *)
 
 SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
   
@@ -46,12 +46,13 @@ SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
                              (SIXATTR2[ LUCK] >= 15)     AND
                              (CHARREC.ALIGN = GOOD);
                              
-        CHG2LST[ NINJA]   := (SIXATTR2[ STRENGTH] >= 17) AND
-                             (SIXATTR2[ IQ] >= 17)       AND
-                             (SIXATTR2[ PIETY] >= 17)    AND
-                             (SIXATTR2[ VITALITY] >= 17) AND
-                             (SIXATTR2[ AGILITY] >= 17)  AND
-                             (SIXATTR2[ LUCK] >= 17)     AND
+        (* WC030 FROM 17 TO 15 *)
+        CHG2LST[ NINJA]   := (SIXATTR2[ STRENGTH] >= 15) AND
+                             (SIXATTR2[ IQ] >= 15)       AND
+                             (SIXATTR2[ PIETY] >= 15)    AND
+                             (SIXATTR2[ VITALITY] >= 15) AND
+                             (SIXATTR2[ AGILITY] >= 15)  AND
+                             (SIXATTR2[ LUCK] >= 15)     AND
                              (CHARREC.ALIGN = EVIL);
                             
         GTCHGLST := CHG2LST[ FIGHTER] OR
