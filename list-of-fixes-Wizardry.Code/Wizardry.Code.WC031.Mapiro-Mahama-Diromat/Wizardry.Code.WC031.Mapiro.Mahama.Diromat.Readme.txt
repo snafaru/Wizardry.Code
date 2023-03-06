@@ -1,0 +1,57 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC031 - Mapiro Mahama Diromat
+=============================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	05-Mar-2023.
+
+Contributors:	Eric Labelle, suggested by David Kilpatrick.
+
+The issue:	On level 1, after coming back from the elevators, or from farming the Murphy's Ghosts, there is a shortcut back to the castle. The shortcut happens when you enter a certain room, and the mage therein sends you back to the castle after an incantation. The problem is that part of the message appears and disappears from the screen so fast that you cannot read it.
+
+Here is the message:
+
+A STRANGE GLOW SEEMS TO EMANATE FROM
+THIS ROOM.  IN THE CENTER, A SMALLISH
+MAN IN A LONG ROBE TURNS TOWARDS THE
+PARTY AND SHOUTS,
+   "BEGONE, STRANGERS!"
+HE THEN BEGINS WAVING HIS HANDS, AND
+INTONES THE WORDS,
+   "MAPIRO MAHAMA DIROMAT"
+
+The fix:	Added a delay after the incantation before going back to the castle.
+
+Why this fix: 	Give the player a chance to read the message.
+
+Source disk:	Wiz1B.dsk
+
+File:		SPECIALS2.TEXT
+
+Procedure:	PROCEDURE BCK2SHOP;  (* P01031E *)
+				
+Code from:
+      BEGIN
+        MAZELEV := 0;
+        WRITE( CHR(12));
+        XGOTO := XNEWMAZE
+      END;
+
+Code to:
+      BEGIN
+        PAUSE2; (* WC031 *)
+        MAZELEV := 0;
+        WRITE( CHR(12));
+        XGOTO := XNEWMAZE
+      END;
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
