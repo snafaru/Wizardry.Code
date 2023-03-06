@@ -1,3 +1,5 @@
+(* VERSION DATE  : 05 MAR 2023 *)
+(* FIX REFERENCE : WC031 *)
   
 PROCEDURE SPCMISC;  (* P010311 *)
   
@@ -294,6 +296,7 @@ PROCEDURE SPCMISC;  (* P010311 *)
     PROCEDURE BCK2SHOP;  (* P01031E *)
     
       BEGIN
+        PAUSE2; (* WC031 *)
         MAZELEV := 0;
         WRITE( CHR(12));
         XGOTO := XNEWMAZE
