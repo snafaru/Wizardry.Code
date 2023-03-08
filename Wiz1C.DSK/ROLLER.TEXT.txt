@@ -1,4 +1,5 @@
 (* VERSION DATE  : 27 FEB 2023 *)
+(* FIX REFERENCE : WC032 *)
 (* ENHANCEMENTS  : WC019 WC030 *)
 
 SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
@@ -501,7 +502,8 @@ SEGMENT PROCEDURE ROLLER;   (* P010B01 *)
                 WRITE( ' (' );
                 WRITE( SCNTOC.STATUS[ CHARREC.STATUS]);
                 WRITE( ')' );
-                IF CHARREC.INMAZE OR (CHARREC.LOSTXYL.LOCATION[ 1] <> 0) THEN
+                (* WC032 FROM -LOCATION [ 1]- TO -LOCATION [ 3]- *)
+                IF CHARREC.INMAZE OR (CHARREC.LOSTXYL.LOCATION[ 3] <> 0) THEN
                   WRITE( ' OUT');
               END;
           END;
