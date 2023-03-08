@@ -1,0 +1,40 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC032 - Roster Out Characters
+=============================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	06-Mar-2023.
+
+Contributors:	Eric Labelle, information from Denis Molony.
+
+The issue:	In the Training Grounds, the Roster of players does not always display characters that are "Out" in the dungeon. Note that characters that are "Out" cannot be added to the party at Gilgamesh's Tavern.
+
+The fix:	Updated the code to display all characters that are "Out".
+
+Why this fix: 	To display all the characters that are "Out" at the Training Grounds. Now there is an indication as to why a character cannot be added to the party.
+
+Source disk:	Wiz1C.dsk
+
+File:		ROLLER.TEXT
+
+Procedure:	PROCEDURE DSP20NM;  (* P010B15 *)
+				
+Code from:
+                IF CHARREC.INMAZE OR (CHARREC.LOSTXYL.LOCATION[ 1] <> 0) THEN
+                  WRITE( ' OUT');
+
+Code to:
+                (* WC032 FROM -LOCATION [ 1]- TO -LOCATION [ 3]- *)
+                IF CHARREC.INMAZE OR (CHARREC.LOSTXYL.LOCATION[ 3] <> 0) THEN
+                  WRITE( ' OUT');
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
