@@ -1,0 +1,69 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC033 - Inventory Full Fix
+==========================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	08-Mar-2023.
+
+Contributors:	Eric Labelle.
+
+The issue:	Before the fix, a random character was selected to receive a treasure item. If that character's inventory was full, then the item was lost. This meant you might not have gotten Werdna's amulet upon defeating him for example.
+
+The fix:	Look at the entire party's inventory for space to receive an item. Display a message when the entire party's inventory is full.
+
+Why this fix: 	To avoid having to continuously micro manage the party's inventory to ensure that there is enough space for treasure drops.
+
+Source disk:	Wiz1C.dsk
+
+File:		REWARDS.TEXT
+
+Procedure:	PROCEDURE ITEMREWD;  (* P010D1D *)
+				
+Code from:
+          BEGIN
+            CHARXXXX := RANDOM MOD PARTYCNT;
+            WHILE CHARACTR[ CHARXXXX].STATUS <> OK DO
+              CHARXXXX := (CHARXXXX + 1) MOD PARTYCNT;
+            IF CHARACTR[ CHARXXXX].POSS.POSSCNT = 8 THEN
+              EXIT( ITEMREWD);  (* IF RANDOM CHARACTER IS OK AND HAS 8 
+                                   POSSESSIONS,  THEN EXIT !! *)
+          ...
+
+Code to:
+        VAR
+             HASROOM : INTEGER; (* WC033 *)
+             CHARYYYY: INTEGER; (* WC033 *)
+             
+          BEGIN
+            (* BEGIN WC033 *)
+            HASROOM := 0;
+            FOR CHARYYYY := 0 TO PARTYCNT - 1 DO
+              BEGIN
+                IF CHARACTR[ CHARYYYY].POSS.POSSCNT < 8 THEN
+                  BEGIN
+                    HASROOM := 1;
+                    CHARXXXX := CHARYYYY
+                  END
+              END;
+            IF HASROOM = 0 THEN
+              BEGIN
+                MVCURSOR( 1, 12);
+                PRINTSTR( 'PARTY INVENTORY FULL !');
+                MVCURSOR( 1, 13);
+                PRINTSTR( 'TREASURE LOST !');
+                PAUSE2;
+                EXIT( ITEMREWD)
+              END;
+            (* END WC033 *)
+          ...
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
