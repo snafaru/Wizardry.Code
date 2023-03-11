@@ -1,5 +1,5 @@
-(* VERSION DATE  : 06 FEB 2023 *)
-(* FIX REFERENCES: WC016 WC022 *)
+(* VERSION DATE  : 08 MAR 2023 *)
+(* FIX REFERENCES: WC016 WC022 WC033 *)
     
 SEGMENT PROCEDURE REWARDS;    (* P010D01 *)
     
@@ -736,13 +736,32 @@ SEGMENT PROCEDURE REWARDS;    (* P010D01 *)
           
         PROCEDURE ITEMREWD;  (* P010D1D *)
         
+        VAR
+             HASROOM : INTEGER; (* WC033 *)
+             CHARYYYY: INTEGER; (* WC033 *)
+             
           BEGIN
-            CHARXXXX := RANDOM MOD PARTYCNT;
-            WHILE CHARACTR[ CHARXXXX].STATUS <> OK DO
-              CHARXXXX := (CHARXXXX + 1) MOD PARTYCNT;
-            IF CHARACTR[ CHARXXXX].POSS.POSSCNT = 8 THEN
-              EXIT( ITEMREWD);  (* IF RANDOM CHARACTER IS OK AND HAS 8 
-                                   POSSESSIONS,  THEN EXIT !! *)
+            (* BEGIN WC033 *)
+            HASROOM := 0;
+            FOR CHARYYYY := 0 TO PARTYCNT - 1 DO
+              BEGIN
+                IF CHARACTR[ CHARYYYY].POSS.POSSCNT < 8 THEN
+                  BEGIN
+                    HASROOM := 1;
+                    CHARXXXX := CHARYYYY
+                  END
+              END;
+            IF HASROOM = 0 THEN
+              BEGIN
+                MVCURSOR( 1, 12);
+                PRINTSTR( 'PARTY INVENTORY FULL !');
+                MVCURSOR( 1, 13);
+                PRINTSTR( 'TREASURE LOST !');
+                PAUSE2;
+                EXIT( ITEMREWD)
+              END;
+            (* END WC033 *)
+            
             CHARIIII := 0;
             WHILE (CALCULAT( 01, 100, 1) <
                                      REWARDM.REWDCALC.ITEM.PERCBIGR) AND
