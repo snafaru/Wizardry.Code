@@ -1,5 +1,5 @@
-(* VERSION DATE  : 05 MAR 2023 *)
-(* FIX REFERENCE : WC031 *)
+(* VERSION DATE  : 11 MAR 2023 *)
+(* FIX REFERENCE : WC031 WC034 *)
   
 PROCEDURE SPCMISC;  (* P010311 *)
   
@@ -93,17 +93,28 @@ PROCEDURE SPCMISC;  (* P010311 *)
            
       BEGIN
         GOTITEM := FALSE;
+        (* WC034 DISPLAY MESSAGES *)
+        PAUSE1;
+        CLRRECT( 1, 11, 38, 4);
+        MVCURSOR( 1, 12);
+        PRINTSTR( CHARACTR[ CHARX].NAME);
         WITH CHARACTR[ CHARX] DO
           BEGIN
-            IF POSS.POSSCNT = 8 THEN
-              EXIT( GOTITEM);
             FOR POSSX := 1 TO POSS.POSSCNT DO
               IF POSS.POSSESS[ POSSX].EQINDEX = ITEMX THEN
-                EXIT( GOTITEM);
-            CLRRECT( 1, 11, 38, 4);
-            MVCURSOR( 1, 11);
-            PRINTSTR( CHARACTR[ CHARX].NAME);
+                BEGIN
+                  PRINTSTR( ' ALREADY HAS ONE');
+                  EXIT( GOTITEM)
+                END;
+            
+            IF POSS.POSSCNT = 8 THEN
+              BEGIN
+                PRINTSTR( ' IS FULL');
+                EXIT( GOTITEM)
+              END;
+            
             PRINTSTR( ' GOT ITEM');
+        (* END WC034 *)
             POSSX := POSS.POSSCNT + 1;
             POSS.POSSCNT := POSSX;
             POSS.POSSESS[ POSSX].EQINDEX := ITEMX;
