@@ -1,0 +1,88 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC034 - Search for Item
+=======================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	11-Mar-2023.
+
+Contributors:	Eric Labelle.
+
+The issue:	In the maze, the party enters areas where Wizardry tells a story and then asks you if you want to "Search (Y/N)?". If the party's inventory is full then nothing happens and that leaves the player wondering what is going on.
+
+The fix:	Added messages to inform the player when the characters’ inventories are full as well as when the characters already have the item they are supposed to get.
+	
+Why this fix: 	To inform the player as to what is going on when responding yes to "Search (Y/N)?".
+
+Source disk:	Wiz1B.dsk
+
+File:		SPECIALS2.TEXT
+
+Function:	FUNCTION GOTITEM
+				
+Code from:
+      BEGIN
+        GOTITEM := FALSE;
+        WITH CHARACTR[ CHARX] DO
+          BEGIN
+            IF POSS.POSSCNT = 8 THEN
+              EXIT( GOTITEM);
+            FOR POSSX := 1 TO POSS.POSSCNT DO
+              IF POSS.POSSESS[ POSSX].EQINDEX = ITEMX THEN
+                EXIT( GOTITEM);
+            CLRRECT( 1, 11, 38, 4);
+            MVCURSOR( 1, 11);
+            PRINTSTR( CHARACTR[ CHARX].NAME);
+            PRINTSTR( ' GOT ITEM');
+            POSSX := POSS.POSSCNT + 1;
+            POSS.POSSCNT := POSSX;
+            POSS.POSSESS[ POSSX].EQINDEX := ITEMX;
+            POSS.POSSESS[ POSSX].EQUIPED := FALSE;
+            POSS.POSSESS[ POSSX].CURSED  := FALSE
+          END;
+        GOTITEM := TRUE
+      END;
+
+Code to:
+      BEGIN
+        GOTITEM := FALSE;
+        (* WC034 DISPLAY MESSAGES *)
+        PAUSE1;
+        CLRRECT( 1, 11, 38, 4);
+        MVCURSOR( 1, 12);
+        PRINTSTR( CHARACTR[ CHARX].NAME);
+        WITH CHARACTR[ CHARX] DO
+          BEGIN
+            FOR POSSX := 1 TO POSS.POSSCNT DO
+              IF POSS.POSSESS[ POSSX].EQINDEX = ITEMX THEN
+                BEGIN
+                  PRINTSTR( ' ALREADY HAS ONE');
+                  EXIT( GOTITEM)
+                END;
+            
+            IF POSS.POSSCNT = 8 THEN
+              BEGIN
+                PRINTSTR( ' IS FULL');
+                EXIT( GOTITEM)
+              END;
+            
+            PRINTSTR( ' GOT ITEM');
+        (* END WC034 *)
+            POSSX := POSS.POSSCNT + 1;
+            POSS.POSSCNT := POSSX;
+            POSS.POSSESS[ POSSX].EQINDEX := ITEMX;
+            POSS.POSSESS[ POSSX].EQUIPED := FALSE;
+            POSS.POSSESS[ POSSX].CURSED  := FALSE
+          END;
+        GOTITEM := TRUE
+      END;
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
