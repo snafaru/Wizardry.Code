@@ -1,0 +1,42 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Release #:	WC035 - Release 2023-03-17 and fixed a misspelling
+==================================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	17-Mar-2023.
+
+Contributors:	E. Labelle.
+
+The result:	This if the first complete release of Wizardry Proving Grounds v3.0. Also, fixed a misspelling.
+
+The adjustment:	Updated the release date on the boot disk. Fixed the misspelling of "Resurrects" when casting Haman or Mahaman.
+
+Why this: 	Bugs and issues fixed. Enhancements done. Ready to distribute.
+
+Source disks:	Wiz1E.dsk, Wiz1B.dsk
+
+Files:		OPTIONS.TEXT, COMBAT4.TEXT
+				
+Code from:	
+                    WRITE( '  VERSION 3.0 OF 14-FEB-23  SER:');
+
+Code to:
+                    WRITE( '  VERSION 3.0 OF 16-MAR-23  SER:');
+
+Code from:	
+            PRINTSTR( 'RESSURECTS AND ');
+
+Code to:
+            (* WC035 FROM -RESSURECTS- TO -RESURRECTS- *)
+            PRINTSTR( 'RESURRECTS AND ');
+
+Final compiled file names:	SYSTEM.STARTUP and WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
