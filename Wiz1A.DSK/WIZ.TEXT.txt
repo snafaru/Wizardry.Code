@@ -13,9 +13,9 @@
       (MAR - JUN 2014)
 *)
 
-(* VERSION DATE : 10 FEB 2023 *)
+(* VERSION DATE : 23 MAR 2023 *)
 (* ENHANCEMENT  : WC020 *)
-(* FIX REFERENCE: WC025 *)
+(* FIX REFERENCE: WC025 WC036 *)
 
 
 PROGRAM WIZARDRY;
@@ -503,9 +503,22 @@ BEGIN  (* P010001 *)
       END;
     UNTIL XGOTO = XDONE;
     
+    (* WC036 - BEGIN *)
     WRITE( CHR( 12));
-    GOTOXY( 0, 10);
-    WRITE( '    PRESS [RETURN] FOR MORE WIZARDRY    ');
-    READLN
+    GOTOXY( 4, 10);
+    WRITE( 'PRESS [RETURN] FOR MORE WIZARDRY    ');
+    GOTOXY( 12, 13);
+    WRITE( 'OR Q)UIT THE GAME           ');
+    REPEAT
+      GETKEY
+    UNTIL (INCHAR = 'Q') OR (INCHAR = CHR( CRETURN));
+    IF INCHAR = 'Q' THEN
+      BEGIN
+        GOTOXY( 4, 16);
+        WRITE( 'THANK YOU FOR PLAYING WIZARDRY!     ');
+        PAUSE2;
+        EXIT( WIZARDRY)
+      END
+    (* WC036 - END *)
   UNTIL FALSE
 END.
