@@ -1,0 +1,85 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Release #:	WC036 - Release 2023-03-23  in alignmentd with a ProDOS release
+===============================================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	23-Mar-2023.
+
+Contributors:	E. Labelle.
+
+The result:	This a complete release of Wizardry Proving Grounds v3.0.
+
+The adjustment:	Bypassed a copy protection check halt which is the same fix that was done on the boot side. Added a Q)uit option after leaving the game to really exit the game in order for the ProDOS version to send you back to ProDOS instead of having to reboot. Updated the date.
+
+Why this: 	A released version that accomodates the ProDOS package.
+
+
+Source disk:	Wiz1A.dsk
+
+File:		WIZ.TEXT
+
+Program:	PROGRAM WIZARDRY;
+				
+Code from:	
+    WRITE( CHR( 12));
+    GOTOXY( 0, 10);
+    WRITE( '    PRESS [RETURN] FOR MORE WIZARDRY    ');
+    READLN
+
+Code to:
+    (* WC036 - BEGIN *)
+    WRITE( CHR( 12));
+    GOTOXY( 4, 10);
+    WRITE( 'PRESS [RETURN] FOR MORE WIZARDRY    ');
+    GOTOXY( 12, 13);
+    WRITE( 'OR Q)UIT THE GAME           ');
+    REPEAT
+      GETKEY
+    UNTIL (INCHAR = 'Q') OR (INCHAR = CHR( CRETURN));
+    IF INCHAR = 'Q' THEN
+      BEGIN
+        GOTOXY( 4, 16);
+        WRITE( 'THANK YOU FOR PLAYING WIZARDRY!     ');
+        PAUSE2;
+        EXIT( WIZARDRY)
+      END
+    (* WC036 - END *)
+
+
+Source disks:	Wiz1B.dsk
+
+Files:		SPECIALS.TEXT
+
+Procedure:	PROCEDURE COPYPROT;  (* P010310 *)
+
+				
+Code from:	
+              IF GOODCOPY THEN
+
+Code to:
+              (* WC036 REMARKED OUT TO BYPASS COPY PROTECTION FAILURE *)
+              (* IF GOODCOPY THEN *)
+
+
+Source disks:	Wiz1E.dsk
+
+Files:		OPTIONS.TEXT
+
+Procedure:	SEGMENT PROCEDURE OPTIONS;  (* P070301 *)
+				
+Code from:	
+                    WRITE( '  VERSION 3.0 OF 17-MA-23  SER:');
+
+Code to:
+                    WRITE( '  VERSION 3.0 OF 23-MAR-23  SER:');
+
+Final compiled file names:	SYSTEM.STARTUP and WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
