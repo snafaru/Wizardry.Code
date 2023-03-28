@@ -1,3 +1,5 @@
+(* VERSION DATE  : 23 MAR 2023 *)
+(* FIX REFERENCES: WC036 *)
     
 SEGMENT PROCEDURE SPECIALS;   (* P010301 *)
     
@@ -369,7 +371,8 @@ SEGMENT PROCEDURE SPECIALS;   (* P010301 *)
                   IF ABS( CPTEMP -  SYNCH[ SAVEI - 10]) > 29 THEN
                      GOODCOPY := FALSE;
                 END;
-              IF GOODCOPY THEN
+              (* WC036 REMARKED OUT TO BYPASS COPY PROTECTION FAILURE *)
+              (* IF GOODCOPY THEN *)
                 EXIT( COPYPROT);
             END;
             
