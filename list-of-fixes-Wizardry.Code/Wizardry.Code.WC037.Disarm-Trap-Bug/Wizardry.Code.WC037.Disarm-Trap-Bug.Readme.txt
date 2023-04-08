@@ -1,0 +1,81 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+
+Bug/Issue #:	WC037 - Disarm Trap Bug
+=======================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	03-Apr-2023.
+
+Contributors:	Eric Labelle. Bug reported by Reiska42.
+
+The issue:	This happens when finding a chest that is booby trapped with a trap of type 3 (Crossbow Bolt, Exploding Box, Splinters, Blades, and Stunner). Upon disarming the trap if you enter any valid trap name besides the current trap then nothing happens and you go back to the chest options. You can continue entering all the trap names and nothing will happen. The only way out is to open the chest, leave it, or enter the right trap name.
+
+The fix:	Added the same code a in Wizardry III Legacy of Llylgamyn to fix this bug.
+	
+Why this fix: 	To make disarming chest traps work as intended.
+
+Source disk:	Wiz1C.dsk
+
+File:		REWARDS.TEXT
+
+Procedure:	DISARM;  (* P010D18 *)
+				
+Code from:
+
+            ELSE IF TRAPTYPE = 3 THEN
+              BEGIN
+                CASE TRAP3TYP OF
+                  0:  IF TRAPSTR = 'CROSSBOW BOLT' THEN
+                        DISARM;
+                       
+                  1:  IF TRAPSTR = 'EXPLODING BOX' THEN
+                        DISARM;
+                       
+                  2:  IF TRAPSTR = 'SPLINTERS' THEN
+                        DISARM;
+                       
+                  3:  IF TRAPSTR = 'BLADES' THEN
+                        DISARM;
+                       
+                  4:  IF TRAPSTR = 'STUNNER' THEN
+                        DISARM;
+                END;
+              END
+
+Code to:
+
+            ELSE IF TRAPTYPE = 3 THEN
+              BEGIN
+                CASE TRAP3TYP OF
+                  0:  IF TRAPSTR = 'CROSSBOW BOLT' THEN
+                        DISARM;
+                       
+                  1:  IF TRAPSTR = 'EXPLODING BOX' THEN
+                        DISARM;
+                       
+                  2:  IF TRAPSTR = 'SPLINTERS' THEN
+                        DISARM;
+                       
+                  3:  IF TRAPSTR = 'BLADES' THEN
+                        DISARM;
+                       
+                  4:  IF TRAPSTR = 'STUNNER' THEN
+                        DISARM;
+                END;
+                
+                (* WC037 ADDED -DOTRAPDM- AS IN WIZ 3 *)
+                DOTRAPDM
+              END
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
+
