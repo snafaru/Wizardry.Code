@@ -1,0 +1,125 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+
+Enhancement #:	WC038 - Camp Screen Update
+==========================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	03-Apr-2023.
+
+Contributors:	Eric Labelle. Enhancement suggested by Reiska42.
+
+The suggestion: Update the gold, hit points and status of a character when performing actions such as trading gold, or casting spells to cure hit points or ailments.
+
+The action:	Added the necessary code to allow these enhancements.
+	
+Why this: 	It is nice now to see the screen updated on the fly when performing these actions.
+
+Source disk:	Wiz1C.dsk
+
+File:		CAMP.TEXT, CAMP2.TEXT
+
+Procedure:	PROCEDURE DSPSPELS;  (* P010C04 *), PROCEDURE TRADITEM;  (* P010C1A *)
+				
+Code from:
+        BEGIN
+          WITH CHARACTR[ CAMPCHAR] DO
+            BEGIN
+              GOTOXY(  0, 9);
+              WRITE( ' ' : 7);
+              WRITE( ' MAGE ');
+              FOR INDX := 1 TO 7 DO
+                BEGIN
+                  WRITE( MAGESP[ INDX]);
+                  IF INDX < 7 THEN
+                    WRITE( '/')
+                END;
+              WRITELN;
+              WRITE( ' ' :6);
+              WRITE( 'PRIEST ');
+              FOR INDX := 1 TO 7 DO
+                BEGIN
+                  WRITE( PRIESTSP[ INDX]);
+                  IF INDX < 7 THEN
+                    WRITE( '/')
+                END
+            END
+        END;
+
+Code to:
+        BEGIN
+          WITH CHARACTR[ CAMPCHAR] DO
+            BEGIN
+              (* WC038 - BEGIN *)
+              GOTOXY( 24, 2);
+              PRNTLONG( GOLD);
+              GOTOXY( 24, 6);
+              WRITE( HPLEFT :3);
+              GOTOXY( 24, 7);
+              WRITE( SCNTOC.STATUS[ STATUS]);
+              IF LOSTXYL.POISNAMT[ 1] > 0 THEN
+                  WRITE( ' & POISONED')
+                ELSE
+                  WRITE( '           ');
+              (* WC038 - END *)
+              GOTOXY(  0, 9);
+              WRITE( ' ' : 7);
+              WRITE( ' MAGE ');
+              FOR INDX := 1 TO 7 DO
+                BEGIN
+                  WRITE( MAGESP[ INDX]);
+                  IF INDX < 7 THEN
+                    WRITE( '/')
+                END;
+              WRITELN;
+              WRITE( ' ' :6);
+              WRITE( 'PRIEST ');
+              FOR INDX := 1 TO 7 DO
+                BEGIN
+                  WRITE( PRIESTSP[ INDX]);
+                  IF INDX < 7 THEN
+                    WRITE( '/')
+                END
+            END
+        END;
+                
+                (* WC037 ADDED -DOTRAPDM- AS IN WIZ 3 *)
+                DOTRAPDM
+              END
+
+Code from:
+        BEGIN (* DOTRADE *)
+          DISPSTAT := FALSE;
+          REPEAT
+            TRADETO := GETCHARX( TRUE, 'TRADE WITH');
+            IF TRADETO = -1 THEN
+              EXIT( DOTRADE);
+          UNTIL TRADETO <> CAMPCHAR;
+          TRADGOLD;
+          TRADITEM
+        END;  (* DOTRADE *)
+
+Code to: 
+        BEGIN (* DOTRADE *)
+          DISPSTAT := FALSE;
+          REPEAT
+            TRADETO := GETCHARX( TRUE, 'TRADE WITH');
+            IF TRADETO = -1 THEN
+              EXIT( DOTRADE);
+          UNTIL TRADETO <> CAMPCHAR;
+          TRADGOLD;
+          DSPSPELS; (* WC038 - TO UPDATE GOLD AMOUNT *)
+          TRADITEM
+        END;  (* DOTRADE *)
+
+Final compiled file name:	WIZARDRY.CODE
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
+
