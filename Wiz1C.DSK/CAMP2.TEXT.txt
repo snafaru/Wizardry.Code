@@ -1,5 +1,5 @@
-(* VERSION DATE  : 11 FEB 2023 *)
-(* FIX REFERENCE : WC026 *)
+(* VERSION DATE  : 05 APR 2023 *)
+(* FIX REFERENCE : WC026 WC038 *)
       
       
     PROCEDURE IDENTIFY;  (* P010C15 *)
@@ -124,6 +124,7 @@
               EXIT( DOTRADE);
           UNTIL TRADETO <> CAMPCHAR;
           TRADGOLD;
+          DSPSPELS; (* WC038 - TO UPDATE GOLD AMOUNT *)
           TRADITEM
         END;  (* DOTRADE *)
         

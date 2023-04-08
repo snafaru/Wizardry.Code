@@ -1,5 +1,5 @@
-(* VERSION DATE  : 14 FEB 2023 *)
-(* FIX REFERENCES: WC017 WC029 *)
+(* VERSION DATE  : 05 APR 2023 *)
+(* FIX REFERENCES: WC017 WC029 WC038 *)
 
 SEGMENT PROCEDURE CAMP;  (* P010C01 *)
 
@@ -34,6 +34,18 @@ SEGMENT PROCEDURE CAMP;  (* P010C01 *)
         BEGIN
           WITH CHARACTR[ CAMPCHAR] DO
             BEGIN
+              (* WC038 - BEGIN *)
+              GOTOXY( 24, 2);
+              PRNTLONG( GOLD);
+              GOTOXY( 24, 6);
+              WRITE( HPLEFT :3);
+              GOTOXY( 24, 7);
+              WRITE( SCNTOC.STATUS[ STATUS]);
+              IF LOSTXYL.POISNAMT[ 1] > 0 THEN
+                  WRITE( ' & POISONED')
+                ELSE
+                  WRITE( '           ');
+              (* WC038 - END *)
               GOTOXY(  0, 9);
               WRITE( ' ' : 7);
               WRITE( ' MAGE ');
