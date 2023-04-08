@@ -1,5 +1,5 @@
-(* VERSION DATE  : 08 MAR 2023 *)
-(* FIX REFERENCES: WC016 WC022 WC033 *)
+(* VERSION DATE  : 03 APR 2023 *)
+(* FIX REFERENCES: WC016 WC022 WC033 WC037 *)
     
 SEGMENT PROCEDURE REWARDS;    (* P010D01 *)
     
@@ -623,7 +623,8 @@ SEGMENT PROCEDURE REWARDS;    (* P010D01 *)
                         DISARM;
                 END;
                 
-                (* DOTRAPDM *)
+                (* WC037 ADDED -DOTRAPDM- AS IN WIZ 3 *)
+                DOTRAPDM
               END
             ELSE IF (TRAPSTR = 'TELEPORTER') AND (TRAPTYPE = 4) THEN
               DISARM
