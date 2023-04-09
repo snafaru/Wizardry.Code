@@ -1,4 +1,5 @@
-(* VERSION DATE : 03 FEB 2023 *)
+(* VERSION DATE : 09 APR 2023 *)
+(* FIX REFERENCE: WC039 *)
 (* ENHANCEMENT  : WC020 *)
 
   PROCEDURE PRINTBEL;  (* P010002 *)
@@ -494,7 +495,11 @@
                   BEGIN
                     MVCURSOR( WINXPOS + IPOS, WINYPOS);
                     PRINTCHR( INCHAR);
-                    IPOS := IPOS + 1;
+                    (* WC039 ADDED -IF IPOS < 22 THEN- TO PREVENT A GAME *)
+                    (* CRASH WHEN ENTERING TOO LONG A SPELL NAME IN COMBAT. *)
+                    (* ALSO APPLIES TO ANWSWERS TO RIDDLES, CHEST TRAPS, *)
+                    (* AND ENTERING THE TIME DELAY *)
+                    IF IPOS < 22 THEN IPOS := IPOS + 1;
                     ASTRING[ IPOS] := INCHAR
                   END
               END
