@@ -1,6 +1,6 @@
-(* VERSION DATE : 09 APR 2023 *)
+(* VERSION DATE : 03 AUG 2023 *)
 (* FIX REFERENCE: WC039 *)
-(* ENHANCEMENT  : WC020 *)
+(* ENHANCEMENTS : WC020 WC040 *)
 
   PROCEDURE PRINTBEL;  (* P010002 *)
   
@@ -562,5 +562,25 @@
           IF SPELLINT = 8330 THEN PRINTSTR( 'LOKTOFEIT');
           IF SPELLINT = 5514 THEN PRINTSTR( 'MALIKTO');
           IF SPELLINT = 6673 THEN PRINTSTR( 'KADORTO')
+      END;
+
+    PROCEDURE POOLALLG; (* WC040 POOL GOLD *)
+
+      VAR
+          ALOOP4 : INTEGER;
+      
+      BEGIN
+        FOR ALOOP4 := 0 TO PARTYCNT -1 DO
+          IF ALOOP4 <> CHAR4GLD THEN
+            BEGIN
+              WITH CHARACTR[ ALOOP4].GOLD DO
+                BEGIN
+                  ADDLONGS( CHARACTR[ CHAR4GLD].GOLD,
+                  CHARACTR[ ALOOP4].GOLD);
+                  HIGH := 0;
+                  MID  := 0;
+                  LOW  := 0
+                END
+            END
       END;
 
