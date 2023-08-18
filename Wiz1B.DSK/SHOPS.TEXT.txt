@@ -1,5 +1,6 @@
-(* VERSION DATE  : 14 FEB 2023 *)
+(* VERSION DATE  : 03 AUG 2023 *)
 (* FIX REFERENCE : WC029 *)
+(* ENHANCEMENT   : WC040 *)
   
   
 SEGMENT PROCEDURE SHOPS;  (* P010201 *)
@@ -574,7 +575,7 @@ SEGMENT PROCEDURE SHOPS;  (* P010201 *)
             PRNTLONG( CHARACTR[ CHARI].GOLD);
             WRITELN( ' GOLD');
             WRITELN;
-            WRITELN( 'YOU MAY B)UY  AN ITEM,');
+            WRITELN( 'YOU MAY POOL G)OLD, B)UY  AN ITEM,'); (* WC040 *)
             WRITELN( '        S)ELL AN ITEM, HAVE AN ITEM');
             WRITELN( '        U)NCURSED,  OR HAVE AN ITEM');
             WRITELN( '        I)DENTIFIED, OR L)EAVE');
@@ -582,6 +583,7 @@ SEGMENT PROCEDURE SHOPS;  (* P010201 *)
             GETKEY;
                            
             CASE INCHAR OF
+              'G': POOLALLG( CHARI); (* WC040 *)
               'U': SELLIDUN( UNCURSE);
               'I': SELLIDUN( IDENTIFY);
               'S': SELLIDUN( SELL);
