@@ -1,5 +1,6 @@
-(* VERSION DATE  : 28 DEC 2022 *)
+(* VERSION DATE  : 03 AUG 2023 *)
 (* FIX REFERENCES: WC004 *)
+(* ENHANCEMENTS  : WC040 *)
     
     PROCEDURE ADVNTINN;  (* P010A0F *)
     
@@ -9,6 +10,7 @@
            ECONOMY  = 67;
            MERCHANT = 68;
            ROYAL    = 69;
+           PGOLD    = 71; (* WC040 *)
            
       VAR
            PARTYX : INTEGER;
@@ -40,6 +42,9 @@
           WRITELN(  '[C] ECONOMY ROOMS. 50 GP/WEEK.');
           WRITELN(  '[D] MERCHANT SUITES. 200 GP/WEEK.');
           WRITELN(  '[E] ROYAL SUITES. 500 GP/WEEK.');
+          WRITELN;
+          WRITELN(  '[G] POOL PARTY GOLD.'); (* WC040 *)
+          WRITELN;
           WRITE(    '    OR [RETURN] TO LEAVE')
         END;
         
@@ -493,6 +498,7 @@
                  ECONOMY:  TAKENAP(  3,  50);
                 MERCHANT:  TAKENAP(  7, 200);
                    ROYAL:  TAKENAP( 10, 500);
+                   PGOLD:  POOLALLG( PARTYX); (* WC040 *)
               END;
               CHARINFO( PARTYX)
             UNTIL (INCHAR = CHR( CRETURN)) OR

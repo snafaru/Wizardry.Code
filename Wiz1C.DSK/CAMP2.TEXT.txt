@@ -1,5 +1,6 @@
-(* VERSION DATE  : 05 APR 2023 *)
+(* VERSION DATE  : 03 AUG 2023 *)
 (* FIX REFERENCE : WC026 WC038 *)
+(* ENHANCEMENTS  : WC040 *)
       
       
     PROCEDURE IDENTIFY;  (* P010C15 *)
@@ -214,6 +215,19 @@
                 END
             END;
         
+        PROCEDURE MENULST4; (* WC040 *)
+          BEGIN
+            WRITE( CHR( 11));
+            WRITELN( 'YOU MAY E)QUIP, D)ROP AN ITEM, T)RADE,');
+            WRITE( ' ' :8);
+            WRITELN( 'POOL G)OLD, DIV)IDE GOLD,');
+            WRITE( ' ' :8);
+          END;
+        
+        PROCEDURE MENULST5; (* WC040 *)
+          BEGIN
+            WRITELN( 'R)EAD SPELL BOOKS, OR L)EAVE.')
+          END;
         
           BEGIN  (* CAMPMENU *)
             WITH CHARACTR[ CAMPCHAR] DO
@@ -232,30 +246,44 @@
                   
                 IF MENUTYPE = 2 THEN
                   BEGIN
-                    WRITE( CHR( 11));
-                    WRITELN( 'YOU MAY E)QUIP, D)ROP AN ITEM, T)RADE,');
-                    WRITE( ' ' :8);
-                    WRITELN( 'R)EAD SPELL BOOKS, CAST S)PELLS,');
-                    WRITE( ' ' :8);
+                    MENULST4; (* WC040 *)
                     WRITELN( 'U)SE AN ITEM, I)DENTIFY AN ITEM,');
                     WRITE( ' ' :8);
-                    WRITELN( 'OR L)EAVE.')
+                    WRITELN( 'CAST S)PELLS,');
+                    WRITE( ' ' :8);
+                    MENULST5 (* WC040 *)
                   END
                 ELSE IF MENUTYPE = 1 THEN
                   BEGIN
-                    WRITE( CHR( 11));
-                    WRITELN( 'YOU MAY E)QUIP, D)ROP AN ITEM, T)RADE,');
-                    WRITE( ' ' :8);
-                    WRITELN( 'R)EAD SPELL BOOKS, OR L)EAVE.')
+                    MENULST4; (* WC040 *)
+                    MENULST5 (* WC040 *)
                   END
                 ELSE
                   BEGIN
                     WRITE( CHR( 11));
-                    WRITELN( 'YOU MAY R)EAD SPELL BOOKS OR L)EAVE.')
+                    WRITE( 'YOU MAY ');
+                    MENULST5 (* WC040 *)
                   END;
               END
           END;  (* CAMPMENU *)
           
+      PROCEDURE DIVALLG( CHAR4GLD: INTEGER); (* WC040 *)
+      
+        VAR
+          ALOOP4   : INTEGER;
+          GOLD2DIV : TWIZLONG;
+          GOLDLESS : TWIZLONG;
+      
+        BEGIN
+          POOLALLG( CHAR4GLD);
+          GOLD2DIV := CHARACTR[ CHAR4GLD].GOLD;
+          DIVLONG( GOLD2DIV, PARTYCNT);
+          GOLDLESS := GOLD2DIV;
+          MULTLONG( GOLDLESS, PARTYCNT);
+          SUBLONGS( CHARACTR[ CHAR4GLD].GOLD, GOLDLESS);
+          FOR ALOOP4 := 0 TO PARTYCNT - 1 DO
+            ADDLONGS( CHARACTR[ ALOOP4].GOLD, GOLD2DIV)
+        END;
           
         BEGIN (* CAMPDO *)
           CAMPMENU;
@@ -265,7 +293,8 @@
             GETKEY
           UNTIL (INCHAR = 'R') OR (INCHAR = 'L') OR
                 ((MENUTYPE > 0) AND
-                 ((INCHAR = 'T') OR (INCHAR = 'D') OR (INCHAR = 'E'))) OR
+                 ((INCHAR = 'T') OR (INCHAR = 'D') OR (INCHAR = 'E')
+                  OR (INCHAR = 'G') OR (INCHAR = 'V'))) OR
                 ((MENUTYPE > 1) AND
                  ((INCHAR = 'I') OR (INCHAR = 'S') OR (INCHAR = 'U')));
           
@@ -285,6 +314,10 @@
                   END;
             'D':  IF MENUTYPE > 0 THEN
                     DROPITEM;
+            'G':  IF MENUTYPE > 0 THEN
+                    POOLALLG( CAMPCHAR); (* WC040 POOL GOLD *)
+            'V':  IF MENUTYPE > 0 THEN
+                    DIVALLG( CAMPCHAR); (* WC040 DIVIDE GOLD *)
             'I':  IF MENUTYPE = 2 THEN
                     IDENTIFY;
             'S':  IF MENUTYPE = 2 THEN
