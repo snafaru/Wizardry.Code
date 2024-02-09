@@ -1,5 +1,5 @@
-  (* VERSION DATE         : 05 FEB 2024 *)
-  (* ENHANCEMENTS AND FIX : WC040, WC041 *)
+  (* VERSION DATE           : 08 FEB 2024 *)
+  (* ENHANCEMENTS AND FIXES : WC040, WC042 *)
   
   PROCEDURE BACKUP;  (* P070113 *)
                
@@ -162,7 +162,8 @@
       
         BEGIN
           WRITELN;
-          WRITELN( '** CHAR HAS NON-XFERRABLE ITEMS **');
+          (* WC042 FROM NON-XFERRABLE TO NON-TRANSFERABLE *)
+          WRITELN( '** CHAR HAS NON-TRANSFERABLE ITEMS **');
           PRESSRET;
           EXIT( TRANSFER)
         END;
@@ -225,10 +226,13 @@
       BEGIN
         REPEAT
           REPEAT
-            IF (MPD3 = BL5BUFF[ 10]) AND
+            (* WC042 DISABLE SERIAL NUMBER CHECK TO ALLOW MOVING
+               CHARACTERS TO ANY SCENARIO COPY *)
+            (* IF (MPD3 = BL5BUFF[ 10]) AND
                (SERIALFR = SERIALTO)     THEN
               RDSCNTOC( 'CANT COPY TO BACKUP - PUT IN SOURCE')
-            ELSE IF (PLAYINDX = -1) THEN
+            ELSE *)
+            IF (PLAYINDX = -1) THEN
               RDSCNTOC( 'DUPLICATE NAME - PUT IN SOURCE')
             ELSE
               RDSCNTOC( 'ALL SLOTS USED - PUT IN SOURCE');
@@ -271,9 +275,12 @@
       MOVELEFT( BL5BUFF, SERIALTO, 7);
       PLAYINDX := SCNTOC.RECPERDK[ ZCHAR];
       
-      IF (MPD3 <> BL5BUFF[ 10]) OR
+      
+       (* WC042 DISABLE SERIAL NUMBER CHECK TO ALLOW MOVING
+          CHARACTERS TO ANY SCENARIO COPY *)
+       (* IF (MPD3 <> BL5BUFF[ 10]) OR
          (SERIALFR <> SERIALTO)    THEN
-         BEGIN
+         BEGIN *)
            FOR BASE04 := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
              BEGIN
                RDCHARAC( PLAYREC1, BASE04);
@@ -285,7 +292,7 @@
                    IF PLAYREC1.STATUS = LOST THEN
                      PLAYINDX := BASE04
              END;
-         END;
+         (* END; *) (* WC042 *)
       
       IF (PLAYINDX = -1) OR
          (PLAYINDX = SCNTOC.RECPERDK[ ZCHAR]) THEN
