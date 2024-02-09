@@ -1,5 +1,5 @@
 # Wizardry.Code
-Wizardry Proving Grounds v3.0 - Editing and Compiling WIZARDRY.CODE - Apple II - UCSD Pascal 1.1
+Wizardry Proving Grounds v3.0 - Editing and Compiling WIZARDRY.CODE and SYSTEM.STARTUP - Apple II - UCSD Pascal 1.1
 -
 
 Besides fixes, here are the main exciting enhancements:
