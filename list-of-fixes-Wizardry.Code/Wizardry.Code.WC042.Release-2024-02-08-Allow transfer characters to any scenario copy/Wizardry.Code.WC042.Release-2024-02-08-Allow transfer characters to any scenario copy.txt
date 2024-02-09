@@ -1,0 +1,155 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+
+Release #:	WC042 - Release 08 Feb 2024 - Allow transfer characters to any scenario copy
+============================================================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	08-Feb-2024.
+
+Contributors:	Eric Labelle.
+
+Enhancements:	Added the possibility transfer characters to any scenario copy even if it has the same serial number as the source.
+
+Spelling:	Full spelling and corrected double "R" from "** CHAR HAS NON-XFERRABLE ITEMS **" to "** CHAR HAS NON-TRANSFERABLE ITEMS **".
+
+
+Following are the programming code details
+==========================================
+
+Enhancement:	Transfer characters to any scenario copy even if it has the same serial number as the source
+------------------------------------
+
+Source disk:	Wiz1E.dsk
+
+File:		WIZUTILC.TEXT
+
+Procedure:	PROCEDURE TRANSFER;  (* P070117 *)
+		PROCEDURE TRANBAD;  (* P07011A *)
+				
+Code from:
+    PROCEDURE TRANBAD;  (* P07011A *)
+    
+      BEGIN
+        REPEAT
+          REPEAT
+            IF (MPD3 = BL5BUFF[ 10]) AND
+               (SERIALFR = SERIALTO)     THEN
+              RDSCNTOC( 'CANT COPY TO BACKUP - PUT IN SOURCE')
+            ELSE IF (PLAYINDX = -1) THEN
+              RDSCNTOC( 'DUPLICATE NAME - PUT IN SOURCE')
+            ELSE
+              RDSCNTOC( 'ALL SLOTS USED - PUT IN SOURCE');
+.
+.
+.
+    BEGIN  (* TRANSFER *)
+.
+.
+.
+
+       IF (MPD3 <> BL5BUFF[ 10]) OR
+         (SERIALFR <> SERIALTO)    THEN
+         BEGIN
+.
+.
+.
+         END;
+
+Code to:
+    PROCEDURE TRANBAD;  (* P07011A *)
+    
+      BEGIN
+        REPEAT
+          REPEAT
+            (* WC042 DISABLE SERIAL NUMBER CHECK TO ALLOW MOVING
+               CHARACTERS TO ANY SCENARIO COPY *)
+            (* IF (MPD3 = BL5BUFF[ 10]) AND
+               (SERIALFR = SERIALTO)     THEN
+              RDSCNTOC( 'CANT COPY TO BACKUP - PUT IN SOURCE')
+            ELSE *)
+            IF (PLAYINDX = -1) THEN
+              RDSCNTOC( 'DUPLICATE NAME - PUT IN SOURCE')
+            ELSE
+              RDSCNTOC( 'ALL SLOTS USED - PUT IN SOURCE');
+.
+.
+.
+    BEGIN  (* TRANSFER *)
+.
+.
+.
+
+       (* WC042 DISABLE SERIAL NUMBER CHECK TO ALLOW MOVING
+          CHARACTERS TO ANY SCENARIO COPY *)
+       (* IF (MPD3 <> BL5BUFF[ 10]) OR
+         (SERIALFR <> SERIALTO)    THEN
+         BEGIN *)
+.
+.
+.
+         (* END; *) (* WC042 *)
+
+
+
+Enhancement:	Corrected double "R" from "** CHAR HAS NON-XFERRABLE ITEMS **" to "** CHAR HAS NON-TRANSFERABLE ITEMS **"
+------------------------------------
+
+Source disk:	Wiz1E.dsk
+
+File:		WIZUTILC.TEXT
+
+Procedure:	PROCEDURE BADITEM;  (* P070119 *)
+				
+Code from:
+        BEGIN
+          WRITELN;
+          WRITELN( '** CHAR HAS NON-X-FERRABLE ITEMS **');
+          PRESSRET;
+          EXIT( TRANSFER)
+        END;
+
+Code to:
+        BEGIN
+          WRITELN;
+          (* WC042 FROM NON-XFERRABLE TO NON-TRANSFERABLE *)
+          WRITELN( '** CHAR HAS NON-TRANSFERABLE ITEMS **');
+          PRESSRET;
+          EXIT( TRANSFER)
+        END;
+
+
+
+Update:		Release Date
+----------------------------
+
+Source disks:	Wiz1E.dsk
+
+Files:		OPTIONS.TEXT
+
+Procedure:	SEGMENT PROCEDURE OPTIONS;  (* P070301 *)
+				
+Code from:	
+    (* ST001 CHANGE VERSION AND DATE DISPLAY AS NEEDED *)
+    WRITE( '  VERSION 3.0 OF 03-AUG-23  SER:');
+    WRITELN( SERIAL);
+
+Code to:
+    (* ST001 CHANGE VERSION AND DATE DISPLAY AS NEEDED *)
+    (* WC041 SHOW FULL 4 DIGITS YEAR DATE *)
+    WRITE( ' VERSION 3.0 OF 08-FEB-2024  SER:');
+    WRITELN( SERIAL);
+
+
+
+Final compiled file names:	SYSTEM.STARTUP
+
+Destination disk:	Any Wizardry Proving Grounds boot disk.
+
+
+
