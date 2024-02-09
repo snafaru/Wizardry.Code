@@ -1,0 +1,205 @@
+SEGMENT PROCEDURE TITLELOA;  (* P070201 *)
+
+  TYPE
+  
+       BYTE = PACKED ARRAY [ 0..1] OF 0..255;
+       
+       MAGIC = RECORD CASE BOOLEAN OF
+           FALSE : (I : INTEGER);
+           TRUE  : (P : ^BYTE);
+         END;
+
+  VAR
+
+       LZFLAG : INTEGER;
+       STKPTR : ^INTEGER;
+       WTBUFF : ARRAY[ 0..4607] OF INTEGER;  (* 9 BLOCKS == 18 SECTORS *)
+       MEMORY : MAGIC;
+
+
+  PROCEDURE SOFTSWTC( MEMLOC : INTEGER);  (* P070202 *)
+  
+    BEGIN
+      MEMORY.I := MEMLOC;
+      MEMORY.P^[ 0] := 0
+    END;
+    
+    
+  FUNCTION KEYPRESS : BOOLEAN;  (* P070203 *)
+  
+    BEGIN
+      KEYPRESS := TRUE;
+      MEMORY.I := -16384;  (* $C000  KEYBOARD DATA *)
+      IF MEMORY.P^[ 0] > 127 THEN
+        EXIT( KEYPRESS);
+      MEMORY.I := -16616;  (* $BF18  PASCAL INPUT BUFFER *)
+                           (* $BF19  PASCAL INPUT BUFFER *)
+      IF MEMORY.P^[ 0] <> MEMORY.P^[ 1] THEN
+        EXIT( KEYPRESS);
+      KEYPRESS := FALSE
+    END;
+    
+    
+  PROCEDURE DSPTITLE;  (* P070204 *)
+  
+    VAR
+        MP01 : INTEGER;
+        MP02 : INTEGER;
+        UNUSED : INTEGER;
+        MP04 : INTEGER;
+        MP05 : INTEGER;
+  
+  
+    PROCEDURE CHKEYPR( LOOPCNT : INTEGER);  (* P070205 *)
+    
+      BEGIN
+        GOTOXY( 41, 0);
+        WHILE LOOPCNT > 0 DO
+          BEGIN
+            IF KEYPRESS THEN
+              EXIT( DSPTITLE);
+            LOOPCNT := LOOPCNT - 1
+          END
+      END;
+      
+      
+    PROCEDURE P070206;
+    
+      BEGIN
+        MP04 := 1 + (MP04 MOD 3);
+        LZDECOMP( WTBUFF[ 0], WTBUFF[ MP04])
+      END;
+      
+      
+    PROCEDURE P070207;
+    
+      BEGIN
+        MP05 := 5 + ((MP05 - 4) MOD 3);
+        LZDECOMP( WTBUFF[ 0], WTBUFF[ MP05])
+      END;
+      
+      
+    BEGIN (* DSPTITLE *)
+       LZDECOMP( WTBUFF[ 0], WTBUFF[ 8]);
+       MEMORY.I := 8192;                (* $2000 *)
+       FILLCHAR( MEMORY.P^, 8192, 0);   (* CLEAR HI RES SCREEN *)
+       WRITE( CHR(12));                 (* CLEAR TEXT SCREEN *)
+       
+       GOTOXY( 12, 10);
+       WRITE( 'PREPARE YOURSELF');
+       CHKEYPR( 150);                   (* CHECK 150 TIMES FOR KEY PRESS *)
+       GOTOXY( 12, 12);
+       WRITE( 'FOR THE ULTIMATE');
+       CHKEYPR( 150);                   (* CHECK 150 TIMES FOR KEY PRESS *)
+       GOTOXY( 12, 14);
+       WRITE( 'IN FANTASY GAMES');
+       CHKEYPR( 500);                   (* CHECK 500 TIMES FOR KEY PRESS *)
+       
+       SOFTSWTC( -16300);  (* PRIMARY PAGE     *)
+       SOFTSWTC( -16297);  (* HI RES           *)
+       SOFTSWTC( -16302);  (* ALL GRAPHICS     *)
+       SOFTSWTC( -16304);  (* DISPLAY GRAPHICS *)
+       
+       WRITE( CHR( 12)); (* CLEAR TEXT SCREEN *)
+       GOTOXY( 41, 0);   (* MOVE CURSOR OFF SCREEN *)
+       
+       LZDECOMP( WTBUFF[ 0], WTBUFF[ 0]);
+       MP04 := 0;
+       MP05 := 4;
+       FOR MP02 := 1 TO 20 DO
+         BEGIN
+           CHKEYPR( 15);
+           P070206
+         END;
+         
+       FOR MP02 := 1 TO 24 DO 
+         BEGIN
+           FOR MP01 := 1 TO 2 DO
+             BEGIN
+               CHKEYPR( 12);
+               P070206
+             END;
+           P070207
+         END;
+         
+       LZDECOMP( WTBUFF[ 0], WTBUFF[ 8]);
+       P070206;
+       FOR MP02 := 9 TO 23 DO
+         BEGIN
+           FOR MP01 := 1 TO 2 DO
+             BEGIN
+               CHKEYPR( 5 + MP02);
+               P070206
+             END;
+           LZDECOMP( WTBUFF[ 0], WTBUFF[ MP02])
+         END;
+         
+       FOR MP02 := 24 TO 32 DO
+         BEGIN
+           FOR MP01 := 1 TO 4 DO 
+             BEGIN
+               CHKEYPR( 10);
+               P070206
+             END;
+           LZDECOMP( WTBUFF[ 0], WTBUFF[ MP02])
+         END;
+         
+       FOR MP02 := 1 TO 40 DO
+         BEGIN
+           CHKEYPR( 12);
+           P070206
+         END;
+         
+       FOR MP02 := 1 TO 80 DO
+         BEGIN
+           LZDECOMP( LZFLAG, 0);
+           CHKEYPR( 7);
+           P070206
+         END;
+         
+       FOR MP02 := 1 TO 40 DO
+         BEGIN
+           CHKEYPR( 12);
+           P070206
+         END
+    END;
+    
+    
+  PROCEDURE READWT;  (* P070208 *)
+  
+    VAR
+        FILE1 : FILE; (* UNTYPED FILE *)
+        
+  
+    BEGIN
+      RESET( FILE1, 'WT');  (* WIZARDRY TITLE SCREEN *)
+      BASE04 := BLOCKREAD( FILE1, WTBUFF, 18, 0);
+      CLOSE( FILE1)
+    END;
+
+
+
+  BEGIN  (* TITLELOA *)
+  
+    SETCHAIN( 'WIZARDRY');
+    READWT;               (* READ WIZARDRY TITLE FILE *)
+    MARK( STKPTR);
+    MEMORY.I := 16384;    (* $4000 PROTECT HI RES SCREEN *)
+    RELEASE( MEMORY.P);
+    LZFLAG := 253;
+    
+    REPEAT
+      DSPTITLE;           (* DISPLAY TITLE ANIMATION AND CHECK KEYPRESS *)
+      IF LZFLAG = 253 THEN
+         LZFLAG := 254
+      ELSE
+         LZFLAG := 253;
+      SOFTSWTC( -16300);  (* DISPLAY PRIMARY PAGE *)
+      SOFTSWTC( -16303)   (* DISPLAY TEXT *)
+    UNTIL KEYPRESS;
+    
+    WRITE( CHR( 32));  (* SPACE CHARACTER *)
+    UNITCLEAR( 1);     (* FLUSH TYPE AHEAD BUFFER; RESET TO LEFT 40 COLS *)
+    RELEASE( STKPTR)
+  END;  (* TITLELOA *)
+

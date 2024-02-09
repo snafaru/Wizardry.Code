@@ -1,0 +1,49 @@
+Wizardry Proving Grounds v3.0 - Boot Side Code Changes
+======================================================
+
+From Thomas William Ewer's reverse engineered Pascal source code (and assembler code) of Wizardry it is now possible to fix the game code itself.
+
+
+Bug/Issue #:	ST004 - 80-Column IIe
+======================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	04-Jan-2023
+
+Contributor:	E. Labelle (Information source: Chris Torrence)
+
+References:	https://archive.org/details/WizardryProvingGrounds
+		https://www.youtube.com/watch?v=6v35XbbBKQw&t=360s
+
+The Issue:	A bug where on an Apple //e (or //e emulator) with an 80-column card in the aux slot, Wizardry would incorrectly switch to 80-column mode and have weird spacing between all characters and lines on the screen. To fix this, memory location $B91D was changed from a JMP instruction ($6C) to a RTS ($60). This prevents Wizardry from attempting to switch out of 80-column mode, which was actually causing it to switch into 80 columns on an Apple //e.
+
+The Fix:	Hex edit the value 6C to 60. Update the release date.	
+
+Why this fix:	To have Wizardry running in 40-column text mode on an Apple //e or emulator. Sector editing is the only way to accomplish this for now until someone comes up with a better solution.
+
+Source Disk:	Wiz1E.dsk
+
+File:		OPTIONS.TEXT
+
+Sector Editing:
+		Start your favorite sector editor
+		Insert the Wizardry Boot disk
+		Search for Hex 6C F6 00
+		Replace Hex 6C to 60
+		Note: This can be reversed if you wish or as needed.
+
+Segment:	PROCEDURE OPTIONS;  (* P070301 *)
+
+Code From:
+
+    WRITE( '  VERSION 3.0 OF 26-DEC-22  SER:');
+
+Code To:	New text output on boot splash screen. 
+
+    (* ST001 CHANGE VERSION AND DATE DISPLAY AS NEEDED *)
+    WRITE( '  VERSION 3.0 OF 04-JAN-23  SER:');
+
+Final Compiled File Name:	SYSTEM.STARTUP
+
+Destination Disk:		Any Wizardry Proving Grounds boot disk.

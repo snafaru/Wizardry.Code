@@ -1,0 +1,207 @@
+(* VERSION DATE  : 25 DEC 2022 *)
+(* FIX REFERENCES: ST002 *)
+
+(*$S+*) 
+(*$L PRINTER: *)
+(* SWITCH "$S+" PRECEDES $L SWITCH *)
+(*$R-*)
+(*$I-*)
+(*$V-*)
+
+(*
+  WIZARDRY 1, SYSTEM.STARTUP
+  REVERSE ENGINEERED BY:  THOMAS WILLIAM EWERS, 2014
+*)
+
+
+PROGRAM WIZBOOT;
+
+  USES CHAINSTUFF;
+
+  CONST
+        DRIVE1 = 4;
+        DRIVE2 = 5;
+        WIZDIRBL = 2;
+        SERIALBL = 5;
+        BS = 8;
+        ESC = 27;
+        VT = 11;
+        HOMECLR = 12;
+        CR = 13;
+     
+     
+  TYPE
+
+       TBLOCKRG = 0..511;
+  
+       DIRENTRY = RECORD
+           FIRSTBLK : INTEGER;
+           LASTBLK  : INTEGER;
+           FILEKIND : PACKED RECORD
+               FT : (VOLHEAD, BADBLK, MACH6502, TEXT, DEBUG,
+                     DATA, GRAFFILE, FOTOFILE, SUBDIR);
+             END;
+           FILENAME : STRING[ 7];
+           VOLLB    : INTEGER;
+           FILECNT  : INTEGER;
+           LOADTIM  : INTEGER;
+           BOOTDATE : INTEGER;
+           RES1     : INTEGER;
+           RES2     : INTEGER;
+         END;
+  
+       TWIZLONG = RECORD
+           LOW  : INTEGER;
+           MID  : INTEGER;
+           HIGH : INTEGER;
+         END;
+         
+       TRACE = (NORACE, HUMAN, ELF, DWARF, GNOME, HOBBIT);
+       
+       TCLASS = (FIGHTER, MAGE, PRIEST, THIEF,
+                 BISHOP, SAMURAI, LORD, NINJA);
+         
+       TALIGN = (UNALIGN, GOOD, NEUTRAL, EVIL);
+         
+       TSTATUS = (OK, AFRAID, ASLEEP, PLYZE, 
+                  STONED, DEAD, ASHES, LOST);
+       
+       TATTRIB = (STRENGTH, IQ, PIETY, VITALITY, AGILITY, LUCK);
+       
+       TSPELL7G = ARRAY[ 1..7] OF INTEGER;
+       
+       THPREC = RECORD
+           LEVEL   : INTEGER;
+           HPFAC   : INTEGER;
+           HPMINAD : INTEGER;
+         END;
+                
+                
+       TCHAR = RECORD
+           NAME     : STRING[ 15];
+           PASSWORD : STRING[ 15];
+           INMAZE   : BOOLEAN;
+           RACE     : TRACE;
+           CLASS    : TCLASS;
+           AGE      : INTEGER;
+           STATUS   : TSTATUS;
+           ALIGN    : TALIGN;
+           ATTRIB   : PACKED ARRAY[ STRENGTH..LUCK] OF 0..18;
+           LUCKSKIL : PACKED ARRAY[ 0..4] OF 0..31;
+           GOLD     : TWIZLONG;
+           POSS     : RECORD
+               POSSCNT : INTEGER;
+               POSSESS : ARRAY[ 1..8] OF RECORD
+                   EQUIPED : BOOLEAN;
+                   CURSED  : BOOLEAN;
+                   IDENTIF : BOOLEAN;
+                   EQINDEX : INTEGER;
+                 END;
+             END;
+           EXP      : TWIZLONG;
+           MAXLEVAC : INTEGER;
+           CHARLEV  : INTEGER;
+           HPLEFT   : INTEGER;
+           HPMAX    : INTEGER;
+           SPELLSKN : PACKED ARRAY[ 0..49] OF BOOLEAN;
+           MAGESP   : TSPELL7G;
+           PRIESTSP : TSPELL7G;
+           HPCALCMD : INTEGER;
+           ARMORCL  : INTEGER;
+           HEALPTS  : INTEGER;
+           CRITHITM : BOOLEAN;
+           SWINGCNT : INTEGER;
+           HPDAMRC  : THPREC;
+           WEPVSTY2 : PACKED ARRAY[ 0..1, 0..13] OF BOOLEAN;
+           WEPVSTY3 : PACKED ARRAY[ 0..1, 0..6] OF BOOLEAN;
+           WEPVSTYP : PACKED ARRAY[ 0..13] OF BOOLEAN;
+           LOSTXYL  : RECORD CASE INTEGER OF
+               1:  (LOCATION : ARRAY[ 1..4] OF INTEGER);
+               2:  (POISNAMT : ARRAY[ 1..4] OF INTEGER);
+               3:  (AWARDS   : ARRAY[ 1..4] OF INTEGER);
+             END;
+         END;
+                
+                
+  VAR 
+       INCHAR : CHAR;
+       BASE04 : INTEGER;
+       SERIAL : STRING[ 7];
+       
+       
+  PROCEDURE LZDECOMP( VAR A1 : INTEGER;
+                          A2 : INTEGER); EXTERNAL;     (* P070002 *)
+  
+  PROCEDURE CHKSYNCH( VAR COUNT: INTEGER); EXTERNAL;   (* P070003 *)
+   
+   
+(*$I WIZ1E:WIZUTILB *)
+(*$I WIZ1E:WIZUTILC *)
+(*$I WIZ1E:TITLELOA *)
+(*$I WIZ1E:OPTIONS  *)
+
+
+  PROCEDURE CHKCOPY;  (* P070004 *)
+  
+    VAR
+        CPCALC   : INTEGER;
+        TRIES    : INTEGER;
+        SAVEI    : INTEGER;
+        CPTEMP   : INTEGER;
+        GOODCOPY : BOOLEAN;
+        SYNCH    : ARRAY[ 0..3] OF INTEGER;
+        IOCACHE  : PACKED ARRAY[ TBLOCKRG] OF CHAR;
+  
+    BEGIN
+      UNITREAD( DRIVE1, IOCACHE, SIZEOF( IOCACHE), SERIALBL, 0);
+      MOVELEFT( IOCACHE, SERIAL, 7);
+      
+      CPTEMP := 31;
+      FOR SAVEI := 10 TO 13 DO
+        BEGIN
+          MOVELEFT( IOCACHE[ CPTEMP], SYNCH[ SAVEI - 10], 2);
+          CPTEMP := CPTEMP + 2 * ((SYNCH[ SAVEI - 10]) MOD 13) + 5;
+        END;
+        
+      FOR TRIES := 1 TO 5 DO
+        BEGIN
+          GOODCOPY := TRUE;
+          FOR SAVEI := 10 TO 13 DO
+            BEGIN
+              UNITREAD( DRIVE1, IOCACHE, SIZEOF( IOCACHE), 8 * SAVEI, 0);
+              CHKSYNCH( CPTEMP);
+              IF SAVEI = 10 THEN
+                CPCALC := CPTEMP - SYNCH[ 10 - 10];
+              CPTEMP := CPTEMP - CPCALC;
+              GOODCOPY := GOODCOPY AND (ABS((CPTEMP - SYNCH[ SAVEI - 10]))
+                                        < 35)
+            END;
+          (* ST002 REMARK OUT/BYPASS COPY PROTECTION CHECK *)
+          (* IF GOODCOPY THEN *)
+            EXIT( CHKCOPY)
+        END;
+      HALT
+    END;
+    
+    
+BEGIN  (* SYSTEM.STARTUP *)
+  
+  CHKCOPY;
+  TITLELOA;
+  REPEAT
+    OPTIONS;
+    CASE INCHAR OF
+    
+      'S':  BEGIN
+              CHKCOPY;
+              EXIT( WIZBOOT)
+            END;
+               
+      'U':  UTILS;
+            
+      'T':  TITLELOA;
+      
+    END;
+  UNTIL FALSE
+END.  (* SYSTEM.STARTUP *)
+

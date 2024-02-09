@@ -1,0 +1,570 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+
+Release #:	WC040 - Release 03 Aug 2023 - Pool and Divide Gold and More
+===========================================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	03-Aug-2023.
+
+Contributors:	Eric Labelle. Thomas Ewers (Fix for Make Scenario bug).
+
+Thanks:		Marshall Bockrath (Tips on Pascal segments sizes, it helped me to figure out where I could cram in the extra code for the Pool/Divide Gold enhancements).
+		Todd Borax (Evil Shield +3 report).
+		Chris Torrence (Transfer characters report).
+
+Enhancements:	Added the possibility for a character to "Pool the Gold" of the entire party in his pocket. This can be done in Gilgamesh's, Boltac's, Adventurer's Inn and Camp. Furthermore, you can also "Divide the Gold" between all characters whilst inspecting your character at Gilgamesh's or Camp.
+
+Enhancements:   Updated the code to allow characters to be transferred between scenario disks even if they are carrying quest items.
+
+Fix:		On the boot side of Wizardry, there is a Utility to "Make Scenario Disk". An off-by-one error in the code had the top half part of the first monster picture overwritten with junk when making the scenario disk.
+	
+Consistency: 	The Evil Shield +3 armor class has been improved from 5 to 6 to be consistent with the armor protection of all the other shields.
+
+
+Following are the programming code details
+==========================================
+
+Enhancement:	Pool and Divide Gold
+------------------------------------
+
+Source disk:	Wiz1A.dsk
+
+File:		WIZ.TEXT
+
+Procedure:	PROCEDURE POOLALLG
+				
+Code from:	(* ---------- BEGIN FORWARD DECLARATIONS ---------- *)
+
+Code to:	(* ---------- BEGIN FORWARD DECLARATIONS ---------- *)
+		PROCEDURE POOLALLG( CHAR4GLD: INTEGER); FORWARD; (* WC040 POOL GOLD *)
+
+
+
+Source disk:	Wiz1A.dsk
+
+File:		WIZ2.TEXT
+
+Procedure:	PROCEDURE POOLALLG; (* WC040 POOL GOLD *)
+				
+Code from:	N/A.
+
+Code to:
+      PROCEDURE POOLALLG; (* WC040 POOL GOLD *)
+
+      VAR
+          ALOOP4 : INTEGER;
+      
+      BEGIN
+        FOR ALOOP4 := 0 TO PARTYCNT -1 DO
+          IF ALOOP4 <> CHAR4GLD THEN
+            BEGIN
+              WITH CHARACTR[ ALOOP4].GOLD DO
+                BEGIN
+                  ADDLONGS( CHARACTR[ CHAR4GLD].GOLD,
+                  CHARACTR[ ALOOP4].GOLD);
+                  HIGH := 0;
+                  MID  := 0;
+                  LOW  := 0
+                END
+            END
+      END;
+
+
+
+Source disk:	Wiz1C.dsk
+
+File:		CAMP2.TEXT
+
+Procedure:	PROCEDURE CAMPDO;  (* P010C1B *)
+				
+Code from:
+          BEGIN  (* CAMPMENU *)
+            WITH CHARACTR[ CAMPCHAR] DO
+              BEGIN
+                IF DISPSTAT THEN
+                  DSPSTATS;
+                GOTOXY( 0, 18);
+                IF XGOTO = XINSPCT3 THEN
+                  MENUTYPE := 0
+                ELSE IF XGOTO = XINSPECT THEN
+                  MENUTYPE := 1
+                ELSE IF STATUS = OK THEN
+                  MENUTYPE := 2
+                ELSE
+                  MENUTYPE := 1;
+                  
+                IF MENUTYPE = 2 THEN
+                  BEGIN
+                    WRITE( CHR( 11));
+                    WRITELN( 'YOU MAY E)QUIP, D)ROP AN ITEM, T)RADE,');
+                    WRITE( ' ' :8);
+                    WRITELN( 'R)EAD SPELL BOOKS, CAST S)PELLS,');
+                    WRITE( ' ' :8);
+                    WRITELN( 'U)SE AN ITEM, I)DENTIFY AN ITEM,');
+                    WRITE( ' ' :8);
+                    WRITELN( 'OR L)EAVE.')
+                  END
+                ELSE IF MENUTYPE = 1 THEN
+                  BEGIN
+                    WRITE( CHR( 11));
+                    WRITELN( 'YOU MAY E)QUIP, D)ROP AN ITEM, T)RADE,');
+                    WRITE( ' ' :8);
+                    WRITELN( 'R)EAD SPELL BOOKS, OR L)EAVE.')
+                  END
+                ELSE
+                  BEGIN
+                    WRITE( CHR( 11));
+                    WRITELN( 'YOU MAY R)EAD SPELL BOOKS OR L)EAVE.')
+                  END;
+              END
+          END;  (* CAMPMENU *)
+          
+          
+        BEGIN (* CAMPDO *)
+          CAMPMENU;
+          DISPSTAT := TRUE;
+          REPEAT
+            GOTOXY( 41, 0);
+            GETKEY
+          UNTIL (INCHAR = 'R') OR (INCHAR = 'L') OR
+                ((MENUTYPE > 0) AND
+                 ((INCHAR = 'T') OR (INCHAR = 'D') OR (INCHAR = 'E'))) OR
+                ((MENUTYPE > 1) AND
+                 ((INCHAR = 'I') OR (INCHAR = 'S') OR (INCHAR = 'U')));
+          
+          CASE INCHAR OF
+            'L':  EXIT( CAMPDO);
+            'E':  IF MENUTYPE > 0 THEN
+                    BEGIN
+                      XGOTO := XEQPDSP;
+                      LLBASE04 := CAMPCHAR;
+                      EXIT( CAMP)
+                    END;
+            'R':  BEGIN
+                    XGOTO := XCAMPSTF;
+                    BASE12.GOTOX := XDONE;
+                    LLBASE04 := CAMPCHAR;
+                    EXIT( CAMP)
+                  END;
+            'D':  IF MENUTYPE > 0 THEN
+                    DROPITEM;
+            'I':  IF MENUTYPE = 2 THEN
+                    IDENTIFY;
+            'S':  IF MENUTYPE = 2 THEN
+                    CASTSPEL( -1);
+            'U':  IF MENUTYPE = 2 THEN
+                    USEITEM;
+            'T':  DOTRADE
+           END
+        END;  (* CAMPDO *)
+
+
+Code to:
+        PROCEDURE MENULST4; (* WC040 *)
+          BEGIN
+            WRITE( CHR( 11));
+            WRITELN( 'YOU MAY E)QUIP, D)ROP AN ITEM, T)RADE,');
+            WRITE( ' ' :8);
+            WRITELN( 'POOL G)OLD, DIV)IDE GOLD,');
+            WRITE( ' ' :8);
+          END;
+        
+
+        PROCEDURE MENULST5; (* WC040 *)
+          BEGIN
+            WRITELN( 'R)EAD SPELL BOOKS, OR L)EAVE.')
+          END;
+        
+
+          BEGIN  (* CAMPMENU *)
+            WITH CHARACTR[ CAMPCHAR] DO
+              BEGIN
+                IF DISPSTAT THEN
+                  DSPSTATS;
+                GOTOXY( 0, 18);
+                IF XGOTO = XINSPCT3 THEN
+                  MENUTYPE := 0
+                ELSE IF XGOTO = XINSPECT THEN
+                  MENUTYPE := 1
+                ELSE IF STATUS = OK THEN
+                  MENUTYPE := 2
+                ELSE
+                  MENUTYPE := 1;
+                  
+                IF MENUTYPE = 2 THEN
+                  BEGIN
+                    MENULST4; (* WC040 *)
+                    WRITELN( 'U)SE AN ITEM, I)DENTIFY AN ITEM,');
+                    WRITE( ' ' :8);
+                    WRITELN( 'CAST S)PELLS,');
+                    WRITE( ' ' :8);
+                    MENULST5 (* WC040 *)
+                  END
+                ELSE IF MENUTYPE = 1 THEN
+                  BEGIN
+                    MENULST4; (* WC040 *)
+                    MENULST5 (* WC040 *)
+                  END
+                ELSE
+                  BEGIN
+                    WRITE( CHR( 11));
+                    WRITE( 'YOU MAY ');
+                    MENULST5 (* WC040 *)
+                  END;
+              END
+          END;  (* CAMPMENU *)
+      
+    
+      PROCEDURE DIVALLG( CHAR4GLD: INTEGER); (* WC040 *)
+      
+        VAR
+          ALOOP4   : INTEGER;
+          GOLD2DIV : TWIZLONG;
+          GOLDLESS : TWIZLONG;
+      
+        BEGIN
+          POOLALLG( CHAR4GLD);
+          GOLD2DIV := CHARACTR[ CHAR4GLD].GOLD;
+          DIVLONG( GOLD2DIV, PARTYCNT);
+          GOLDLESS := GOLD2DIV;
+          MULTLONG( GOLDLESS, PARTYCNT);
+          SUBLONGS( CHARACTR[ CHAR4GLD].GOLD, GOLDLESS);
+          FOR ALOOP4 := 0 TO PARTYCNT - 1 DO
+            ADDLONGS( CHARACTR[ ALOOP4].GOLD, GOLD2DIV)
+        END;
+
+          
+        BEGIN (* CAMPDO *)
+          CAMPMENU;
+          DISPSTAT := TRUE;
+          REPEAT
+            GOTOXY( 41, 0);
+            GETKEY
+          UNTIL (INCHAR = 'R') OR (INCHAR = 'L') OR
+                ((MENUTYPE > 0) AND
+                 ((INCHAR = 'T') OR (INCHAR = 'D') OR (INCHAR = 'E')
+                  OR (INCHAR = 'G') OR (INCHAR = 'V'))) OR
+                ((MENUTYPE > 1) AND
+                 ((INCHAR = 'I') OR (INCHAR = 'S') OR (INCHAR = 'U')));
+          
+          CASE INCHAR OF
+            'L':  EXIT( CAMPDO);
+            'E':  IF MENUTYPE > 0 THEN
+                    BEGIN
+                      XGOTO := XEQPDSP;
+                      LLBASE04 := CAMPCHAR;
+                      EXIT( CAMP)
+                    END;
+            'R':  BEGIN
+                    XGOTO := XCAMPSTF;
+                    BASE12.GOTOX := XDONE;
+                    LLBASE04 := CAMPCHAR;
+                    EXIT( CAMP)
+                  END;
+            'D':  IF MENUTYPE > 0 THEN
+                    DROPITEM;
+            'G':  IF MENUTYPE > 0 THEN
+                    POOLALLG( CAMPCHAR); (* WC040 POOL GOLD *)
+            'V':  IF MENUTYPE > 0 THEN
+                    DIVALLG( CAMPCHAR); (* WC040 DIVIDE GOLD *)
+            'I':  IF MENUTYPE = 2 THEN
+                    IDENTIFY;
+            'S':  IF MENUTYPE = 2 THEN
+                    CASTSPEL( -1);
+            'U':  IF MENUTYPE = 2 THEN
+                    USEITEM;
+            'T':  DOTRADE
+           END
+        END;  (* CAMPDO *)
+
+
+
+Source disk:	Wiz1C.dsk
+
+File:		CASTLE2.TEXT
+
+Procedures:	PROCEDURE ADVNTINN;  (* P010A0F *)
+		PROCEDURE INNMENU;  (* P010A11 *)
+				
+Code from:
+
+    PROCEDURE ADVNTINN;  (* P010A0F *)
+    
+      CONST
+           STABLES  = 65;
+           COTS     = 66;
+           ECONOMY  = 67;
+           MERCHANT = 68;
+           ROYAL    = 69;
+.
+.
+.
+      PROCEDURE INNMENU;  (* P010A11 *)
+      
+        BEGIN
+          GOTOXY( 0, 13);
+          WRITE( CHR( 11));
+          WRITE( '   WELCOME ');
+          WRITE( CHARACTR[ PARTYX].NAME);
+          WRITELN( '. WE HAVE:');
+          WRITELN;
+          WRITELN(  '[A] THE STABLES (FREE!)');
+          WRITELN(  '[B] COTS. 10 GP/WEEK.');
+          WRITELN(  '[C] ECONOMY ROOMS. 50 GP/WEEK.');
+          WRITELN(  '[D] MERCHANT SUITES. 200 GP/WEEK.');
+          WRITELN(  '[E] ROYAL SUITES. 500 GP/WEEK.');
+          WRITE(    '    OR [RETURN] TO LEAVE')
+        END;
+.
+.
+.
+      BEGIN  (* ADVNTINN *)
+        REPEAT
+          GETWHO;
+          IF CHARACTR[ PARTYX].STATUS = OK THEN
+            REPEAT
+              UNITCLEAR( 1);
+              INNMENU;
+              GOTOXY( 41, 0);
+              GETKEY;
+              CASE ORD( INCHAR) OF
+                 STABLES:  TAKENAP(  0,   0);
+                    COTS:  TAKENAP(  1,  10);
+                 ECONOMY:  TAKENAP(  3,  50);
+                MERCHANT:  TAKENAP(  7, 200);
+                   ROYAL:  TAKENAP( 10, 500);
+              END;
+              CHARINFO( PARTYX)
+            UNTIL (INCHAR = CHR( CRETURN)) OR
+                  (CHARACTR[ PARTYX].STATUS <> OK)
+        UNTIL FALSE
+      END;  (* ADVNTINN *)
+
+
+Code to: 
+
+    PROCEDURE ADVNTINN;  (* P010A0F *)
+    
+      CONST
+           STABLES  = 65;
+           COTS     = 66;
+           ECONOMY  = 67;
+           MERCHANT = 68;
+           ROYAL    = 69;
+           PGOLD    = 71; (* WC040 *)
+.
+.
+.
+      PROCEDURE INNMENU;  (* P010A11 *)
+      
+        BEGIN
+          GOTOXY( 0, 13);
+          WRITE( CHR( 11));
+          WRITE( '   WELCOME ');
+          WRITE( CHARACTR[ PARTYX].NAME);
+          WRITELN( '. WE HAVE:');
+          WRITELN;
+          WRITELN(  '[A] THE STABLES (FREE!)');
+          WRITELN(  '[B] COTS. 10 GP/WEEK.');
+          WRITELN(  '[C] ECONOMY ROOMS. 50 GP/WEEK.');
+          WRITELN(  '[D] MERCHANT SUITES. 200 GP/WEEK.');
+          WRITELN(  '[E] ROYAL SUITES. 500 GP/WEEK.');
+          WRITELN;
+          WRITELN(  '[G] POOL PARTY GOLD.'); (* WC040 *)
+          WRITELN;
+          WRITE(    '    OR [RETURN] TO LEAVE')
+        END;
+.
+.
+.
+      BEGIN  (* ADVNTINN *)
+        REPEAT
+          GETWHO;
+          IF CHARACTR[ PARTYX].STATUS = OK THEN
+            REPEAT
+              UNITCLEAR( 1);
+              INNMENU;
+              GOTOXY( 41, 0);
+              GETKEY;
+              CASE ORD( INCHAR) OF
+                 STABLES:  TAKENAP(  0,   0);
+                    COTS:  TAKENAP(  1,  10);
+                 ECONOMY:  TAKENAP(  3,  50);
+                MERCHANT:  TAKENAP(  7, 200);
+                   ROYAL:  TAKENAP( 10, 500);
+                   PGOLD:  POOLALLG( PARTYX); (* WC040 *)
+              END;
+              CHARINFO( PARTYX)
+            UNTIL (INCHAR = CHR( CRETURN)) OR
+                  (CHARACTR[ PARTYX].STATUS <> OK)
+        UNTIL FALSE
+      END;  (* ADVNTINN *)
+
+
+
+Source disk:	Wiz1B.dsk
+
+File:		SHOPS.TEXT
+
+Procedure:	PROCEDURE DOPLAYER;  (* P01020B *)
+				
+Code from:
+        BEGIN (* DOPLAYER *)
+          REPEAT
+            GOTOXY( 0, 13);
+            WRITE( CHR( 11));
+            WRITE( '      WELCOME ');
+            WRITE(  CHARACTR[ CHARI].NAME);
+            WRITELN;
+            WRITE( '     YOU HAVE ');
+            PRNTLONG( CHARACTR[ CHARI].GOLD);
+            WRITELN( ' GOLD');
+            WRITELN;
+            WRITELN( 'YOU MAY B)UY  AN ITEM,');
+            WRITELN( '        S)ELL AN ITEM, HAVE AN ITEM');
+            WRITELN( '        U)NCURSED,  OR HAVE AN ITEM');
+            WRITELN( '        I)DENTIFIED, OR L)EAVE');
+            GOTOXY( 41, 0);
+            GETKEY;
+                           
+            CASE INCHAR OF
+              'U': SELLIDUN( UNCURSE);
+              'I': SELLIDUN( IDENTIFY);
+              'S': SELLIDUN( SELL);
+              'B': DOBUY;
+              'L': EXIT( DOPLAYER);
+            END
+          UNTIL FALSE
+        END; (* DOPLAYER *)
+
+Code to:
+        BEGIN (* DOPLAYER *)
+          REPEAT
+            GOTOXY( 0, 13);
+            WRITE( CHR( 11));
+            WRITE( '      WELCOME ');
+            WRITE(  CHARACTR[ CHARI].NAME);
+            WRITELN;
+            WRITE( '     YOU HAVE ');
+            PRNTLONG( CHARACTR[ CHARI].GOLD);
+            WRITELN( ' GOLD');
+            WRITELN;
+            WRITELN( 'YOU MAY POOL G)OLD, B)UY  AN ITEM,'); (* WC040 *)
+            WRITELN( '        S)ELL AN ITEM, HAVE AN ITEM');
+            WRITELN( '        U)NCURSED,  OR HAVE AN ITEM');
+            WRITELN( '        I)DENTIFIED, OR L)EAVE');
+            GOTOXY( 41, 0);
+            GETKEY;
+                           
+            CASE INCHAR OF
+              'G': POOLALLG( CHARI); (* WC040 *)
+              'U': SELLIDUN( UNCURSE);
+              'I': SELLIDUN( IDENTIFY);
+              'S': SELLIDUN( SELL);
+              'B': DOBUY;
+              'L': EXIT( DOPLAYER);
+            END
+          UNTIL FALSE
+        END; (* DOPLAYER *)
+
+
+
+Enhancement:	Allow characters to be transferred between scenario disks even if they are carrying quest items.
+------------------------------------
+
+Source disk:	Wiz1E.dsk
+
+File:		WIZUTILC.TEXT
+
+Procedure:	PROCEDURE REMOVCHR;  (* P070118 *)
+				
+Code from:	The code below has been remarked out.
+
+Code to:	
+      (* WC040 REMARKED OUT TO ALLOW TRANSFER OF QUEST ITEMS *)
+      (* PROCEDURE BADITEM; *)  (* P070119 *)
+      
+        (* BEGIN
+          WRITELN;
+          WRITELN( '** CHAR HAS NON-XFERRABLE ITEMS **');
+          PRESSRET;
+          EXIT( TRANSFER)
+        END; *)
+.
+.
+.
+        (* WC040 REMARKED OUT TO ALLOW TRANSFER OF QUEST ITEMS *)
+        (* FOR PLAYERI := 1 TO PLAYREC2.POSS.POSSCNT DO
+          IF PLAYREC2.POSS.POSSESS[ PLAYERI].EQINDEX > 93 THEN
+            BADITEM; *)
+
+
+
+Fix:		On the boot side of Wizardry, there is a Utility to "Make Scenario Disk". An off-by-one error in the code had the top half part of the first monster picture overwritten with junk when making the scenario disk.
+------------------------------------
+
+Source disk:	Wiz1E.dsk
+
+File:		WIZUTILC.TEXT
+
+Procedure:	PROCEDURE MAKESCEN;  (* P07011C *)
+				
+Code from:
+      FOR TEMPI := 0 TO SCNTOC.RECPERDK[ ZCHAR] DO
+        WRCHARAC( CHARREC0, TEMPI);
+
+Code to:
+      (* WC040 FROM 'SCNTOC.RECPERDK[ ZCHAR]' TO
+       'SCNTOC.RECPERDK[ ZCHAR] - 1' *)
+      (* THIS ERROR BY 1 WAS OVERWRITING PART OF THE FIRST MONSTER PICTURE *)
+      FOR TEMPI := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+        WRCHARAC( CHARREC0, TEMPI);
+
+
+
+Update:		Database Update
+-------------------------------
+
+Source disks:	Scenario Disk
+
+Files:		SCENARIO.DATA
+
+From:		Evil Shield +3 armor class 5
+
+To:		Evil Shield +3 armor class 6
+
+
+
+Update:		Release Date
+----------------------------
+
+Source disks:	Wiz1E.dsk
+
+Files:		OPTIONS.TEXT
+
+Procedure:	SEGMENT PROCEDURE OPTIONS;  (* P070301 *)
+				
+Code from:	
+    (* ST001 CHANGE VERSION AND DATE DISPLAY AS NEEDED *)
+    WRITE( '  VERSION 3.0 OF 09-APR-23  SER:');
+    WRITELN( SERIAL);
+
+Code to:
+    (* ST001 CHANGE VERSION AND DATE DISPLAY AS NEEDED *)
+    WRITE( '  VERSION 3.0 OF 03-AUG-23  SER:');
+    WRITELN( SERIAL);
+
+
+
+Final compiled file names:	WIZARDRY.CODE, SYSTEM.STARTUP
+
+Destination disks:		Any Wizardry Proving Grounds boot and scenario disks.
+
+
+

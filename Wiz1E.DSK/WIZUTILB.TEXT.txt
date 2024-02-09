@@ -1,0 +1,400 @@
+SEGMENT PROCEDURE UTILS;  (* P070101 *)
+
+  TYPE
+
+        TSPEL012 = (GENERIC, PERSON, GROUP);
+        
+        TZSCN = (ZZERO, ZMAZE, ZENEMY, ZREWARD, ZOBJECT,
+                 ZCHAR, ZSPCCHRS, ZEXP);
+                   
+        TSCNTOC = RECORD
+            GAMENAME : STRING[ 40];
+            RECPER2B : ARRAY[ ZZERO..ZEXP] OF INTEGER;
+            RECPERDK : ARRAY[ ZZERO..ZEXP] OF INTEGER;
+            UNUSEDXX : ARRAY[ ZZERO..ZEXP] OF INTEGER;
+            BLOFF    : ARRAY[ ZZERO..ZEXP] OF INTEGER;
+            RACE     : ARRAY[ NORACE..HOBBIT]         OF STRING[ 9];
+            CLASS    : PACKED ARRAY[ FIGHTER..NINJA]  OF STRING[ 9];
+            STATUS   : ARRAY[ OK..LOST]               OF STRING[ 8];
+            ALIGN    : PACKED ARRAY[ UNALIGN..EVIL]   OF STRING[ 9];
+            SPELLHSH : PACKED ARRAY[ 0..50] OF INTEGER;
+            SPELLGRP : PACKED ARRAY[ 0..50] OF 0..7;
+            SPELL012 : PACKED ARRAY[ 0..50] OF TSPEL012;
+          END;
+
+  VAR
+  
+       IOCACHE  : PACKED ARRAY[ 0..1023] OF CHAR;
+       UNUSEDXX : INTEGER;
+       CACHEBL  : INTEGER;
+       SCNTOCBL : INTEGER;
+       RANDNUM  : INTEGER;
+       CACHEWRI : BOOLEAN;
+       SCNTOC   : TSCNTOC;
+    
+    
+    FUNCTION GETREC( DATATYPE : TZSCN;              (* P070102 *)
+                     DATAINDX : INTEGER;
+                     DATASIZE : INTEGER) : INTEGER;
+                      
+      VAR
+           BUFFADDR : INTEGER;
+           DSKBLOCK : INTEGER;
+           
+      BEGIN
+        DSKBLOCK := SCNTOC.BLOFF[ DATATYPE] +
+                    2 * (DATAINDX DIV SCNTOC.RECPER2B[ DATATYPE]);
+        BUFFADDR := DATASIZE * (DATAINDX MOD SCNTOC.RECPER2B[ DATATYPE]);
+        IF CACHEBL <> DSKBLOCK THEN
+          BEGIN
+            IF CACHEWRI THEN
+              UNITWRITE( DRIVE1, IOCACHE, SIZEOF( IOCACHE),
+                         CACHEBL + SCNTOCBL, 0);
+            CACHEWRI := FALSE;
+            CACHEBL := DSKBLOCK;
+            UNITREAD( DRIVE1, IOCACHE, SIZEOF( IOCACHE),
+                      CACHEBL + SCNTOCBL, 0)
+          END;
+        GETREC := BUFFADDR
+      END;
+        
+        
+  FUNCTION PUTREC( DATATYPE : TZSCN;             (* P070103 *)
+                   DATAINDX : INTEGER;
+                   DATASIZE : INTEGER) : INTEGER;
+                   
+    VAR
+         BUFFADDR : INTEGER;
+         DSKBLOCK : INTEGER;
+                    
+    BEGIN
+        DSKBLOCK := SCNTOC.BLOFF[ DATATYPE] +
+                    2 * (DATAINDX DIV SCNTOC.RECPER2B[ DATATYPE]);
+        BUFFADDR := DATASIZE * (DATAINDX MOD SCNTOC.RECPER2B[ DATATYPE]);
+        IF CACHEBL <> DSKBLOCK THEN
+          BEGIN
+            IF CACHEWRI THEN
+              UNITWRITE( DRIVE1, IOCACHE, SIZEOF( IOCACHE),
+                         CACHEBL + SCNTOCBL, 0);
+            CACHEBL := DSKBLOCK;
+            UNITREAD( DRIVE1, IOCACHE, SIZEOF( IOCACHE),
+                      CACHEBL + SCNTOCBL, 0)
+          END;
+        CACHEWRI := TRUE;
+        PUTREC := BUFFADDR
+    END;
+  
+  
+  PROCEDURE GETKEY;  (* P070104 *)
+  
+    BEGIN
+      READ( INCHAR);
+      IF EOLN THEN
+        INCHAR := CHR( 13);
+      RANDNUM := (RANDNUM + ORD( INCHAR)) MOD 1027
+      (* NOTE:  RANDNUM IS GARBAGE WHEN THIS IS FIRST CALLED *)
+    END;
+    
+    
+  FUNCTION FINDFILE( DRIVE    : INTEGER;             (*  P070105 *)
+                     FILENAME : STRING) : INTEGER;
+                    
+    VAR
+         DIR      : ARRAY[ 0..12] OF DIRENTRY;
+         FILEIFND : INTEGER;
+         FILEI    : INTEGER;
+         FILECNT  : INTEGER;
+
+    BEGIN
+      UNITREAD( DRIVE, IOCACHE, SIZEOF( IOCACHE), WIZDIRBL, 0);
+      IF IORESULT <> 0 THEN
+          FINDFILE := -ABS( IORESULT)    (* THIS IS A BUG *)
+      ELSE
+        BEGIN
+          MOVELEFT( IOCACHE, DIR, SIZEOF( DIR)); 
+          IF (DIR[ 0].FILECNT < 0) OR (DIR[ 0].FILECNT > 8) THEN
+            BEGIN
+              FINDFILE := -1;
+              EXIT( FINDFILE)
+            END;
+          FILEIFND := 0;
+          FILEI := 1;
+          FILECNT := DIR[ 0].FILECNT;
+          WHILE FILEI <= FILECNT DO
+            BEGIN
+              IF (DIR[ FILEI].FILEKIND.FT >= BADBLK) AND
+                 (DIR[ FILEI].FILEKIND.FT <= FOTOFILE)    THEN
+                BEGIN
+                  IF DIR[ FILEI].FILENAME = FILENAME THEN
+                    FILEIFND := FILEI
+                END;
+              FILEI := FILEI + 1;
+            END;
+          IF FILEIFND = 0 THEN
+            FINDFILE := -9
+          ELSE
+            FINDFILE := DIR[ FILEIFND].FIRSTBLK
+        END
+      END;
+    
+    
+  PROCEDURE GETCR;  (* P070106 *)
+  
+    BEGIN
+      REPEAT
+        GOTOXY( 41, 0);
+        GETKEY
+      UNTIL INCHAR = CHR( CR)
+    END;
+  
+  
+  PROCEDURE EXITUTIL;  (* P070107 *)
+  
+    VAR
+        FILEINDX : INTEGER;
+        
+    BEGIN
+      FILEINDX := FINDFILE( DRIVE1, 'SYSTEM.PASCAL');
+      WHILE FILEINDX <= 0 DO
+        BEGIN
+          WRITE( CHR( HOMECLR));
+          GOTOXY( 0, 10);
+          WRITE( 'PLACE BOOT DISK IN DRIVE 1, PRESS RETURN');
+          GETCR;
+          FILEINDX := FINDFILE( DRIVE1, 'SYSTEM.PASCAL')
+        END;
+      EXIT( UTILS)
+    END;
+
+
+  PROCEDURE RDSCNTC2;  (* P070108 *)
+  
+    BEGIN
+      CACHEWRI := FALSE;
+      CACHEBL := 0;
+      UNITREAD( DRIVE1, IOCACHE, SIZEOF( IOCACHE), SCNTOCBL);
+      MOVELEFT( IOCACHE, SCNTOC, SIZEOF( SCNTOC))
+    END;
+  
+  
+  PROCEDURE RDSCNTOC( MSG : STRING);  (* P070109 *)
+  
+    VAR
+        UNUSEDXX : INTEGER;
+  
+    BEGIN
+      REPEAT
+        WRITE( CHR( HOMECLR));
+        GOTOXY( 20 - LENGTH( MSG) DIV 2, 8);
+        WRITE( MSG);
+        GOTOXY( 0, 10);
+        WRITE( 'PLACE SCENARIO IN DRIVE 1, PRESS RETURN');
+        UNITCLEAR( 1);
+        GETCR;
+        SCNTOCBL := FINDFILE( DRIVE1, 'SCENARIO.DATA')
+      UNTIL (SCNTOCBL >= 0);
+      RDSCNTC2
+    END;
+  
+  
+  PROCEDURE GETPASS( VAR PASSWD : STRING );  (* P07010A *)
+  
+    VAR
+         UNUSEDXX : INTEGER;
+         I        : INTEGER;
+         PASSI    : INTEGER;
+         
+    BEGIN
+      PASSI := 0;
+      REPEAT
+        GETKEY;
+        IF INCHAR <> CHR( CR) THEN
+          BEGIN
+            WRITE( CHR( BS));
+            FOR I := 0 TO RANDNUM MOD 2 DO
+              WRITE( 'X')
+          END;
+        PASSI := PASSI + 1;
+        PASSWD[ PASSI] := INCHAR
+      UNTIL (INCHAR = CHR( CR)) OR (PASSI = 15);
+      WRITELN;
+      PASSWD[ 0] := CHR( PASSI - 1)
+    END;
+  
+  
+  PROCEDURE RDCHARAC( VAR CHARREC : TCHAR; CHARINDX : INTEGER);  (* P07010B *)
+  
+    BEGIN
+      MOVELEFT( IOCACHE[ GETREC( ZCHAR, CHARINDX, SIZEOF( CHARREC))],
+                CHARREC,
+                SIZEOF( CHARREC)) 
+    END;
+  
+  
+  PROCEDURE WRCHARAC( VAR CHARREC : TCHAR; CHARINDX : INTEGER);  (* P07010C *)
+  
+    BEGIN
+      MOVELEFT( CHARREC,
+                IOCACHE[ PUTREC(  ZCHAR, CHARINDX, SIZEOF( CHARREC))], 
+                SIZEOF( CHARREC)) 
+    END;
+    
+    
+  PROCEDURE WRICACHE;  (* P07010D *)
+  
+    BEGIN
+      UNITWRITE( DRIVE1, IOCACHE, SIZEOF( IOCACHE), (CACHEBL + SCNTOCBL), 0);
+      CACHEWRI := FALSE
+    END;
+    
+    
+  PROCEDURE PRESSRET;  (* P07010E *)
+  
+    BEGIN
+      WRITELN;
+      WRITE( 'PRESS [RET]' :25);
+      GETCR
+    END;
+    
+    
+  PROCEDURE TITLESCR( TITLESTR : STRING);    (* P07010F *)
+  
+    VAR
+        I : INTEGER;
+        
+    BEGIN
+      WRITE( CHR( HOMECLR));
+      WRITELN( TITLESTR : (20 + LENGTH( TITLESTR) DIV 2));
+      FOR I := 1 TO 40 DO 
+        WRITE( '-');
+      WRITELN;
+      WRITELN
+    END;
+    
+    
+  FUNCTION  RTNESC( TITLESTR : STRING;             (* P070110 *)
+                    TITLE2ST : STRING) : BOOLEAN;
+  
+    BEGIN
+      TITLESCR( TITLESTR);
+      WRITELN( TITLE2ST : (20 + LENGTH( TITLE2ST) DIV 2));
+      WRITELN;
+      WRITE( ' PRESS [RET] TO BEGIN OR [ESC] TO EXIT');
+      REPEAT
+        GOTOXY( 41, 0);
+        GETKEY;
+        IF INCHAR = CHR( CR) THEN
+          BEGIN
+            RTNESC := FALSE;
+            EXIT( RTNESC)
+          END
+        ELSE
+          BEGIN
+            IF INCHAR = CHR( ESC) THEN
+              BEGIN
+                RTNESC := TRUE;
+                EXIT( RTNESC)
+              END
+          END
+      UNTIL FALSE
+    END;
+    
+    
+  PROCEDURE CHGNAMES;  (* P070111 *)
+  
+    VAR
+        PASSWD   : STRING[ 40];
+        TONAME   : STRING[ 40];
+        FROMNAME : STRING[ 40];
+        X        : INTEGER;
+        CHARINDX : INTEGER;
+        BADSTUFF : BOOLEAN;
+        PLAYREC  : TCHAR;
+        
+        
+    PROCEDURE GETNAME( VAR CHARNAME : STRING;  (* P070112 *)
+                           VERT4SOL : INTEGER;
+                           PROMPT   : STRING);
+                           
+      BEGIN
+        REPEAT
+          REPEAT
+            REPEAT
+              GOTOXY( 0, VERT4SOL);
+              WRITE( CHR( VT));
+              WRITE( PROMPT);
+              READLN( CHARNAME)
+            UNTIL LENGTH( CHARNAME) <= 15;
+            IF CHARNAME = '' THEN
+              EXIT( CHGNAMES)
+          UNTIL LENGTH( CHARNAME) > 0;
+          
+          BADSTUFF := FALSE;
+          FOR X := 1 TO LENGTH( CHARNAME) DO
+            BADSTUFF := BADSTUFF OR 
+                        (CHARNAME[ X] < ' ') OR (CHARNAME[ X] > '_')
+        UNTIL NOT BADSTUFF
+      END;
+    
+  
+    BEGIN (* CHGNAMES *)
+      IF RTNESC( 'NAME CHANGE', '') THEN
+        EXIT( CHGNAMES);
+      RDSCNTOC( 'NAME CHANGE');
+      
+      REPEAT
+        TITLESCR( 'NAME CHANGE');
+        WRITELN( 'ENTER THE CURRENT NAME OF  THE CHAR');
+        WRITELN( '& THEN THE NEW NAME. OR PRESS [RET]');
+        WRITELN( 'TO EXIT.');
+        GETNAME( FROMNAME, 10, 'FROM NAME >');
+        GETNAME( TONAME, 12, ' TO  NAME >');
+        WRITELN;
+        WRITELN;
+        IF TONAME <> '' THEN
+          BEGIN
+            BADSTUFF := FALSE;
+            FOR CHARINDX := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+              BEGIN
+                RDCHARAC( PLAYREC, CHARINDX);
+                IF (PLAYREC.NAME = TONAME) AND (PLAYREC.STATUS <> LOST) THEN
+                  BEGIN
+                    WRITELN( 'NAME ALREADY IN USE');
+                    BADSTUFF := TRUE
+                  END
+              END;
+              
+            IF NOT BADSTUFF THEN
+              BEGIN
+                X := -1;
+                FOR CHARINDX := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+                  BEGIN
+                    RDCHARAC( PLAYREC, CHARINDX);
+                    IF PLAYREC.NAME = FROMNAME THEN
+                      X := CHARINDX
+                  END;
+                  
+                IF X = -1 THEN
+                  WRITELN( 'CANT FIND CHAR')
+                ELSE
+                  BEGIN
+                    RDCHARAC( PLAYREC, X);
+                    WRITE( 'PASSWORD >');
+                    GETPASS( PASSWD);
+                    WRITELN;
+                    IF PASSWD <> PLAYREC.PASSWORD THEN
+                      WRITELN( 'PASSWORDS DO NOT MATCH')
+                    ELSE
+                      BEGIN
+                        PLAYREC.NAME := TONAME;
+                        WRCHARAC( PLAYREC, X);
+                        WRICACHE;
+                        WRITELN( 'NAME CHANGED!')
+                      END
+                  END
+              END;
+            PRESSRET
+          END
+      UNTIL FALSE
+    END;  (* CHGNAMES *)
+    

@@ -1,0 +1,570 @@
+  (* VERSION DATE         : 05 FEB 2024 *)
+  (* ENHANCEMENTS AND FIX : WC040, WC041 *)
+  
+  PROCEDURE BACKUP;  (* P070113 *)
+               
+    VAR
+         PLAY20BF : ARRAY[ 0..19] OF TCHAR;
+         SERIALBU : STRING[ 7];
+         SERIALXX : STRING[ 7];
+         UNUSEDXX : INTEGER;
+         CHARINDX : INTEGER;
+  
+  
+    PROCEDURE FRBACKUP;  (* P070114 *)
+    
+      BEGIN
+        WRITE( CHR( HOMECLR));
+        WRITELN( 'PLACE BACKUP DISKETTE IN DRIVE 1,');
+        PRESSRET;
+        WRITE( CHR( HOMECLR));
+        FOR CHARINDX := 0 TO 19 DO
+          BEGIN
+            GOTOXY( 20 * (CHARINDX MOD 2), CHARINDX DIV 2);
+            UNITREAD( DRIVE1, PLAY20BF[ CHARINDX], SIZEOF( TCHAR),
+                      CHARINDX, 0);
+            IF PLAY20BF[ CHARINDX].STATUS <> LOST THEN
+              WRITE( PLAY20BF[ CHARINDX].NAME)
+          END;
+          
+        UNITREAD( DRIVE1, SERIALBU, 7, 20, 0);
+        GOTOXY( 0, 20);
+        WRITE( CHR( VT));
+        WRITE( 'RECOVER THESE (Y/N) ? >');
+        REPEAT
+          GOTOXY (41, 0);
+          GETKEY;
+          IF INCHAR = 'N' THEN
+            EXIT( BACKUP)
+        UNTIL INCHAR = 'Y';
+        
+        RDSCNTOC( 'SCENARIO TO RECOVER TO');
+        UNITREAD( DRIVE1, SERIALXX, 7, SERIALBL, 0);
+        IF SERIALXX <> SERIALBU THEN
+          BEGIN
+            TITLESCR( 'CANT RECOVER ONTO DIFFERENT SCENARIO');
+            WRITELN( 'SCENARIO MUST BE MADE OFF SAME MASTER');
+            WRITELN( 'AS THE SCENARIO THE BACKUP WAS MADE');
+            WRITELN( 'FROM.');
+            PRESSRET;
+            EXIT( BACKUP)
+          END;
+          
+        TITLESCR( 'SAVING CHARS');
+        FOR CHARINDX := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+          WRCHARAC( PLAY20BF[ CHARINDX], CHARINDX);
+        WRICACHE;
+        TITLESCR( 'BACKUP RECOVERED');
+        PRESSRET
+      END;
+      
+      
+    PROCEDURE TOBACKUP;  (* P070115 *)
+    
+      BEGIN
+        RDSCNTOC( 'MAKING BACKUP');
+        UNITREAD( DRIVE1, SERIALXX, 7, SERIALBL, 0);
+        TITLESCR( 'LOADING CHARS');
+        FOR CHARINDX := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+          RDCHARAC( PLAY20BF[ CHARINDX], CHARINDX);
+        WRITELN( 'LOADED! NOW PLACE A FORMATTED DISKETTE');
+        WRITELN( 'IN DRIVE 1 AND PRESS [RETURN] TO SAVE.');
+        WRITELN;
+        GOTOXY( 41, 0);
+        GETCR;
+        
+        IF FINDFILE( DRIVE1, 'WIZARDRY.CODE') >= 0 THEN
+          BEGIN
+            TITLESCR( 'CANT BACKUP ONTO A WIZARDRY DISK!');
+            PRESSRET;
+            EXIT( TOBACKUP)
+          END;
+          
+        FOR CHARINDX := 0 TO SCNTOC.RECPERDK[ ZCHAR] -1 DO
+          UNITWRITE( DRIVE1, PLAY20BF[ CHARINDX], SIZEOF( TCHAR),
+                     CHARINDX, 0);
+        UNITWRITE( DRIVE1, SERIALXX,  7, 20, 0);
+        TITLESCR( 'BACKUP MADE');
+        PRESSRET
+      END;
+
+
+    BEGIN  (* BACKUP *)
+      IF RTNESC( 'CHAR BACKUP', '(INCOMPATIBLE WITH PREVIOUS VERSION)') THEN
+        EXIT( BACKUP);
+      TITLESCR( 'CHAR BACKUP');
+      WRITELN;
+      WRITE( 'T)O OR F)ROM BACKUP' :30);
+      GOTOXY( 41, 0);
+      GETKEY;
+      IF INCHAR = 'T' THEN
+        TOBACKUP
+      ELSE IF INCHAR = 'F' THEN
+        FRBACKUP
+    END;
+    
+    
+  PROCEDURE RECOVER;  (* P070116 *)
+  
+    VAR
+         CHARREC  : TCHAR;
+         CHARINDX : INTEGER;
+         UNUSEDXX : ARRAY[ 0..1] OF INTEGER;
+  
+    BEGIN;
+      IF RTNESC( 'CHAR RECOVERY', 'NO 10 YEAR PENALTY') THEN
+        EXIT( RECOVER);
+      RDSCNTOC( 'INSERT SCENARIO WITH "OUT" CHARS');
+      WRITE( CHR( HOMECLR));
+      WRITELN( 'RECOVERING');
+      WRITELN;
+      
+      FOR CHARINDX := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+        BEGIN
+          RDCHARAC( CHARREC, CHARINDX);
+          IF CHARREC.INMAZE THEN
+            BEGIN
+              CHARREC.INMAZE := FALSE;
+              WRCHARAC( CHARREC, CHARINDX);
+              WRITE( CHARREC.NAME);
+              WRITELN( ' SAVED');
+            END
+        END;
+      WRICACHE;
+      PRESSRET
+    END;
+    
+    
+  PROCEDURE TRANSFER;  (* P070117 *)
+  
+    VAR
+         PLAYREC1 : TCHAR;
+         PLAYREC2 : TCHAR;
+         PLAYFRMI : INTEGER;
+         PLAYINDX : INTEGER;
+         MPD3     : CHAR;
+         FRMRNDID : CHAR;
+         FRMGAMNM : STRING;
+         BL5BUFF  : PACKED ARRAY[ 0..511] OF CHAR;
+         SERIALTO : STRING[ 7];
+         SERIALFR : STRING[ 7];
+         
+         
+    PROCEDURE REMOVCHR;  (* P070118 *)
+    
+      VAR
+           PASSFROM : STRING;
+           UNUSEDXX : INTEGER;
+           PLAYERI  : INTEGER;
+           
+      
+      PROCEDURE BADITEM;  (* P070119 *)
+      
+        BEGIN
+          WRITELN;
+          WRITELN( '** CHAR HAS NON-XFERRABLE ITEMS **');
+          PRESSRET;
+          EXIT( TRANSFER)
+        END;
+        
+        
+      BEGIN
+        REPEAT
+          WRITE( CHR( HOMECLR));
+          WRITE( SCNTOC.GAMENAME :
+                                (20 + (LENGTH( SCNTOC.GAMENAME) DIV 2)));
+          FOR PLAYERI := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+            BEGIN
+              GOTOXY( 20 * (PLAYERI MOD 2), 2 + (PLAYERI DIV 2));
+              RDCHARAC( PLAYREC2, PLAYERI);
+              IF PLAYREC2.STATUS = OK THEN
+                BEGIN
+                  WRITE( CHR( ORD('A') + PLAYERI));
+                  WRITE( ' - ');
+                  WRITE( PLAYREC2.NAME)
+                END
+            END;
+          
+          REPEAT
+            REPEAT
+              GOTOXY( 0, 18);
+              WRITELN( 'NOTE - CHARS MUST BE LIVE & IN CASTLE');
+              WRITELN;
+              WRITELN( 'ENTER LETTER OF CHAR TO MOVE, OR');
+              WRITE(   'OR PRESS [RETURN] TO EXIT');
+              GOTOXY( 41, 0);
+              GETKEY;
+              IF INCHAR = CHR( CR) THEN
+                EXIT( TRANSFER);
+              PLAYINDX := ORD( INCHAR) - ORD('A')
+            UNTIL (PLAYINDX >= 0) AND (PLAYINDX < SCNTOC.RECPERDK[ ZCHAR]);
+            RDCHARAC( PLAYREC2, PLAYINDX)
+          UNTIL PLAYREC2.STATUS = OK;
+          
+          WRITE( CHR( HOMECLR));
+          WRITE( 'MOVING ');
+          WRITELN( PLAYREC2.NAME);
+          WRITELN;
+          WRITE( 'PASSWORD >');
+          GETPASS( PASSFROM)
+        UNTIL PASSFROM = PLAYREC2.PASSWORD;
+        
+        FOR PLAYERI := 1 TO PLAYREC2.POSS.POSSCNT DO
+          IF PLAYREC2.POSS.POSSESS[ PLAYERI].EQINDEX > 93 THEN
+            BADITEM;
+        
+        PLAYREC1 := PLAYREC2;
+        PLAYREC1.STATUS := LOST;
+        WRCHARAC( PLAYREC1, PLAYINDX);
+        WRICACHE
+      END;  (* REMOVCHR *)
+      
+      
+    PROCEDURE TRANBAD;  (* P07011A *)
+    
+      BEGIN
+        REPEAT
+          REPEAT
+            IF (MPD3 = BL5BUFF[ 10]) AND
+               (SERIALFR = SERIALTO)     THEN
+              RDSCNTOC( 'CANT COPY TO BACKUP - PUT IN SOURCE')
+            ELSE IF (PLAYINDX = -1) THEN
+              RDSCNTOC( 'DUPLICATE NAME - PUT IN SOURCE')
+            ELSE
+              RDSCNTOC( 'ALL SLOTS USED - PUT IN SOURCE');
+            UNITREAD( DRIVE1, BL5BUFF, SIZEOF( BL5BUFF), SERIALBL, 0)
+          UNTIL (SCNTOC.GAMENAME = FRMGAMNM) AND (FRMRNDID = BL5BUFF[ 12]);
+          RDCHARAC( PLAYREC1, PLAYFRMI)
+        UNTIL PLAYREC1.NAME = PLAYREC2.NAME;
+        WRCHARAC( PLAYREC2, PLAYFRMI);
+        WRICACHE;
+        TITLESCR( 'CHAR HAS BEEN PUT BACK.');
+        PRESSRET
+      END;
+      
+      
+    PROCEDURE TRANGOOD;  (* P07011B *)
+    
+      BEGIN
+        WRCHARAC( PLAYREC2, PLAYINDX);
+        WRICACHE;
+        TITLESCR( 'CHAR HAS BEEN MOVED');
+        PRESSRET
+      END;
+         
+         
+    BEGIN  (* TRANSFER *)
+      IF RTNESC( 'MOVE CHARS BETWEEN SCENARIOS', '') THEN
+        EXIT( TRANSFER);
+      RDSCNTOC( 'INSERT SCENARIO WITH CHAR(S) TO BE MOVED');
+      UNITREAD( DRIVE1, BL5BUFF, SIZEOF( BL5BUFF), SERIALBL, 0);
+      MPD3 := BL5BUFF[ 10];
+      MOVELEFT( BL5BUFF, SERIALFR, 7);
+      BL5BUFF[ 12] := CHR( (ORD( BL5BUFF[ 12]) + RANDNUM) MOD 256);
+      UNITWRITE( DRIVE1, BL5BUFF, SIZEOF( BL5BUFF), SERIALBL, 0);
+      FRMRNDID := BL5BUFF[ 12];
+      REMOVCHR;
+      PLAYFRMI := PLAYINDX;
+      FRMGAMNM := SCNTOC.GAMENAME;
+      RDSCNTOC( 'INSERT SCENARIO TO MOVE CHAR(S) TO');
+      UNITREAD( DRIVE1, BL5BUFF, SIZEOF( BL5BUFF), SERIALBL, 0);
+      MOVELEFT( BL5BUFF, SERIALTO, 7);
+      PLAYINDX := SCNTOC.RECPERDK[ ZCHAR];
+      
+      IF (MPD3 <> BL5BUFF[ 10]) OR
+         (SERIALFR <> SERIALTO)    THEN
+         BEGIN
+           FOR BASE04 := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+             BEGIN
+               RDCHARAC( PLAYREC1, BASE04);
+               IF (PLAYREC1.NAME = PLAYREC2.NAME) AND
+                  (PLAYREC1.STATUS <> LOST) THEN
+                 PLAYINDX := -1
+               ELSE
+                 IF PLAYINDX = SCNTOC.RECPERDK[ ZCHAR] THEN
+                   IF PLAYREC1.STATUS = LOST THEN
+                     PLAYINDX := BASE04
+             END;
+         END;
+      
+      IF (PLAYINDX = -1) OR
+         (PLAYINDX = SCNTOC.RECPERDK[ ZCHAR]) THEN
+         TRANBAD
+      ELSE
+         TRANGOOD
+    END;  (* TRANSFER *)
+    
+    
+  PROCEDURE MAKESCEN;  (* P07011C *)
+      
+    VAR
+         UNUSED   : INTEGER;
+         DUPIDX   : INTEGER;
+         TEMPI    : INTEGER; (* MULTIPLE USES *)
+         CHARREC0 : TCHAR;
+         IOCACHE2 : PACKED ARRAY [ 0..3071] OF CHAR;
+         SERBUFF  : PACKED ARRAY [ 0..511] OF CHAR;
+      
+      
+    PROCEDURE EXITMAKE( ERRMSG : STRING);  (* P07011D *)
+    
+      BEGIN
+        TITLESCR( 'ERROR MAKING SCENARIO');
+        WRITELN( ERRMSG: (20 + LENGTH( ERRMSG) DIV 2) );
+        PRESSRET;
+        EXIT( MAKESCEN)
+      END;  (* EXITMAKE *)
+      
+      
+    PROCEDURE DSKERROR;  (* P07011E *)
+    
+      BEGIN
+        EXITMAKE( 'DISK ERROR')
+      END;
+      
+      
+    PROCEDURE NOTSCEN; (* P07011F *)
+    
+      BEGIN
+        EXITMAKE( 'NOT SCENARIO DISK')
+      END;
+      
+      
+    BEGIN (* MAKESCEN *)
+      IF RTNESC( 'MAKE NEW SCENARIO DISKETTE', '') THEN
+        EXIT( MAKESCEN);
+      TITLESCR( 'MAKE NEW SCENARIO DISKETTE');
+      WRITELN( 'PLACE ORIGINAL MASTER SCENARIO SIDE IN');
+      WRITELN( 'DRIVE 2,  AND A  FORMATTED DISKETTE IN');
+      WRITELN( 'DRIVE 1.');
+      WRITELN;
+      WRITELN( 'REMEMBER : ORIGINAL=2, NEW=1');
+      PRESSRET;
+      TITLESCR( 'MAKING SCENARIO - DO NOT DISTURB');
+      SCNTOCBL := FINDFILE( DRIVE2, 'SCENARIO.DATA');
+      IF SCNTOCBL < 0 THEN
+        NOTSCEN;
+      UNITREAD( DRIVE2, SERBUFF, SIZEOF( SERBUFF), SERIALBL, 0);
+      IF IORESULT <> 0 THEN
+        DSKERROR;
+      IF SERBUFF[ 10] <> CHR( 0) THEN
+        EXITMAKE( 'NOT MASTER IN 2');
+      DUPIDX := ORD( SERBUFF[ 11]) + 1;
+      IF DUPIDX = 256 THEN
+        DUPIDX := 1;
+      SERBUFF[ 11] := CHR( DUPIDX);
+      UNITWRITE( DRIVE2, SERBUFF, SIZEOF( SERBUFF), SERIALBL, 0);
+      IF IORESULT <> 0 THEN
+        DSKERROR;
+      FOR TEMPI := 0 TO 34 DO
+        BEGIN
+          UNITREAD( DRIVE2, IOCACHE, SIZEOF( IOCACHE), 8 * TEMPI, 0);
+          IF IORESULT <> 0 THEN
+            DSKERROR;
+          UNITREAD( DRIVE2, IOCACHE2[ 0], SIZEOF( IOCACHE2),
+                      8 * TEMPI + 2, 0);
+          IF IORESULT <> 0 THEN
+            DSKERROR;
+          UNITWRITE( DRIVE1, IOCACHE, SIZEOF( IOCACHE), 8 * TEMPI, 0);
+          IF IORESULT <> 0 THEN
+            DSKERROR;
+          UNITWRITE( DRIVE1, IOCACHE2[ 0], SIZEOF( IOCACHE2),
+                       8 * TEMPI + 2, 0);
+          IF IORESULT <> 0 THEN
+            DSKERROR;
+        END;
+        
+      SERBUFF[ 10] := SERBUFF[ 11];
+      SERBUFF[ 11] := CHR( 0);
+      SERBUFF[ 12] := CHR( (ORD( SERBUFF[ 12]) +  RANDNUM) MOD 256 );
+      
+      UNITWRITE( DRIVE1, SERBUFF, SIZEOF( SERBUFF), SERIALBL, 0);
+      IF IORESULT <> 0 THEN
+        DSKERROR;
+      SCNTOCBL := FINDFILE( DRIVE1, 'SCENARIO.DATA');
+      IF SCNTOCBL < 0 THEN
+        NOTSCEN;
+      RDSCNTC2;
+      CHARREC0.STATUS := LOST;
+      (* WC040 FROM 'SCNTOC.RECPERDK[ ZCHAR]' TO
+       'SCNTOC.RECPERDK[ ZCHAR] - 1' *)
+      (* THIS ERROR BY 1 WAS OVERWRITING PART OF THE FIRST MONSTER PICTURE *)
+      FOR TEMPI := 0 TO SCNTOC.RECPERDK[ ZCHAR] - 1 DO
+        WRCHARAC( CHARREC0, TEMPI);
+      WRICACHE;
+      TITLESCR( 'MADE');
+      PRESSRET
+    END;
+    
+    
+  PROCEDURE UPDATDSK;  (* P070120 *)
+  
+    VAR
+        UNUSED  : INTEGER;
+        TEMPI   : INTEGER;                  (* MULTIPLE USES *)
+        CHARS20 : ARRAY [ 0..19] OF TCHAR;
+        SERNUM  : STRING[ 6];               (* EVER USED PROPERLY? *)
+        UNUSED2 : PACKED ARRAY [0..38] OF CHAR;
+        IOBUF   : PACKED ARRAY [ 0..511] OF CHAR;
+        BUF6BLK : PACKED ARRAY [ 0..3071] OF CHAR;
+        
+        
+    PROCEDURE EXITUPD;  (* P070121 *)
+    
+      BEGIN
+        TITLESCR( 'ERROR DURING UPDATE');
+        WRITELN( 'UPDATE ABORTED' :27);
+        PRESSRET;
+        EXIT( UPDATDSK)
+      END;
+    
+    
+    PROCEDURE COPYDSK;  (* P070122 *)
+    
+      (* COPY ALL OF DISK FROM DRIVE 2 TO DRIVE 1,
+         EXCEPT FOR THE SERIAL BLOCK (#5)          *)
+    
+    
+      PROCEDURE COPYTRCK( BLOCKNUM : INTEGER);  (* P070123 *)
+      
+        BEGIN
+          UNITREAD( DRIVE2, IOCACHE, SIZEOF( IOCACHE), BLOCKNUM, 0);
+          IF IORESULT <> 0 THEN
+            EXITUPD;
+          UNITREAD( DRIVE2, BUF6BLK, SIZEOF( BUF6BLK), BLOCKNUM + 2, 0);
+          IF IORESULT <> 0 THEN
+            EXITUPD;
+          UNITWRITE( DRIVE1, IOCACHE, SIZEOF( IOCACHE), BLOCKNUM, 0);
+          IF IORESULT <> 0 THEN
+            EXITUPD;
+          UNITWRITE( DRIVE1, BUF6BLK, SIZEOF( BUF6BLK), BLOCKNUM + 2, 0);
+          IF IORESULT <> 0 THEN
+            EXITUPD
+        END;
+        
+        
+      BEGIN (* COPYDSK *)
+        TITLESCR( 'UPDATING');
+        UNITREAD( DRIVE2, BUF6BLK, 5 * 512, 0, 0);
+        IF IORESULT <> 0 THEN
+          EXITUPD;
+        UNITWRITE( DRIVE1, BUF6BLK, 5 * 512, 0, 0);
+        IF IORESULT <> 0 THEN
+          EXITUPD;
+          
+        (* SKIP BLOCK 5, THE SERIAL BLOCK *)
+          
+        UNITREAD( DRIVE2, BUF6BLK, 1024, 6, 0);
+        IF IORESULT <> 0 THEN
+          EXITUPD;
+        UNITWRITE( DRIVE1, BUF6BLK, 1024, 6, 0);
+        IF IORESULT <> 0 THEN
+          EXITUPD;
+        FOR TEMPI := 1 TO 34 DO
+            COPYTRCK( 8 * TEMPI)
+      END;
+      
+      
+    PROCEDURE UPDINSTR;  (* P070124 *)
+    
+      BEGIN
+        IF RTNESC( 'UPDATE DISK', 
+                   'WARNING - FOLLOW DIRECTIONS CAREFULLY') THEN
+          EXIT( UPDATDSK);
+        TITLESCR( 'STEP 1 - UPDATE BOOT SIDE');
+        WRITELN( 'PUNCH WRITE-PROTECT NOTCH ON BOOT SIDE');
+        WRITELN( 'OF OLD DISKETTE.');
+        WRITELN;
+        WRITELN( 'PLACE NEW BOOT SIDE IN DRIVE 2');
+        WRITELN( '      OLD BOOT SIDE IN DRIVE 1');
+        WRITELN;
+        WRITELN( 'BE SURE : NEW=2, OLD=1; COPY 2 -> 1!');
+        WRITELN;
+        PRESSRET
+      END;
+      
+      
+    BEGIN (* UPDATDSK *)
+      UPDINSTR;
+      COPYDSK;
+      UNITREAD( DRIVE1, IOBUF, SIZEOF( IOBUF), SERIALBL, 0);
+      IF IORESULT <> 0 THEN
+        EXITUPD;
+      MOVELEFT( IOBUF, SERNUM, 7);
+      IOBUF[ 10] := CHR( 0);
+      IOBUF[ 11] := CHR( 1);
+      IOBUF[ 12] := CHR( RANDNUM);
+      UNITWRITE( DRIVE1, IOBUF, SIZEOF( IOBUF), SERIALBL, 0);
+      IF IORESULT <> 0 THEN
+        EXITUPD;
+      REPEAT
+        TITLESCR( 'STEP 2 - UPDATE SCENARIO SIDE');
+        WRITELN( 'NOW FLIP BOTH DISKETTES SO WE CAN COPY');
+        WRITELN( 'SCENARIO SIDES.');
+        PRESSRET;
+        SCNTOCBL := FINDFILE( DRIVE1, 'SCENARIO.DATA')
+      UNTIL SCNTOCBL >= 0;
+      RDSCNTC2;
+      FOR TEMPI := 0 TO 19 DO
+        RDCHARAC( CHARS20[ TEMPI], TEMPI);
+      COPYDSK;
+      SCNTOCBL := FINDFILE( DRIVE1, 'SCENARIO.DATA');
+      RDSCNTC2;
+      FOR TEMPI := 0 TO 19 DO
+        BEGIN
+          IF CHARS20[ TEMPI].AGE > 1250 THEN
+            CHARS20[ TEMPI].AGE := 1250;
+          CHARS20[ TEMPI].INMAZE := FALSE;
+          WRCHARAC( CHARS20[ TEMPI], TEMPI);
+        END;
+      WRICACHE;
+      UNITREAD( DRIVE1, IOBUF, SIZEOF( IOBUF), SERIALBL, 0);
+      IF IORESULT <> 0 THEN
+        EXITUPD;
+      MOVELEFT( IOBUF, SERNUM, 7);  (* THIS LOOKS LIKE BUG *)
+      IOBUF[ 10] := CHR( 0);
+      IOBUF[ 11] := CHR( 1);
+      IOBUF[ 12] := CHR( RANDNUM);
+      UNITWRITE( DRIVE1, IOBUF, SIZEOF( IOBUF), SERIALBL, 0);
+      IF IORESULT <> 0 THEN
+        EXITUPD;
+      TITLESCR( 'DISK UPDATED');
+      WRITELN( 'REMEMBER TO PUT A WRITE-PROTECT TAB ON');
+      WRITELN( 'THE NOTCH YOU PUNCHED!');
+      PRESSRET
+    END;
+    
+    
+
+  BEGIN (* UTILS *)
+    REPEAT
+      TITLESCR( 'WIZARDRY UTILITIES');
+      WRITELN;
+      WRITELN(  'CHOOSE AN OPTION' :28);
+      WRITELN;
+      WRITELN(  'R)ECOVER  T)RANSFER B)ACKUP' :34);
+      WRITELN;
+      WRITELN(  'M)AKE SCENARIO DISK U)PDATE' :34);
+      WRITELN;
+      WRITELN(  'C)HANGE NAMES       L)EAVE ' :34);
+      
+      REPEAT
+        GOTOXY( 41, 0);
+        GETKEY
+      UNTIL (INCHAR = 'R') OR (INCHAR = 'T') OR
+            (INCHAR = 'L') OR (INCHAR = 'C') OR
+            (INCHAR = 'B') OR (INCHAR = 'M') OR
+            (INCHAR = 'U');
+      
+      CASE INCHAR OF
+        'L':  EXITUTIL;
+        'T':  TRANSFER;
+        'R':  RECOVER;
+        'C':  CHGNAMES;
+        'B':  BACKUP;
+        'M':  MAKESCEN;
+        'U':  UPDATDSK;
+      END
+    UNTIL FALSE
+  END; (* UTILS *)
+  

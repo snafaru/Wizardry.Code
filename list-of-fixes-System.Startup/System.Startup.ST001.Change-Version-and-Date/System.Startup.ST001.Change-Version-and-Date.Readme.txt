@@ -1,0 +1,40 @@
+Wizardry Proving Grounds v3.0 - Boot Side Code Changes
+======================================================
+
+From Thomas William Ewer's reverse engineered Pascal source code (and assembler code) of Wizardry it is now possible to fix the game code itself.
+
+
+Bug/Issue #:	ST001 - Version and Date
+========================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	26-Dec-2022
+
+Contributor:	E. Labelle
+
+The Issue:	To track which version and release date we are at.
+
+The Fix:	Change the version and date text displayed as needed.	
+
+Source Disk:	Wiz1E.dsk
+
+File:		OPTIONS.TEXT
+
+Segment:	PROCEDURE OPTIONS;  (* P070301 *)
+
+Code From:
+
+    WRITE( '  VERSION 2.1 OF 22-JAN-82  SER:');
+
+Code To:	New text output on boot splash screen. 
+
+    (* ST001 CHANGE VERSION AND DATE DISPLAY AS NEEDED *)
+    WRITE( '  VERSION 3.0 OF 26-DEC-22  SER:');
+
+Final Compiled File Name:	SYSTEM.STARTUP
+
+Destination Disk:		Any Wizardry Proving Grounds boot disk.
+
+
+

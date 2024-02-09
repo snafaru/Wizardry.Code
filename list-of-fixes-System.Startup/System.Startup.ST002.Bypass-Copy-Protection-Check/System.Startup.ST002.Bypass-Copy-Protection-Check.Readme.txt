@@ -1,0 +1,40 @@
+Wizardry Proving Grounds v3.0 - Boot Side Code Changes
+======================================================
+
+From Thomas William Ewer's reverse engineered Pascal source code (and assembler code) of Wizardry it is now possible to fix the game code itself.
+
+
+Bug/Issue #:	ST002 - Bypass Copy Protection Check
+====================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	25-Dec-2022
+
+Contributor:	E. Labelle (Information source: Thomas W. Ewers)
+
+The Issue:	After putting a new compiled version of SYSTEM.STARTUP (STARTUP.CODE) on a Wizardry boot disk, the latter will hang on boot. This is due to the copy protection scheme used. Note: Skipping the write-protect check has not been implemented yet, therefore do not forget to write-protect your boot disk, else it will hang.
+
+The Fix:	Remark out the copy protection check to bypass it.	
+
+Source Disk:	Wiz1E.dsk
+
+File:		STARTUP.TEXT
+
+Segment:	PROCEDURE CHKCOPY;  (* P07004 *)
+
+Code From:
+
+          IF GOODCOPY THEN *)
+
+Code To:	Putting the code between "(* " and " *)" makes it a remark and thus it is skipped, therefore bypassing the copy protection check. 
+
+          (* ST001 REMARK OUT/BYPASS COPY PROTECTION CHECK *)
+          (* IF GOODCOPY THEN *)
+
+Final Compiled File Name:	SYSTEM.STARTUP
+
+Destination Disk:		Any Wizardry Proving Grounds boot disk.
+
+
+

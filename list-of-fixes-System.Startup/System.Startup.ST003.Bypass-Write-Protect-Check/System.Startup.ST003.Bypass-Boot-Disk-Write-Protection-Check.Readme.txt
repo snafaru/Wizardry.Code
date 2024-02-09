@@ -1,0 +1,50 @@
+Wizardry Proving Grounds v3.0 - Boot Side Code Changes
+======================================================
+
+From Thomas William Ewer's reverse engineered Pascal source code (and assembler code) of Wizardry it is now possible to fix the game code itself.
+
+
+Bug/Issue #:	ST003 - Boot Disk Write Protection Check
+========================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	25-Dec-2022
+
+Contributor:	E. Labelle (Information source: Thomas W. Ewers, Chris Torrence)
+
+The Issue:	If the write-protection tab on a physical diskette, or the read-only flag on a diskette image, is not on then game will go to a blank screen and stay in an infinity loop right after the game boot splash screens.
+
+The Fix:	Remark out the write protection check code to bypass it.	
+
+Source Disk:	Wiz1E.dsk
+
+File:		OPTIONS.TEXT
+
+Segment:	PROCEDURE OPTIONS;  (* P070301 *)
+
+Code From:
+
+    UNITREAD( DRIVE1, IOBUFF, SIZEOF( IOBUFF), 0, 0);
+    UNITWRITE( DRIVE1, IOBUFF, SIZEOF( IOBUFF), 0, 0);
+    
+    IF IORESULT <> 16 THEN
+      REPEAT
+      UNTIL FALSE;
+
+Code To:	Putting the code between "(* " and " *)" makes it a remark and thus it is skipped, therefore bypassing the write protection check. 
+
+    (* ST003 REMARK OUT/BYPASS BOOT DISK WRITE-PROTECT CHECK *)
+    (* UNITREAD( DRIVE1, IOBUFF, SIZEOF( IOBUFF), 0, 0);
+    UNITWRITE( DRIVE1, IOBUFF, SIZEOF( IOBUFF), 0, 0);
+    
+    IF IORESULT <> 16 THEN
+      REPEAT
+      UNTIL FALSE; *)
+
+Final Compiled File Name:	SYSTEM.STARTUP
+
+Destination Disk:		Any Wizardry Proving Grounds boot disk.
+
+
+
