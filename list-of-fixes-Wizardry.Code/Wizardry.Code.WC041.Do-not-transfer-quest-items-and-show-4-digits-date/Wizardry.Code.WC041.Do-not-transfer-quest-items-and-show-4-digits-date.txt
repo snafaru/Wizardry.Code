@@ -18,7 +18,7 @@ Enhancements:   Revert the code done in WC040 to disallow characters to be trans
 
 Information:	This was done in WC040 to facilitate transferring characters between Proving Grounds and other alternate PG scenarios. But that has potential undesireable effets upon the transfer to the Knight of Diamonds scenario when using the transfer utility from the PG boot disk instead of the KOD boot disk.
 	
-Enhancements:   On spash screen upon boot show 4 digits for date year instead of 2 digits.
+Enhancements:   On splash screen upon boot show 4 digits for date year instead of 2 digits.
 
 Following are the programming code details
 ==========================================
