@@ -16,7 +16,7 @@ Contributors:	Eric Labelle.
 
 Enhancements:   Revert the code done in WC040 to disallow characters to be transferred between scenario disks when they are carrying quest items.
 
-Information:	This was done in WC040 to facilitate transferring characters between Proving Grounds and other alternate PG scenarios. But that has potential undesireable effets upon the transfer to the Knight of Diamonds scenario when using the transfer utility from the PG boot disk instead of the KOD boot disk.
+Information:	This was done in WC040 to facilitate transferring characters between Proving Grounds and other alternate PG scenarios. But that has potential undesirable effects upon the transfer to the Knight of Diamonds scenario when using the transfer utility from the PG boot disk instead of the KOD boot disk.
 	
 Enhancements:   On splash screen upon boot show 4 digits for date year instead of 2 digits.
 
