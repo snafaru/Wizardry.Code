@@ -1,5 +1,6 @@
-(* VERSION DATE  : 26 DEC 2022 *)
+(* VERSION DATE  : 20 MAR 2024 *)
 (* FIX REFERENCES: WC001 WC002 *)
+(* ENHANCEMENTS  : WC043 *)
 
 SEGMENT PROCEDURE UTILITIE;  (* P010101 *)
 
@@ -225,41 +226,29 @@ SEGMENT PROCEDURE UTILITIE;  (* P010101 *)
       
     PROCEDURE KANDILOC;  (* P01010C *)
     
+      (* BEGIN ENHANCEMENTS WC043 *)
       BEGIN
-        IF LOSTCHAR.STATUS = LOST THEN
+        IF (LOSTCHAR.STATUS = LOST) THEN
           EXIT( KANDILOC);
-        IF LOSTCHAR.STATUS < DEAD THEN
-          WRITELN( 'STILL WITH US!')
-        ELSE
+        IF LOSTCHAR.STATUS >= DEAD THEN
+          IF (LOSTCHAR.LOSTXYL.LOCATION[ 3] = 0) THEN
+             BEGIN
+             (* WC002 CHANGE -MOURGE- TO -MORGUE- *)
+             WRITELN( 'IN THE MORGUE');
+             EXITKAND
+             END;
+        IF (LOSTCHAR.LOSTXYL.LOCATION[ 3] = 0) THEN
+          WRITELN( 'STILL WITH US!');
+        IF (LOSTCHAR.LOSTXYL.LOCATION[ 3] > 0) THEN
           BEGIN
-            IF (LOSTCHAR.LOSTXYL.LOCATION[ 1] = 0) AND
-               (LOSTCHAR.LOSTXYL.LOCATION[ 2] = 0) AND
-               (LOSTCHAR.LOSTXYL.LOCATION[ 3] = 0)     THEN
-              (* WC002 CHANGE -MOURGE- TO -MORGUE- *)
-              WRITELN( 'IN THE MORGUE')
-            ELSE
-              IF LOSTCHAR.LOSTXYL.LOCATION[ 3] <= 0 THEN
-                BEGIN
-                  WRITELN( 'UNREACHABLE!')
-                END
-              ELSE
-                BEGIN
-                  WRITE( 'IN THE ');
-                  
-                  IF LOSTCHAR.LOSTXYL.LOCATION[ 2] > 9 THEN
-                    WRITE( 'NORTH ')
-                  ELSE
-                    WRITE( 'SOUTH ');
-                    
-                  IF LOSTCHAR.LOSTXYL.LOCATION[ 1] > 9 THEN
-                    WRITE( 'EAST')
-                  ELSE
-                    WRITE( 'WEST');
-                    
-                  WRITE( ' OF LEVEL ');
-                  WRITELN(  LOSTCHAR.LOSTXYL.LOCATION[ 3]);
-                END
+            WRITE( 'AT EAST ');
+            WRITE( LOSTCHAR.LOSTXYL.LOCATION[ 1]);
+            WRITE( ', NORTH ');
+            WRITE( LOSTCHAR.LOSTXYL.LOCATION[ 2]);
+            WRITE( ' OF LEVEL ');
+            WRITELN(  LOSTCHAR.LOSTXYL.LOCATION[ 3])
           END;
+        (* END ENHANCEMENTS WC043 *) 
         EXITKAND
       END;  (* KANDILOC *)
       
