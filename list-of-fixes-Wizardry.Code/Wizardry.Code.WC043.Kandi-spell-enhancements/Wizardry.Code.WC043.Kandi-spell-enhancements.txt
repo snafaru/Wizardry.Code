@@ -4,7 +4,7 @@ Wizardry Proving Grounds v3.0 - Pascal Code Changes
 The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
 
 
-Release #:	WC043 - Kandi spell enhancements
+Enhancement #:	WC043 - Kandi spell enhancements
 ================================================
 
 Status:		Fixed. Recompiled. Verified.
