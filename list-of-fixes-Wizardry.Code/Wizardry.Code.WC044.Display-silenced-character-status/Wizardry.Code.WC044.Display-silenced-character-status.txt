@@ -1,0 +1,63 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Enhancement #:	WC044 - Display Silenced Character Status
+=========================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	21-Mar-2024.
+
+Contributors:	Eric Labelle.
+
+Enhancements:	Added the status 'SILENC' in the character's status screen in combat when they have been silenced by monsters casting the Montino spell.
+
+
+Following are the programming code details
+==========================================
+
+Source disk:	Wiz1B.dsk
+
+File:		COMBAT3.TEXT
+
+Procedure:	PROCEDURE PRSTATUS;  (* P010627 *)
+				
+Code from:
+
+          BEGIN
+            STATUSOK :=  STATUSOK OR (CHARACTR[ PARTYI].STATUS < DEAD);
+            IF CHARACTR[ PARTYI].STATUS = OK THEN
+              IF CHARACTR[ PARTYI].LOSTXYL.POISNAMT[ 1] > 0 THEN
+                PRINTSTR( 'POISON')
+              ELSE
+                PRINTNUM( CHARACTR[ PARTYI].HPMAX, 4)
+            ELSE
+              PRINTSTR( SCNTOC.STATUS[ CHARACTR[ PARTYI].STATUS])
+          END; (* PRSTATUS *)
+
+Code to:
+
+          BEGIN
+            STATUSOK :=  STATUSOK OR (CHARACTR[ PARTYI].STATUS < DEAD);
+            IF CHARACTR[ PARTYI].STATUS = OK THEN
+                (* WC044 DISPLAY SILENCED CHARACTERS *)
+                IF BATTLERC[ 0].A.TEMP04[ PARTYI].INAUDCNT > 0 THEN
+                  PRINTSTR( 'SILENC')
+              ELSE
+                IF CHARACTR[ PARTYI].LOSTXYL.POISNAMT[ 1] > 0 THEN
+                  PRINTSTR( 'POISON')
+                  ELSE
+                    PRINTNUM( CHARACTR[ PARTYI].HPMAX, 4)
+            ELSE
+              PRINTSTR( SCNTOC.STATUS[ CHARACTR[ PARTYI].STATUS])
+          END; (* PRSTATUS *)
+
+Final compiled file names:	WIZARDRY.CODE
+
+Destination disk:	Any Wizardry Proving Grounds boot and scenario disks.
+
+
+
