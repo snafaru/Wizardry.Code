@@ -5,7 +5,7 @@ The baseline is the re-engineered Pascal source code (and assembler code) from t
 
 
 
-Release #:	WC041 - Do not transfer quest items - Show full 4-digits year on splash screen
+Enhancement #:	WC041 - Do not transfer quest items - Show full 4-digits year on splash screen
 ==============================================================================================
 
 Status:		Fixed. Recompiled. Verified.
