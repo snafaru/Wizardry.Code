@@ -91,6 +91,3 @@ Code to:
 Final compiled file names:	SYSTEM.STARTUP
 
 Destination disks:		Any Wizardry Proving Grounds boot disks.
-
-
-
