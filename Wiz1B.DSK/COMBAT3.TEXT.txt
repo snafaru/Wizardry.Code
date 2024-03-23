@@ -1,5 +1,6 @@
-(* VERSION DATE  : 05 JAN 2023 *)
+(* VERSION DATE  : 21 MAR 2024 *)
 (* FIX REFERENCES: WC009 *)
+(* ENHANCEMENTS  : WC044 *)
 
     PROCEDURE HEAL;  (* P01061F *)
       
@@ -217,10 +218,14 @@
           BEGIN
             STATUSOK :=  STATUSOK OR (CHARACTR[ PARTYI].STATUS < DEAD);
             IF CHARACTR[ PARTYI].STATUS = OK THEN
-              IF CHARACTR[ PARTYI].LOSTXYL.POISNAMT[ 1] > 0 THEN
-                PRINTSTR( 'POISON')
+                (* WC044 DISPLAY SILENCED CHARACTERS *)
+                IF BATTLERC[ 0].A.TEMP04[ PARTYI].INAUDCNT > 0 THEN
+                  PRINTSTR( 'SILENC')
               ELSE
-                PRINTNUM( CHARACTR[ PARTYI].HPMAX, 4)
+                IF CHARACTR[ PARTYI].LOSTXYL.POISNAMT[ 1] > 0 THEN
+                  PRINTSTR( 'POISON')
+                  ELSE
+                    PRINTNUM( CHARACTR[ PARTYI].HPMAX, 4)
             ELSE
               PRINTSTR( SCNTOC.STATUS[ CHARACTR[ PARTYI].STATUS])
           END; (* PRSTATUS *)
