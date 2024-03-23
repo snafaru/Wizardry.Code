@@ -25,13 +25,10 @@ Source disk:	Wiz1C.dsk
 
 File:		UTILITIE.TEXT
 
-Procedure:	PROCEDURE TRANSFER;  (* P070117 *)
-		PROCEDURE TRANBAD;  (* P07011A *)
+Procedure:	PROCEDURE KANDILOC;  (* P01010C *)
 				
 Code from:
 
-    PROCEDURE KANDILOC;  (* P01010C *)
-    
       BEGIN
         IF LOSTCHAR.STATUS = LOST THEN
           EXIT( KANDILOC);
@@ -70,8 +67,6 @@ Code from:
       END;  (* KANDILOC *)
 
 Code to:
-
-    PROCEDURE KANDILOC;  (* P01010C *)
     
       (* BEGIN ENHANCEMENTS WC043 *)
       BEGIN
