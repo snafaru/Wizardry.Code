@@ -1,6 +1,6 @@
-(* VERSION DATE  : 27 FEB 2023 *)
+(* VERSION DATE  : 23 MAR 2024 *)
 (* FIX REFERENCES: WC002 WC021 WC023 WC029 *)
-(* ENHANCEMENT   : WC030 *)
+(* ENHANCEMENT   : WC030 WC046 *)
 
     SEGMENT PROCEDURE CUTIL;
 
@@ -818,8 +818,9 @@
                             IF SURPRISE = 0 THEN
                               IF ATTCKTYP = 0 THEN
                                 BREATHES; (* WC023 *)
-                            IF ATTCKTYP = 0 THEN
-                              YELLHELP;
+                            IF SURPRISE = 0 THEN
+                              IF ATTCKTYP = 0 THEN
+                                YELLHELP; (* WC046 *)
                             IF ATTCKTYP = 0 THEN
                               RUNENMY;
                             IF ATTCKTYP > 0 THEN
