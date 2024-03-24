@@ -1,0 +1,108 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Enhancement #:	WC045 - Auto Update Hit Points of Poisoned Characters
+=====================================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	22-Mar-2024.
+
+Contributors:	Eric Labelle.
+
+Enhancements:	Added code to automatically update the remaining hit points of poisoned characters in the status window while walking in the maze.
+
+
+Following are the programming code details
+==========================================
+
+Source disk:	Wiz1C.dsk
+
+File:		RUNNER2.TEXT
+
+Procedure:	PROCEDURE UPDATEHP;  (* P010E1C *)
+				
+Code from:
+
+      VAR
+           UNUSEDXX : INTEGER;
+           CHARX    : INTEGER;
+           
+      BEGIN
+        FOR CHARX := 0 TO PARTYCNT - 1 DO
+          WITH CHARACTR[ CHARX] DO
+            BEGIN
+            
+              IF (RANDOM MOD 4) = 2 THEN
+                HPLEFT := HPLEFT - LOSTXYL.POISNAMT[ 1] + HEALPTS;
+              IF HPLEFT <= 0 THEN
+                BEGIN
+                  LOSTXYL.POISNAMT[ 1] := 0;
+                  IF STATUS < DEAD THEN
+                    BEGIN
+                      MVCURSOR( 1, 11);
+                      PRINTSTR( NAME);
+                      PRINTSTR( ' DIED');
+                      PAUSE2;
+                      CLRRECT( 1, 11, 38, 1);
+                      HPLEFT := 0;
+                      STATUS := DEAD;
+                      PRSTATS
+                    END
+                END
+              ELSE
+                IF HPLEFT > HPMAX THEN
+                  HPLEFT := HPMAX
+            END
+      END;  (* UPDATEHP *)
+
+
+Code to:
+
+      VAR
+           UNUSEDXX : INTEGER;
+           CHARX    : INTEGER;
+           SHOWPOIS : INTEGER;
+           
+      BEGIN
+        SHOWPOIS := 0;
+        FOR CHARX := 0 TO PARTYCNT - 1 DO
+          WITH CHARACTR[ CHARX] DO
+            BEGIN
+              IF (RANDOM MOD 4) = 2 THEN
+                HPLEFT := HPLEFT - LOSTXYL.POISNAMT[ 1] + HEALPTS;
+              IF HPLEFT <= 0 THEN
+                BEGIN
+                  LOSTXYL.POISNAMT[ 1] := 0;
+                  IF STATUS < DEAD THEN
+                    BEGIN
+                      MVCURSOR( 1, 11);
+                      PRINTSTR( NAME);
+                      PRINTSTR( ' DIED');
+                      PAUSE2;
+                      CLRRECT( 1, 11, 38, 1);
+                      HPLEFT := 0;
+                      STATUS := DEAD;
+                      PRSTATS
+                    END
+                END
+              ELSE
+                IF HPLEFT > HPMAX THEN
+                  HPLEFT := HPMAX;
+              (* WC045 REFRESH STATS AUTOMATICALLY WHEN POISONED *)
+              IF LOSTXYL.POISNAMT[ 1] > 0 THEN
+                SHOWPOIS := 1
+            END;
+        IF SHOWPOIS = 1 THEN
+          PRSTATS
+      END;  (* UPDATEHP *)
+
+Final compiled file names:	WIZARDRY.CODE
+
+Destination disk:	Any Wizardry Proving Grounds boot and scenario disks.
+
+
+
