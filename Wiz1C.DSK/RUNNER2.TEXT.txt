@@ -1,3 +1,5 @@
+(* VERSION DATE  : 22 MAR 2024 *)
+(* ENHANCEMENTS  : WC045 *)
     
     PROCEDURE READMAZE;  (* P010E0A *)
     
@@ -398,12 +400,13 @@
       VAR
            UNUSEDXX : INTEGER;
            CHARX    : INTEGER;
+           SHOWPOIS : INTEGER;
            
       BEGIN
+        SHOWPOIS := 0;
         FOR CHARX := 0 TO PARTYCNT - 1 DO
           WITH CHARACTR[ CHARX] DO
             BEGIN
-            
               IF (RANDOM MOD 4) = 2 THEN
                 HPLEFT := HPLEFT - LOSTXYL.POISNAMT[ 1] + HEALPTS;
               IF HPLEFT <= 0 THEN
@@ -423,8 +426,13 @@
                 END
               ELSE
                 IF HPLEFT > HPMAX THEN
-                  HPLEFT := HPMAX
-            END
+                  HPLEFT := HPMAX;
+              (* WC045 REFRESH STATS AUTOMATICALLY WHEN POISONED *)
+              IF LOSTXYL.POISNAMT[ 1] > 0 THEN
+                SHOWPOIS := 1
+            END;
+        IF SHOWPOIS = 1 THEN
+          PRSTATS
       END;  (* UPDATEHP *)
       
       
