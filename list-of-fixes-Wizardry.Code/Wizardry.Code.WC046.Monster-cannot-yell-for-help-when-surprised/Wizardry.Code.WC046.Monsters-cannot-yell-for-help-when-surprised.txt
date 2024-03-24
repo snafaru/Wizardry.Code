@@ -1,0 +1,45 @@
+Wizardry Proving Grounds v3.0 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Enhancement #:	WC046 - Monsters cannot yell for help when surprised
+====================================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	23-Mar-2024.
+
+Contributors:	Eric Labelle.
+
+Enhancements:	Prevent monsters from yelling for help when surprised. This was a guaranteed party slaughter (game breaker) in many scenarios. For Proving Grounds for example, on level 10, if four Dragon Zombies surprised you, you could end up facing eight Dragon Zombies the next round, no party can survive this. And if there are multiple groups of monsters surprising you it was even worse.
+
+
+Following are the programming code details
+==========================================
+
+Source disk:	Wiz1B.dsk
+
+File:		COMBAT2.TEXT
+
+Procedure:	PROCEDURE ENATTACK;  (* P010614 *)
+				
+Code from:
+
+                            IF ATTCKTYP = 0 THEN
+                              YELLHELP;
+
+
+Code to:
+
+                            IF SURPRISE = 0 THEN
+                              IF ATTCKTYP = 0 THEN
+                                YELLHELP; (* WC046 *)
+
+Final compiled file names:	WIZARDRY.CODE
+
+Destination disk:	Any Wizardry Proving Grounds boot and scenario disks.
+
+
+
