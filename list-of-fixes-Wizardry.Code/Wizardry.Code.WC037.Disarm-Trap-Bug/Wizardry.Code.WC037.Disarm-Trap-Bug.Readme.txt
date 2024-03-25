@@ -16,7 +16,7 @@ Contributors:	Eric Labelle. Bug reported by Reiska42.
 
 The issue:	This happens when finding a chest that is booby trapped with a trap of type 3 (Crossbow Bolt, Exploding Box, Splinters, Blades, and Stunner). Upon disarming the trap if you enter any valid trap name besides the current trap then nothing happens and you go back to the chest options. You can continue entering all the trap names and nothing will happen. The only way out is to open the chest, leave it, or enter the right trap name.
 
-The fix:	Added the same code a in Wizardry III Legacy of Llylgamyn to fix this bug.
+The fix:	Added the same code as in Wizardry III Legacy of Llylgamyn to fix this bug.
 	
 Why this fix: 	To make disarming chest traps work as intended.
 
