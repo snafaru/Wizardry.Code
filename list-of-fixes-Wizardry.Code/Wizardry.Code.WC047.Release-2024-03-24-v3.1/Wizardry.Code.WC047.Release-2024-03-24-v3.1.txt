@@ -1,0 +1,41 @@
+Wizardry Proving Grounds v3.1 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Release #:	WC047 - Release 24 March 2024 v3.1
+==================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	24-Mar-2024.
+
+Contributors:	Eric Labelle.
+
+Enhancements:	Fully recompiled release v3.1 as of 24 March 2024.
+
+
+Following are the programming code details
+==========================================
+
+Source disk:	Wiz1E.dsk
+
+File:		OPTIONS.TEXT
+
+Procedure:	SEGMENT PROCEDURE OPTIONS;  (* P070301 *)
+				
+Code from:
+
+    WRITE( ' VERSION 3.0 OF 08-FEB-2024  SER:');
+
+Code to:
+
+    WRITE( ' VERSION 3.1 OF 24-MAR-2024  SER:');
+
+Final compiled file names:	SYSTEM.STARTUP
+
+Destination disk:	Any Wizardry Proving Grounds boot disks.
+
+
+
