@@ -1,10 +1,18 @@
 # Wizardry.Code
-Wizardry Proving Grounds v3.0 - Editing and Compiling WIZARDRY.CODE and SYSTEM.STARTUP - Apple II - UCSD Pascal 1.1
+Wizardry Proving Grounds v3.1 - Editing and Compiling WIZARDRY.CODE and SYSTEM.STARTUP - Apple II - UCSD Pascal 1.1
 -
 
-Besides fixes, here are the main exciting enhancements:
+More than forty years after the last public release of Wizardry Proving Grounds of the Mad Overlord for the Apple II platform, Wizardry Proving Grounds v3.1 is released!
+
+More than 100 database and code fixes, and enhancements, have been done in Wizardry Proving Grounds v3.1.
+
+You can find more details and downloads at https://www.zimlab.com/wizardry
+
+Here are only a few of the game play enhancements:
 
 Camp, Gilgamesh's, Boltac's, Adventurer's Inn : Pool and divide gold between party members.	
+
+Castle : Removed password prompts.
 
 Ninja : The requirements to change class to ninja are now 15 in all attributes instead of 17.
 
@@ -18,9 +26,13 @@ Combat : Display hit probability for characters and monsters.
 
 Combat : Display spells cast by both monsters and players.
 
+Combat : Display silenced characters in the status window.
+
 Combat : No more spell casting during the surprise round for both monsters and players.
 
 Combat : Monsters drain your character only once per combat.
+
+Combat : You can repeat the last spell cast using your keyboard's up arrow in the ProDOS version (Qkumba qol improvement)
 
 Spells : Haman and Mahaman now have 7 effects.
 
