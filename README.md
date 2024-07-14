@@ -2,6 +2,8 @@
 Wizardry Proving Grounds v3.1 - Editing and Compiling WIZARDRY.CODE and SYSTEM.STARTUP - Apple II - UCSD Pascal 1.1
 -
 
+First, I'd like to start with an acknowlegement. The baseline for this project is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it. I am forever grateful for his work.
+
 More than forty years after the last public release of Wizardry Proving Grounds of the Mad Overlord for the Apple II platform, Wizardry Proving Grounds v3.1 is released!
 
 More than 100 database and code fixes, and enhancements, have been done in Wizardry Proving Grounds v3.1.
