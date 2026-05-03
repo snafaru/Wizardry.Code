@@ -1,0 +1,37 @@
+Wizardry Proving Grounds v3.1 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Enhancement #:	WC049 - New Fonts
+=================================
+
+Status:				Fixed. Recompiled. Verified.
+
+Date of change:			27-Jan-2026.
+
+Creator/Contributors:		4am.
+
+Insertion in this project: 	Eric Labelle.
+
+Enhancements:	4am provided new fonts that are easier to read and easier on the eyes. 
+
+
+
+Following are the programming code details
+==========================================
+
+Source disk:	Wizardry scenario disk.
+
+File:		SCENARIO.DATA
+
+Tool:		Use Copy II Plus 5.5 - Sector Editor
+				
+Method:		The normal hi-res character set are located at block offset 1.
+		That is Hex 200 to Hex 3ff.
+		Copy those from 4am's release in Wizardry Replay 2.0 that
+		includes his fonts to the destination scenario disk.
+		Note: This is track 12 hex, sectors 3 hex and 2 hex.
+
+Destination disk:	Any Wizardry scenario disks.
