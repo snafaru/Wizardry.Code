@@ -62,4 +62,4 @@ Version 3.2 enhancements/fixes over the previous versions:
 
 <img src="resources/castle-market-party-02.png" alt="Castle Market"/>
 <img src="resources/maze-entrance-party-02.png" alt="Maze Entrance"/>
-<img src="resources/chraracter-stats-02.png" alt="Character Stats"/>
+<img src="resources/chraracter-stats-03.png" alt="Character Stats"/>
