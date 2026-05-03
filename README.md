@@ -1,12 +1,12 @@
 # Wizardry.Code
-Wizardry Proving Grounds v3.1 - Editing and Compiling WIZARDRY.CODE and SYSTEM.STARTUP - Apple II - UCSD Pascal 1.1
+Wizardry Proving Grounds v3.2 - Editing and Compiling WIZARDRY.CODE and SYSTEM.STARTUP - Apple II - UCSD Pascal 1.1
 -
 
 First, I'd like to start with an acknowledgment. The baseline for this project's code is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it. I am forever grateful for his work.
 
-More than forty years after the last public release of Wizardry Proving Grounds of the Mad Overlord for the Apple II platform, Wizardry Proving Grounds v3.1 is released!
+More than forty-five years after the last public release of Wizardry Proving Grounds of the Mad Overlord for the Apple II platform, Wizardry Proving Grounds v3.2 is released!
 
-More than 100 database and code fixes, and enhancements, have been done in Wizardry Proving Grounds v3.1.
+More than 100 database and code fixes, and enhancements, have been done in Wizardry Proving Grounds v3.2.
 
 You can find more details and downloads at https://www.zimlab.com/wizardry
 
@@ -51,6 +51,14 @@ Camp : On the fly update of your characters' Gold, Hit Points, Status.
 Chest Traps : Bug fix where the chest traps are now working as intended.
 
 Maze : Easter egg and specials encounters re-enabled.
+
+Version 3.2 enhancements/fixes over the previous versions:
+- Game Q)uick Plot option now makes the screen draw faster when there are poisoned characters.
+- New fonts by 4am. My grateful thanks to 4am for this marvelous work.
+- Added a pause (with a funny quip) after stepping on a CHUTE! square to see that it happened at higher speeds.
+- Game breaker fix for after getting out of a FIZZLE square the spells fizzling effect now stops.
+- Fix the Random Number Generator and have assembly code to now use safe memory locations by Qkumba. My grateful thanks to Qkumba for this incredible feat.
+
 
 <img src="resources/castle-market-party-01.png" alt="Castle Market"/>
 <img src="resources/maze-entrance-party-01.png" alt="Maze Entrance"/>
