@@ -1,0 +1,51 @@
+Wizardry Proving Grounds v3.1 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Enhancement #:	WC048 - Quickplot To Stop Update Hit Points of Poisoned Characters
+==================================================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	27-Jan-2026.
+
+Contributors:	Eric Labelle.
+
+Enhancements:	WC045 added code to automatically update the remaining hit points of poisoned characters in the status window while walking in the maze. This WC048 now checks if the game option Q)UICK PLOT is ON, if ON then the game engine stops updating the characters statistics and the screen draws much faster. Press Q)UICK PLOT again to turn it back OFF.
+
+
+
+Following are the programming code details
+==========================================
+
+Source disk:	Wiz1C.dsk
+
+File:		RUNNER2.TEXT
+
+Procedure:	PROCEDURE UPDATEHP;  (* P010E1C *)
+				
+Code from:
+
+.
+.
+.
+        IF SHOWPOIS = 1 THEN
+            PRSTATS
+
+Code to:
+
+.
+.
+.
+        IF SHOWPOIS = 1 THEN
+          IF NOT QUICKPLT THEN (* WC048 STOP REFRESH STATS IF QUICKPLOT ON *)
+            PRSTATS
+
+Final compiled file names:	WIZARDRY.CODE
+
+Destination disk:	All Wizardry Proving Grounds boot and scenario disks.
+
+
+
