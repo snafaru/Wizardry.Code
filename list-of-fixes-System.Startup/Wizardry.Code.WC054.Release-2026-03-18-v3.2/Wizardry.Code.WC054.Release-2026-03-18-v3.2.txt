@@ -1,0 +1,73 @@
+Wizardry Proving Grounds v3.2 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Release #:	WC054 - Release 18 Mar 2026 v3.2
+================================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	18-Mar-2026.
+
+Contributors:	Eric Labelle, Peter Ferrie (Qkumba), 4am.
+
+Compiled by:	Eric Labelle.
+
+Enhancements:	Fully recompiled release v3.2 as of 18 Mar 2026. This release includes the following fixes and improvements since release 3.1:
+	- Game Q)uick Plot option now makes the screen draw faster when there are poisoned characters.
+	- New fonts by 4am. My grateful thanks to 4am for this marvelous work.
+	- Added a pause after stepping on a CHUTE! square to see that it happened at higher speeds.
+	- Game breaker fix for after getting out of a FIZZLE square the spells fizzling effect now stops.
+	- Fix the Random Number Generator and have assembly code to now use safe memory locations by Qkumba. My grateful thanks to Qkumba for this incredible feat.
+
+Consistency:	The Pascal disk volume names for the boot and scenario disks have been updated to WBV3.2: and WSV3.2:
+
+
+Following are the programming code details
+==========================================
+
+Source disk:	Wiz1E.dsk
+
+File:		OPTIONS.TEXT
+
+Procedure:	SEGMENT PROCEDURE OPTIONS;  (* P070301 *)
+				
+Code from:
+
+    WRITE( ' VERSION 3.1 OF 24-MAR-2024  SER:');
+
+Code to:
+
+(* VERSION DATE           : 18-MAR-2026 WC054 *)
+(* ENHANCEMENTS AND FIXES : ST001 ST003 ST004 WC041 *)
+
+(* ACKWNOLEDGEMENTS FOR VERSION 3.2 *)
+(* THOMAS W. EWERS - WIZARDRY PASCAL AND ASSEMBLY CODE REVERSE-ENGINEERING *)
+(* ERIC LABELLE (SNAFARU) - DATABASE FIXES. ENGINE FIXES, ENHANCEMENTS, *)
+(*   AND QUALITY OF LIFE IMPROVEMENTS. RE-COMPILING. VERSION 3.2 RELEASE *)
+(* PETER FERRIE (QKUMBA) - PRODOS SUPPORT, SAFE MEMORY LOCATION AND FIX *)
+(*   FOR THE RANDOM NUMBER GENERATOR. *)
+(* 4AM - FONTS *)
+(* CHRIS TORRENCE (CT6502) - 40-COLUMNS FIX FOR APPLE IIE *)
+(* OTHER PEOPLE THAT HELPED SNAFARU ALONG THE WAY: STEVE EVANS, *)
+(*    DENIS MOLONY (WIZARDRY APP), MARSHALL BOCKRATH, DDG AHAB, *)
+(*    DAN GARTUNG (WIZARD'S  WORKBENCH), AND THE AUTHOR(S) OF THE BIG M *)
+(*    WIZARDRY SCENARIO EDITOR, AS WELL AS THE NUMEROUS FANS FOR THEIR *)
+(*    SUGGESTIONS AND FEEDBACK *)
+(*         *)
+(* SNAFARU *)
+.
+.
+.
+    (* WC054 RELEASE DATE *)
+    WRITE( ' VERSION 3.2 OF 18-MAR-2026  SER:');
+
+
+Final compiled file names:	SYSTEM.STARTUP
+
+Destination disk:	Any Wizardry Proving Grounds boot disks.
+
+
+
