@@ -1,5 +1,5 @@
-(* VERSION DATE  : 27 JAN 2026 *)
-(* ENHANCEMENTS  : WC045 WC048 *)
+(* VERSION DATE  : 11 FEB 2026 *)
+(* ENHANCEMENTS  : WC045 WC048 WC050 *)
     
     PROCEDURE READMAZE;  (* P010E0A *)
     
@@ -189,6 +189,11 @@
         
           BEGIN
             PRINTSTR( 'A CHUTE!');
+            MVCURSOR( 1, 13); (* WC050 INSERT PAUSE *)
+            PRINTSTR( 'PRESS A KEY TO SCRAMBLE');
+            MVCURSOR( 1, 14);
+            PRINTSTR( 'BACK TO YOUR FEET!');
+            GETKEY;
             QUIETXFR
           END;
           
