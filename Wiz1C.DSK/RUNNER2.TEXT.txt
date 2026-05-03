@@ -1,5 +1,5 @@
-(* VERSION DATE  : 22 MAR 2024 *)
-(* ENHANCEMENTS  : WC045 *)
+(* VERSION DATE  : 27 JAN 2026 *)
+(* ENHANCEMENTS  : WC045 WC048 *)
     
     PROCEDURE READMAZE;  (* P010E0A *)
     
@@ -432,7 +432,8 @@
                 SHOWPOIS := 1
             END;
         IF SHOWPOIS = 1 THEN
-          PRSTATS
+          IF NOT QUICKPLT THEN (* WC048 STOP REFRESH STATS IF QUICKPLOT ON *)
+            PRSTATS
       END;  (* UPDATEHP *)
       
       
