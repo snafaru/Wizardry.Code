@@ -1,0 +1,62 @@
+Wizardry Proving Grounds v3.1 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Bug/Issue #:	WC051 - Fizzle Fix
+==================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	12-Feb-2026.
+
+Contributors:	Eric Labelle.
+
+Fix:		Game breaker fix. When stepping on a square which has the FIZZLES attribute, all spells for monsters and your party fail, even if in camp. The problem was that if you stepped on any normal square thereafter the FIZZLES effect did not stop. This meant for example if you got in a tough fight and needed to heal (or MALOR/Teleport out, he, he, he) you couldn't do it, and furthermore you could not cast spells in the next fight either, which often unfairly got your entire party slaughtered. With this fix, now stepping out of a warded FIZZLES square gives you party a chance to cast spells again and survive.
+
+
+Following are the programming code details
+==========================================
+
+Source disk:	Wiz1C.dsk
+
+File:		RUNNER2.TEXT
+
+Procedure:	    PROCEDURE RUNMAIN;  (* P010E0E *)
+				
+Code from:
+
+      BEGIN (* RUNMAIN *)
+.
+.
+.
+          IF MAZE.SQRETYPE[ MAZE.SQREXTRA[ MAZEX][ MAZEY]] <> NORMAL THEN
+            IF XGOTO2 <> XSCNMSG THEN
+              IF INITTURN THEN
+                SPECSQAR;
+.
+.
+.
+
+Code to:
+
+.
+.
+.
+          IF MAZE.SQRETYPE[ MAZE.SQREXTRA[ MAZEX][ MAZEY]] = NORMAL THEN
+            FIZZLES := 0; (* WC051 CANCEL FIZZLE IS NOT ON A FIZZLE SQUARE *)
+          IF MAZE.SQRETYPE[ MAZE.SQREXTRA[ MAZEX][ MAZEY]] <> NORMAL THEN
+            IF XGOTO2 <> XSCNMSG THEN
+              IF INITTURN THEN
+                SPECSQAR;
+.
+.
+.
+
+
+Final compiled file names:	WIZARDRY.CODE
+
+Destination disk:		All Wizardry Proving Grounds boot and scenario disks.
+
+
