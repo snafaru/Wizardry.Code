@@ -1,21 +1,25 @@
  .PROC MVCURSOR,2 ; 2 PARAMETERS ;    P01001F,2
 ;
+;          ; FIX WC053 - CODE BY QKUMBA TO USE SAFE MEMORY LOCATIONS
+;          ; AND FIX THE RANDOM NUMBER GENERATOR BUG BY REPLACING
+;          ; $047A,$04FA,$057A,$05FB,$04F9,$0579,$0679,$06F9,$0779,$07F9 BY
+;          ; $BFF0,$BFF1,$BFF2,$BFF3,$BFF4,$BFF5,$BFF9,$BFFA,$BFFB,$BFFC
+;
 ;          ; CALL:  MVCURSOR (X, Y);
 ;          ;
 ;          ; IN THIS ROUTINE:
 ;          ;
-;          ;        X STORED AT $4F9  (SLOT #1 RAM SPACE)
-;          ;        Y STORED AT $579  (SLOT #1 RAM SPACE)
+;          ;        X STORED AT $BFF4
+;          ;        Y STORED AT $BFF5
 ;          ;
-;          ;            PRGRCHR USES $4F9 AND $579
+;          ;            PRGRCHR USES $BFF4 AND $BFF5
 ;          ;
 ;          ; MVCURSOR( 40, Y)    TURN ON GRAPHICS MODE
 ;          ; MVCUROSR( 50, Y)    TURN ON TEXT MODE
 ;          ; MVCURSOR( 60, Y)    JUMP TO $2002  (COPY PROTECTION)
 ;          ; MVCURSOR( 70, Y)    CRASH AND BURN (COPY PROTECTION)
 ;          ; MVCURSOR( 80, Y)    ADJUST RANDOM # (UNTIL KEY IS AVAILABLE)
-;          ;                                  $47A, $47B, $47C, $47D (???)
-;          ;                       RNG USES:  $47A, $4FA, $57A, $5FB (!!!)
+;          ;                       RNG USES:  $BFF0, $BFF1, $BFF2, $BFF3
 ;    
  PLA       ; PULL RETURN
  STA 00
@@ -52,9 +56,9 @@
 ;
 ;          ; X NOT A "SPECIAL" VALUE
 ;
- STA 004F9 ; SAVE "X" COORDINATE (AT SLOT #1 RAM SPACE)
+ STA 0BFF4 ; SAVE "X" COORDINATE
  LDA 08
- STA 00579 ; SAVE "Y" COORDINATE (AT SLOT #1 RAM SPACE)
+ STA 0BFF5 ; SAVE "Y" COORDINATE
  RTS
 ;
 L58EF
@@ -121,11 +125,11 @@ L5920
 L5931
  LDX #00
 L5933
- INC 0047A,X ; INCREMENT RANDOM #         (BUG !!!!!!)
- BNE L593D   ;   $47A, $47B, $47C, $47D   (??????????)
+ INC 0BFF0,X ; INCREMENT RANDOM #
+ BNE L593D   ;   $BFF0, $BFF1, $BFF2, $BFF3
  INX         ;   RAM FOR SLOTS #2, #3, #4, #5
  CPX #04     ;
- BNE L5933   ; RNG CODE USES $47A, $4FA, $57A, $5FB (ALL SLOT #2)
+ BNE L5933   ; RNG CODE USES $BFF0, $BFF1, $BFF2, $BFF3
 L593D
  LDA 0C000   ; KEYBOARD DATA
  BPL L5931   ; KEY PRESSED?  NO, L5931  (CONTINUE INCREMENTING RANDOM #)
