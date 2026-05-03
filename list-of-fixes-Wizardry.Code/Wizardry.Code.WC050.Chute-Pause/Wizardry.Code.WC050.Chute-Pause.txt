@@ -1,0 +1,51 @@
+Wizardry Proving Grounds v3.1 - Pascal Code Changes
+===================================================
+
+The baseline is the re-engineered Pascal source code (and assembler code) from the Wizardry_I program by Thomas William Ewers. This project would not exist without it.
+
+
+Enhancement #:	WC050 - Chute Pause
+===================================
+
+Status:		Fixed. Recompiled. Verified.
+
+Date of change:	11-Feb-2026.
+
+Contributors:	Eric Labelle.
+
+Enhancements:	Added a pause with extra text after stepping on a CHUTE square in the maze. When playing with an emulator, and especially at faster game speeds, the "A CHUTE!" message was dissapearing too fast to see what happened.
+
+
+Following are the programming code details
+==========================================
+
+Source disk:	Wiz1C.dsk
+
+File:		RUNNER2.TEXT
+
+Procedure:	PROCEDURE ACHUTE;  (* P010E13 *)
+				
+Code from:
+
+          BEGIN
+            PRINTSTR( 'A CHUTE!');
+            QUIETXFR
+          END;
+
+Code to:
+
+          BEGIN
+            PRINTSTR( 'A CHUTE!');
+            MVCURSOR( 1, 13); (* WC050 INSERT PAUSE *)
+            PRINTSTR( 'PRESS A KEY TO SCRAMBLE');
+            MVCURSOR( 1, 14);
+            PRINTSTR( 'BACK TO YOUR FEET!');
+            GETKEY;
+            QUIETXFR
+          END;
+
+Final compiled file names:	WIZARDRY.CODE
+
+Destination disk:		All Wizardry Proving Grounds boot and scenario disks.
+
+
